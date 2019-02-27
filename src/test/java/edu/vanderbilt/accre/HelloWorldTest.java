@@ -7,6 +7,7 @@ import org.junit.Test;
 public class HelloWorldTest {
     @Test
     public void shouldAnswerWithTrue() {
+        System.out.println("Hey, I'm testing!");
         assertTrue( true );
     }
 }
