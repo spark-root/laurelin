@@ -29,3 +29,7 @@ hs_err_pid*
 .classpath
 .project
 .settings/
+
+# Temporary unit test files
+ttree-unit-input
+ttree-unit-input2
