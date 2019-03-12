@@ -10,7 +10,7 @@ public interface Interpretation {
     public int source_numitems(Array source);
     public Array fromroot(RawArray bytedata, PrimitiveArrayInt4 byteoffsets, int local_entrystart, int local_entrystop);
     public Array destination(int numitems, int numentries);
-    // public void fill(Array source, Array destination, int itemstart, int itemstop, int entrystart, int entrystop);
+    public void fill(Array source, Array destination, int itemstart, int itemstop, int entrystart, int entrystop);
     // public Array clip(Array destination, int itemstart, int itemstop, int entrystart, int entrystop);
     // public Array finalize(Array destination);
 }

@@ -32,13 +32,11 @@ public abstract class PrimitiveArray extends Array {
         return this.length * this.multiplicity();
     }
 
-    // public void copyflat(PrimitiveArray source, int itemstart, int itemstop) {
-    //     int bytestart = itemstart * this.interpretation.itemsize();
-    //     int bytestop = itemstart * this.interpretation.itemsize();
-    //     dst = this.buffer
-
-
-    // }
+    public void copyitems(PrimitiveArray source, int itemstart, int itemstop) {
+        int bytestart = itemstart * this.itemsize();
+        int bytestop = itemstart * this.itemsize();
+        this.raw().put(source.raw().array(), bytestart, bytestop - bytestart);
+    }
 
     protected ByteBuffer raw() {
         return this.buffer;
