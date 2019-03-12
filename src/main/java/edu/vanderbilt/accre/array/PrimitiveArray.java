@@ -20,6 +20,11 @@ public abstract class PrimitiveArray<THIS> extends Array<THIS> {
         this.buffer = rawarray.raw();
     }
 
+    protected PrimitiveArray(Interpretation interpretation, ByteBuffer buffer) {
+        super(interpretation, buffer.limit() / (((AsDtype)interpretation).itemsize() * ((AsDtype)interpretation).multiplicity()));
+        this.buffer = buffer;
+    }
+
     public int itemsize() {
         return ((AsDtype)interpretation).itemsize();
     }
@@ -40,5 +45,15 @@ public abstract class PrimitiveArray<THIS> extends Array<THIS> {
 
     protected ByteBuffer raw() {
         return this.buffer;
+    }
+
+    protected ByteBuffer rawclipped(int start, int stop) {
+        int mult = this.multiplicity();
+        int bytestart = start * mult * this.itemsize();
+        int bytestop = stop * mult * this.itemsize();
+        ByteBuffer out = this.buffer.duplicate();
+        out.position(bytestart);
+        out.limit(bytestop);
+        return out;
     }
 }
