@@ -5,6 +5,7 @@ import java.lang.Integer;
 import java.util.ArrayList;
 import java.util.List;
 import java.lang.UnsupportedOperationException;
+import java.lang.String;
 
 import edu.vanderbilt.accre.array.Array;
 import edu.vanderbilt.accre.array.RawArray;
@@ -43,6 +44,35 @@ public class AsDtype implements Interpretation {
         this.dims = Collections.unmodifiableList(dims);
     }
 
+    public int itemsize() {
+        switch (this.dtype) {
+        case BOOL:
+            return 1;
+        case INT1:
+            return 1;
+        case INT2:
+            return 2;
+        case INT4:
+            return 4;
+        case INT8:
+            return 8;
+        case UINT1:
+            return 1;
+        case UINT2:
+            return 2;
+        case UINT4:
+            return 4;
+        case UINT8:
+            return 8;
+        case FLOAT4:
+            return 4;
+        case FLOAT8:
+            return 8;
+        default:
+            throw new AssertionError("unrecognized dtype");
+        }
+    }
+
     public Array empty() {
         switch (this.dtype) {
         case BOOL:
@@ -72,9 +102,12 @@ public class AsDtype implements Interpretation {
         }
     }
     
-    // public long numitems(long numbytes, long numentries) {
-
-    // }
+    public long numitems(long numbytes, long numentries) {
+        if (numbytes % this.itemsize() != 0) {
+            throw new AssertionError(String.format("%ld byte buffer does not divide evenly into %s", numbytes, this.dtype.toString()));
+        }
+        return numbytes / this.itemsize();
+    }
     
     // public long source_numitems(Array source) {
 
