@@ -127,7 +127,7 @@ public class AsDtype implements Interpretation {
             throw new AssertionError("byteoffsets must be null for AsDtype");
         }
         int entrysize = this.multiplicity() * this.itemsize();
-        RawArray sliced = bytedata.slice(local_entrystart * entrysize, local_entrystop * entrysize);
+        RawArray sliced = bytedata.slice(local_entrystart * entrysize, local_entrystop * entrysize).byteswap(this.itemsize());
         switch (this.dtype) {
         case BOOL:
             throw new UnsupportedOperationException("not implemented yet");
