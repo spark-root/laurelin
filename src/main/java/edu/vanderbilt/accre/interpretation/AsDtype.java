@@ -45,6 +45,14 @@ public class AsDtype implements Interpretation {
         this.dims = Collections.unmodifiableList(dims);
     }
 
+    public int multiplicity() {
+        int out = 1;
+        for (Integer i : this.dims) {
+            out *= i;
+        }
+        return out;
+    }
+
     public int itemsize() {
         switch (this.dtype) {
         case BOOL:
@@ -103,30 +111,60 @@ public class AsDtype implements Interpretation {
         }
     }
     
-    public long numitems(long numbytes, long numentries) {
+    public int numitems(int numbytes, int numentries) {
         if (numbytes % this.itemsize() != 0) {
             throw new AssertionError(String.format("%ld byte buffer does not divide evenly into %s", numbytes, this.dtype.toString()));
         }
         return numbytes / this.itemsize();
     }
     
-    public long source_numitems(Array source) {
+    public int source_numitems(Array source) {
         return ((PrimitiveArray)source).numitems();
     }
     
-    // public Array fromroot(RawArray bytedata, PrimitiveArrayInt4 byteoffsets, long local_entrystart, long local_entrystop) {
+    public Array fromroot(RawArray bytedata, PrimitiveArrayInt4 byteoffsets, int local_entrystart, int local_entrystop) {
+        if (byteoffsets != null) {
+            throw new AssertionError("byteoffsets must be null for AsDtype");
+        }
+        int entrysize = this.multiplicity() * this.itemsize();
+        RawArray sliced = bytedata.slice(local_entrystart * entrysize, local_entrystop * entrysize);
+        switch (this.dtype) {
+        case BOOL:
+            throw new UnsupportedOperationException("not implemented yet");
+        case INT1:
+            throw new UnsupportedOperationException("not implemented yet");
+        case INT2:
+            throw new UnsupportedOperationException("not implemented yet");
+        case INT4:
+            throw new UnsupportedOperationException("not implemented yet");
+        case INT8:
+            throw new UnsupportedOperationException("not implemented yet");
+        case UINT1:
+            throw new UnsupportedOperationException("not implemented yet");
+        case UINT2:
+            throw new UnsupportedOperationException("not implemented yet");
+        case UINT4:
+            throw new UnsupportedOperationException("not implemented yet");
+        case UINT8:
+            throw new UnsupportedOperationException("not implemented yet");
+        case FLOAT4:
+            throw new UnsupportedOperationException("not implemented yet");
+        case FLOAT8:
+            return new PrimitiveArrayFloat8(this, sliced);
+        default:
+            throw new AssertionError("unrecognized dtype");
+        }
+    }
+
+    // public Array destination(int numitems, int numentries) {
 
     // }
 
-    // public Array destination(long numitems, long numentries) {
-
-    // }
-
-    // public void fill(Array source, Array destination, long itemstart, long itemstop, long entrystart, long entrystop) {
+    // public void fill(Array source, Array destination, int itemstart, int itemstop, int entrystart, int entrystop) {
 
     // }
     
-    // public Array clip(Array destination, long itemstart, long itemstop, long entrystart, long entrystop) {
+    // public Array clip(Array destination, int itemstart, int itemstop, int entrystart, int entrystop) {
 
     // }
     

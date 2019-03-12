@@ -12,4 +12,9 @@ public class PrimitiveArrayFloat8 extends PrimitiveArray {
         super(interpretation, length);
         this.buffer = DoubleBuffer.allocate(this.numitems());
     }
+
+    public PrimitiveArrayFloat8(Interpretation interpretation, RawArray rawarray) {
+        super(interpretation, rawarray.length() / 8);
+        this.buffer = rawarray.raw().asDoubleBuffer();
+    }
 }

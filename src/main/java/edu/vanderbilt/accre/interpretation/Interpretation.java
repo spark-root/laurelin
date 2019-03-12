@@ -6,11 +6,11 @@ import edu.vanderbilt.accre.array.PrimitiveArrayInt4;
 
 public interface Interpretation {
     public Array empty();
-    public long numitems(long numbytes, long numentries);
-    public long source_numitems(Array source);
-    // public Array fromroot(RawArray bytedata, PrimitiveArrayInt4 byteoffsets, long local_entrystart, long local_entrystop);
-    // public Array destination(long numitems, long numentries);
-    // public void fill(Array source, Array destination, long itemstart, long itemstop, long entrystart, long entrystop);
-    // public Array clip(Array destination, long itemstart, long itemstop, long entrystart, long entrystop);
+    public int numitems(int numbytes, int numentries);
+    public int source_numitems(Array source);
+    public Array fromroot(RawArray bytedata, PrimitiveArrayInt4 byteoffsets, int local_entrystart, int local_entrystop);
+    // public Array destination(int numitems, int numentries);
+    // public void fill(Array source, Array destination, int itemstart, int itemstop, int entrystart, int entrystop);
+    // public Array clip(Array destination, int itemstart, int itemstop, int entrystart, int entrystop);
     // public Array finalize(Array destination);
 }

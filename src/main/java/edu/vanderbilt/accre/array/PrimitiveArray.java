@@ -12,10 +12,6 @@ public abstract class PrimitiveArray extends Array {
     }
 
     public int numitems() {
-        int out = this.length;
-        for (Integer i : ((AsDtype)this.interpretation).dims()) {
-            out *= i;
-        }
-        return out;
+        return this.length * ((AsDtype)this.interpretation).multiplicity();
     }
 }

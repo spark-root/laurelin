@@ -1,5 +1,7 @@
 package edu.vanderbilt.accre.array;
 
+import java.nio.ByteBuffer;
+
 import edu.vanderbilt.accre.interpretation.Interpretation;
 
 public abstract class Array {
@@ -17,5 +19,9 @@ public abstract class Array {
 
     public int length() {
         return this.length;
+    }
+
+    protected ByteBuffer raw() {
+        return null;
     }
 }
