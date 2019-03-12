@@ -7,7 +7,7 @@ import edu.vanderbilt.accre.interpretation.Interpretation;
 import edu.vanderbilt.accre.interpretation.AsDtype;
 import edu.vanderbilt.accre.array.Array;
 
-public abstract class PrimitiveArray extends Array {
+public abstract class PrimitiveArray<THIS> extends Array<THIS> {
     ByteBuffer buffer;
 
     PrimitiveArray(Interpretation interpretation, int length) {

@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 
 import edu.vanderbilt.accre.interpretation.Interpretation;
 
-public abstract class Array {
+public abstract class Array<THIS> {
     Interpretation interpretation = null;
     int length;
 
@@ -20,4 +20,6 @@ public abstract class Array {
     public int length() {
         return this.length;
     }
+
+    abstract public THIS clip(int start, int stop);
 }

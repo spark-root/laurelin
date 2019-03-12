@@ -1,10 +1,11 @@
 package edu.vanderbilt.accre.array;
 
 import java.nio.ByteBuffer;
+import java.lang.UnsupportedOperationException;
 
 import edu.vanderbilt.accre.array.PrimitiveArray;
 
-public class RawArray extends PrimitiveArray {
+public class RawArray extends PrimitiveArray<RawArray> {
     RawArray(int length) {
         super(null, length);
         this.buffer = ByteBuffer.allocate(length);
@@ -50,5 +51,9 @@ public class RawArray extends PrimitiveArray {
             this.buffer.put(buf, i, itemsize);
         }
         return this;
+    }
+    
+    public RawArray clip(int start, int stop) {
+        throw new UnsupportedOperationException("not implemented yet");
     }
 }
