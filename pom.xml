@@ -17,17 +17,17 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-memory</artifactId>
-      <version>0.12.0</version>
-    </dependency>
+    <!-- <dependency> -->
+    <!--   <groupId>org.apache.arrow</groupId> -->
+    <!--   <artifactId>arrow-memory</artifactId> -->
+    <!--   <version>0.12.0</version> -->
+    <!-- </dependency> -->
 
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-vector</artifactId>
-      <version>0.12.0</version>
-    </dependency>
+    <!-- <dependency> -->
+    <!--   <groupId>org.apache.arrow</groupId> -->
+    <!--   <artifactId>arrow-vector</artifactId> -->
+    <!--   <version>0.12.0</version> -->
+    <!-- </dependency> -->
 
     <dependency>
       <groupId>junit</groupId>
