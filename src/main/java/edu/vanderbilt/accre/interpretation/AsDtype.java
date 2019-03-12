@@ -192,7 +192,7 @@ public class AsDtype implements Interpretation {
     public void fill(Array source, Array destination, int itemstart, int itemstop, int entrystart, int entrystop) {
         ((PrimitiveArray)destination).copyitems((PrimitiveArray)source, itemstart, itemstop);
     }
-    
+
     public <T extends Array<T>> Array<T> clip(Array<T> destination, int itemstart, int itemstop, int entrystart, int entrystop) {
         int mult = this.multiplicity();
         if ((itemstart % mult != 0)  ||  (itemstop % mult != 0)) {
@@ -201,7 +201,7 @@ public class AsDtype implements Interpretation {
         return destination.clip(itemstart / mult, itemstop / mult);
     }
     
-    // public Array finalize(Array destination) {
-
-    // }
+    public <T extends Array<T>> Array<T> finalize(Array<T> destination) {
+        return destination;
+    }
 }
