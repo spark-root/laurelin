@@ -9,6 +9,7 @@ import java.lang.String;
 
 import edu.vanderbilt.accre.array.Array;
 import edu.vanderbilt.accre.array.RawArray;
+import edu.vanderbilt.accre.array.PrimitiveArray;
 import edu.vanderbilt.accre.array.PrimitiveArrayInt4;
 import edu.vanderbilt.accre.array.PrimitiveArrayFloat8;
 import edu.vanderbilt.accre.interpretation.Interpretation;
@@ -109,9 +110,9 @@ public class AsDtype implements Interpretation {
         return numbytes / this.itemsize();
     }
     
-    // public long source_numitems(Array source) {
-
-    // }
+    public long source_numitems(Array source) {
+        return ((PrimitiveArray)source).numitems();
+    }
     
     // public Array fromroot(RawArray bytedata, PrimitiveArrayInt4 byteoffsets, long local_entrystart, long local_entrystop) {
 
