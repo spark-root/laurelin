@@ -190,7 +190,7 @@ public class AsDtype implements Interpretation {
     }
 
     // public void fill(Array source, Array destination, int itemstart, int itemstop, int entrystart, int entrystop) {
-
+    //     ((PrimitiveArray)destination).copyflat((PrimitiveArray)source, itemstart, itemstop);
     // }
     
     // public Array clip(Array destination, int itemstart, int itemstop, int entrystart, int entrystop) {

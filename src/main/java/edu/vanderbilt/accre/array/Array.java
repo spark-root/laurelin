@@ -20,8 +20,4 @@ public abstract class Array {
     public int length() {
         return this.length;
     }
-
-    protected ByteBuffer raw() {
-        return null;
-    }
 }

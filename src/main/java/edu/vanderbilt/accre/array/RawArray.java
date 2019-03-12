@@ -2,24 +2,30 @@ package edu.vanderbilt.accre.array;
 
 import java.nio.ByteBuffer;
 
-import edu.vanderbilt.accre.array.Array;
+import edu.vanderbilt.accre.array.PrimitiveArray;
 
-public class RawArray extends Array {
-    ByteBuffer buffer;
-
-    public RawArray(int length) {
+public class RawArray extends PrimitiveArray {
+    RawArray(int length) {
         super(null, length);
         this.buffer = ByteBuffer.allocate(length);
     }
 
-    public RawArray(RawArray rawarray) {
+    RawArray(RawArray rawarray) {
         super(null, rawarray.length());
-        this.buffer = rawarray.raw().duplicate();
+        this.buffer = rawarray.raw();
     }
 
     protected RawArray(ByteBuffer buffer) {
         super(null, buffer.limit());
         this.buffer = buffer;
+    }
+
+    public int itemsize() {
+        return 1;
+    }
+
+    public int multiplicity() {
+        return 1;
     }
 
     public RawArray slice(int start, int stop) {
@@ -44,9 +50,5 @@ public class RawArray extends Array {
             this.buffer.put(buf, i, itemsize);
         }
         return this;
-    }
-
-    protected ByteBuffer raw() {
-        return this.buffer;
     }
 }
