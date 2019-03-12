@@ -10,8 +10,6 @@ import java.util.List;
 
 import edu.vanderbilt.accre.array.Array;
 import edu.vanderbilt.accre.array.PrimitiveArray;
-import edu.vanderbilt.accre.array.PrimitiveArrayFloat8;
-import edu.vanderbilt.accre.array.PrimitiveArrayInt4;
 import edu.vanderbilt.accre.array.RawArray;
 import edu.vanderbilt.accre.interpretation.Interpretation;
 
@@ -111,7 +109,7 @@ public class AsDtype implements Interpretation {
         case FLOAT4:
             throw new UnsupportedOperationException("not implemented yet");
         case FLOAT8:
-            return new PrimitiveArrayFloat8(this, 0);
+            return new PrimitiveArray.Float8(this, 0);
         default:
             throw new AssertionError("unrecognized dtype");
         }
@@ -128,7 +126,7 @@ public class AsDtype implements Interpretation {
         return ((PrimitiveArray)source).numitems();
     }
     
-    public Array fromroot(RawArray bytedata, PrimitiveArrayInt4 byteoffsets, int local_entrystart, int local_entrystop) {
+    public Array fromroot(RawArray bytedata, PrimitiveArray.Int4 byteoffsets, int local_entrystart, int local_entrystop) {
         if (byteoffsets != null) {
             throw new AssertionError("byteoffsets must be null for AsDtype");
         }
@@ -156,7 +154,7 @@ public class AsDtype implements Interpretation {
         case FLOAT4:
             throw new UnsupportedOperationException("not implemented yet");
         case FLOAT8:
-            return new PrimitiveArrayFloat8(this, sliced);
+            return new PrimitiveArray.Float8(this, sliced);
         default:
             throw new AssertionError("unrecognized dtype");
         }
@@ -189,7 +187,7 @@ public class AsDtype implements Interpretation {
         case FLOAT4:
             throw new UnsupportedOperationException("not implemented yet");
         case FLOAT8:
-            return new PrimitiveArrayFloat8(this, length);
+            return new PrimitiveArray.Float8(this, length);
         default:
             throw new AssertionError("unrecognized dtype");
         }
