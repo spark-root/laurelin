@@ -5,7 +5,7 @@ import java.lang.UnsupportedOperationException;
 
 import edu.vanderbilt.accre.array.PrimitiveArray;
 
-public class RawArray extends PrimitiveArray<RawArray> {
+public class RawArray extends PrimitiveArray {
     RawArray(int length) {
         super(null, length);
         this.buffer = ByteBuffer.allocate(length);
@@ -36,7 +36,7 @@ public class RawArray extends PrimitiveArray<RawArray> {
         return new RawArray(tmp.slice());
     }
 
-    public RawArray clip(int start, int stop) {
+    public Array clip(int start, int stop) {
         throw new UnsupportedOperationException("not implemented yet");
     }
 
@@ -44,5 +44,9 @@ public class RawArray extends PrimitiveArray<RawArray> {
         byte[] out = new byte[this.buffer.limit() - this.buffer.position()];
         this.buffer.get(out);
         return out;
+    }
+    
+    protected Array make(ByteBuffer out) {
+        return new RawArray(out);
     }
 }

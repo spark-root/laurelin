@@ -8,7 +8,7 @@ import edu.vanderbilt.accre.interpretation.AsDtype;
 import edu.vanderbilt.accre.array.Array;
 import edu.vanderbilt.accre.array.RawArray;
 
-public abstract class PrimitiveArray<THIS> extends Array<THIS> {
+public abstract class PrimitiveArray extends Array {
     ByteBuffer buffer;
 
     PrimitiveArray(Interpretation interpretation, int length) {
@@ -47,6 +47,16 @@ public abstract class PrimitiveArray<THIS> extends Array<THIS> {
         tmp.put(source.raw());
     }
 
+    public Array clip(int start, int stop) {
+        int mult = this.multiplicity();
+        int bytestart = start * mult * this.itemsize();
+        int bytestop = stop * mult * this.itemsize();
+        ByteBuffer out = this.buffer.duplicate();
+        out.position(bytestart);
+        out.limit(bytestop);
+        return this.make(out);
+    }
+    
     public RawArray rawarray() {
         return new RawArray(this.buffer);
     }
@@ -55,13 +65,5 @@ public abstract class PrimitiveArray<THIS> extends Array<THIS> {
         return this.buffer;
     }
 
-    protected ByteBuffer rawclipped(int start, int stop) {
-        int mult = this.multiplicity();
-        int bytestart = start * mult * this.itemsize();
-        int bytestop = stop * mult * this.itemsize();
-        ByteBuffer out = this.buffer.duplicate();
-        out.position(bytestart);
-        out.limit(bytestop);
-        return out;
-    }
+    abstract protected Array make(ByteBuffer out);
 }

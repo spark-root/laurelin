@@ -5,12 +5,12 @@ import java.lang.UnsupportedOperationException;
 import edu.vanderbilt.accre.interpretation.Interpretation;
 import edu.vanderbilt.accre.array.Array;
 
-public class StructArray extends Array<StructArray> {
+public class StructArray extends Array {
     public StructArray(Interpretation interpretation, int length) {
         super(interpretation, length);
     }
     
-    public StructArray clip(int start, int stop) {
+    public Array clip(int start, int stop) {
         throw new UnsupportedOperationException("not implemented yet");
     }
 

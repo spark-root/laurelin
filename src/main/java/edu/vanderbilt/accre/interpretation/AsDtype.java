@@ -199,7 +199,7 @@ public class AsDtype implements Interpretation {
         ((PrimitiveArray)destination).copyitems((PrimitiveArray)source, itemstart, itemstop);
     }
 
-    public <T extends Array<T>> Array<T> clip(Array<T> destination, int itemstart, int itemstop, int entrystart, int entrystop) {
+    public Array clip(Array destination, int itemstart, int itemstop, int entrystart, int entrystop) {
         int mult = this.multiplicity();
         if ((itemstart % mult != 0)  ||  (itemstop % mult != 0)) {
             throw new AssertionError(String.format("itemstart (%d) or itemstop (%d) do not divide evenly into multiplicty %d", itemstart, itemstop, mult));
@@ -207,7 +207,7 @@ public class AsDtype implements Interpretation {
         return destination.clip(itemstart / mult, itemstop / mult);
     }
     
-    public <T extends Array<T>> Array<T> finalize(Array<T> destination) {
+    public Array finalize(Array destination) {
         return destination;
     }
 }
