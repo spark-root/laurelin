@@ -113,7 +113,7 @@ public class AsDtype implements Interpretation {
     
     public int numitems(int numbytes, int numentries) {
         if (numbytes % this.itemsize() != 0) {
-            throw new AssertionError(String.format("%ld byte buffer does not divide evenly into %s", numbytes, this.dtype.toString()));
+            throw new AssertionError(String.format("%d byte buffer does not divide evenly into %s", numbytes, this.dtype.toString()));
         }
         return numbytes / this.itemsize();
     }
@@ -156,9 +156,38 @@ public class AsDtype implements Interpretation {
         }
     }
 
-    // public Array destination(int numitems, int numentries) {
-
-    // }
+    public Array destination(int numitems, int numentries) {
+        if (numitems % this.multiplicity() != 0) {
+            throw new AssertionError(String.format("%d items do not divide evenly into multiplicity %d", numitems, this.multiplicity()));
+        }
+        int length = numitems / this.multiplicity();
+        switch (this.dtype) {
+        case BOOL:
+            throw new UnsupportedOperationException("not implemented yet");
+        case INT1:
+            throw new UnsupportedOperationException("not implemented yet");
+        case INT2:
+            throw new UnsupportedOperationException("not implemented yet");
+        case INT4:
+            throw new UnsupportedOperationException("not implemented yet");
+        case INT8:
+            throw new UnsupportedOperationException("not implemented yet");
+        case UINT1:
+            throw new UnsupportedOperationException("not implemented yet");
+        case UINT2:
+            throw new UnsupportedOperationException("not implemented yet");
+        case UINT4:
+            throw new UnsupportedOperationException("not implemented yet");
+        case UINT8:
+            throw new UnsupportedOperationException("not implemented yet");
+        case FLOAT4:
+            throw new UnsupportedOperationException("not implemented yet");
+        case FLOAT8:
+            return new PrimitiveArrayFloat8(this, length);
+        default:
+            throw new AssertionError("unrecognized dtype");
+        }
+    }
 
     // public void fill(Array source, Array destination, int itemstart, int itemstop, int entrystart, int entrystop) {
 
