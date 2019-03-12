@@ -36,24 +36,13 @@ public class RawArray extends PrimitiveArray<RawArray> {
         return new RawArray(tmp.slice());
     }
 
-    public RawArray byteswap(int itemsize) {
-        if (itemsize <= 1) {
-            return this;
-        }
-        byte[] buf = new byte[itemsize];
-        for (int i = 0;  i < this.length;  i += itemsize) {
-            this.buffer.get(buf, i, itemsize);
-            for (int j = 0;  j < itemsize / 2;  j++) {
-                byte tmp = buf[j];
-                buf[j] = buf[itemsize - j - 1];
-                buf[itemsize - j - 1] = tmp;
-            }
-            this.buffer.put(buf, i, itemsize);
-        }
-        return this;
-    }
-    
     public RawArray clip(int start, int stop) {
         throw new UnsupportedOperationException("not implemented yet");
+    }
+
+    public Object toArray(boolean bigEndian) {
+        byte[] out = new byte[this.buffer.limit() - this.buffer.position()];
+        this.buffer.get(out);
+        return out;
     }
 }

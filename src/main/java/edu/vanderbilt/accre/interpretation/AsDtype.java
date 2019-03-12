@@ -1,21 +1,22 @@
 package edu.vanderbilt.accre.interpretation;
 
-import java.util.Collections;
 import java.lang.Integer;
-import java.util.ArrayList;
-import java.util.List;
-import java.lang.UnsupportedOperationException;
 import java.lang.String;
+import java.lang.UnsupportedOperationException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import edu.vanderbilt.accre.array.Array;
-import edu.vanderbilt.accre.array.RawArray;
 import edu.vanderbilt.accre.array.PrimitiveArray;
-import edu.vanderbilt.accre.array.PrimitiveArrayInt4;
 import edu.vanderbilt.accre.array.PrimitiveArrayFloat8;
+import edu.vanderbilt.accre.array.PrimitiveArrayInt4;
+import edu.vanderbilt.accre.array.RawArray;
 import edu.vanderbilt.accre.interpretation.Interpretation;
 
 public class AsDtype implements Interpretation {
-    enum Dtype {
+    public enum Dtype {
         BOOL,
         INT1,
         INT2,
@@ -38,6 +39,11 @@ public class AsDtype implements Interpretation {
 
     public List<Integer> dims() {
         return this.dims;
+    }
+
+    public AsDtype(Dtype dtype) {
+        this.dtype = dtype;
+        this.dims = Arrays.asList(1);
     }
 
     public AsDtype(Dtype dtype, List<Integer> dims) {
@@ -127,7 +133,7 @@ public class AsDtype implements Interpretation {
             throw new AssertionError("byteoffsets must be null for AsDtype");
         }
         int entrysize = this.multiplicity() * this.itemsize();
-        RawArray sliced = bytedata.slice(local_entrystart * entrysize, local_entrystop * entrysize).byteswap(this.itemsize());
+        RawArray sliced = bytedata.slice(local_entrystart * entrysize, local_entrystop * entrysize);
         switch (this.dtype) {
         case BOOL:
             throw new UnsupportedOperationException("not implemented yet");

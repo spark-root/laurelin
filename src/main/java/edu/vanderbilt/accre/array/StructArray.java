@@ -13,4 +13,8 @@ public class StructArray extends Array<StructArray> {
     public StructArray clip(int start, int stop) {
         throw new UnsupportedOperationException("not implemented yet");
     }
+
+    public Object toArray(boolean bigEndian) {
+        throw new UnsupportedOperationException("not implemented yet");
+    }
 }

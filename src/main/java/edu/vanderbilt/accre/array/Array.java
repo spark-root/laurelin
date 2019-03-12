@@ -22,4 +22,6 @@ public abstract class Array<THIS> {
     }
 
     abstract public THIS clip(int start, int stop);
+
+    abstract public Object toArray(boolean bigEndian);
 }

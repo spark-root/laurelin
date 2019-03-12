@@ -6,22 +6,23 @@ import java.nio.ByteBuffer;
 import edu.vanderbilt.accre.interpretation.Interpretation;
 import edu.vanderbilt.accre.interpretation.AsDtype;
 import edu.vanderbilt.accre.array.Array;
+import edu.vanderbilt.accre.array.RawArray;
 
 public abstract class PrimitiveArray<THIS> extends Array<THIS> {
     ByteBuffer buffer;
 
     PrimitiveArray(Interpretation interpretation, int length) {
         super(interpretation, length);
-        this.buffer = ByteBuffer.allocate(length * (((AsDtype)interpretation).itemsize() * ((AsDtype)interpretation).multiplicity()));
+        this.buffer = ByteBuffer.allocate(length * ((interpretation == null) ? 1 : ((AsDtype)interpretation).itemsize() * ((AsDtype)interpretation).multiplicity()));
     }
 
     PrimitiveArray(Interpretation interpretation, RawArray rawarray) {
-        super(interpretation, rawarray.length() / (((AsDtype)interpretation).itemsize() * ((AsDtype)interpretation).multiplicity()));
+        super(interpretation, rawarray.length() / ((interpretation == null) ? 1 : ((AsDtype)interpretation).itemsize() * ((AsDtype)interpretation).multiplicity()));
         this.buffer = rawarray.raw();
     }
 
     protected PrimitiveArray(Interpretation interpretation, ByteBuffer buffer) {
-        super(interpretation, buffer.limit() / (((AsDtype)interpretation).itemsize() * ((AsDtype)interpretation).multiplicity()));
+        super(interpretation, buffer.limit() / ((interpretation == null) ? 1 : ((AsDtype)interpretation).itemsize() * ((AsDtype)interpretation).multiplicity()));
         this.buffer = buffer;
     }
 
@@ -39,8 +40,15 @@ public abstract class PrimitiveArray<THIS> extends Array<THIS> {
 
     public void copyitems(PrimitiveArray source, int itemstart, int itemstop) {
         int bytestart = itemstart * this.itemsize();
-        int bytestop = itemstart * this.itemsize();
-        this.raw().put(source.raw().array(), bytestart, bytestop - bytestart);
+        int bytestop = itemstop * this.itemsize();
+        ByteBuffer tmp = this.buffer.duplicate();
+        tmp.position(bytestart);
+        tmp.limit(bytestop);
+        tmp.put(source.raw());
+    }
+
+    public RawArray rawarray() {
+        return new RawArray(this.buffer);
     }
 
     protected ByteBuffer raw() {

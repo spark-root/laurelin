@@ -14,4 +14,8 @@ public class JaggedArray extends Array<JaggedArray> {
     public JaggedArray clip(int start, int stop) {
         throw new UnsupportedOperationException("not implemented yet");
     }
+
+    public Object toArray(boolean bigEndian) {
+        throw new UnsupportedOperationException("not implemented yet");
+    }
 }
