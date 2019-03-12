@@ -23,5 +23,8 @@ public abstract class Array {
 
     abstract public Array clip(int start, int stop);
 
+    public Object toArray() {
+        return this.toArray(true);
+    }
     abstract public Object toArray(boolean bigEndian);
 }
