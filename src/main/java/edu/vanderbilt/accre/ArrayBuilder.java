@@ -100,16 +100,73 @@ public class ArrayBuilder {
 
         // this loop can be parallelized!
         for (int j = 0;  j < basketstop - basketstart;  j++) {
-            fill(j, entrystart, entrystop, basketstart, basketstop, basket_itemoffset, basket_entryoffset);
+            fill(j, getbasket, interpretation, basketkeys, destination, entrystart, entrystop, basketstart, basketstop, basket_itemoffset, basket_entryoffset);
         }
 
-        Array clipped = interpretation.clip(destination, basket_itemoffset[0], basket_itemoffset[basket_itemoffset.length - 1], basket_entryoffset[0], basket_entryoffset[basket_entryoffset.length - 1]);
+        Array clipped = interpretation.clip(destination,
+                                            basket_itemoffset[0],
+                                            basket_itemoffset[basket_itemoffset.length - 1],
+                                            basket_entryoffset[0],
+                                            basket_entryoffset[basket_entryoffset.length - 1]);
 
-        Array finalized = interpretation.finalize(clipped);
-        return finalized;
+        return interpretation.finalize(clipped);
     }
 
-    private void fill(int j, long entrystart, long entrystop, int basketstart, int basketstop, int[] basket_itemoffset, int[] basket_entryoffset) {
+    private void fill(int j, GetBasket getbasket, Interpretation interpretation, BasketKey[] basketkeys, Array destination, long entrystart, long entrystop, int basketstart, int basketstop, int[] basket_itemoffset, int[] basket_entryoffset) {
         int i = j + basketstart;
+        
+        int local_entrystart = (int)(entrystart - basket_entryoffset[i]);
+        if (local_entrystart < 0) {
+            local_entrystart = 0;
+        }
+
+        int local_numentries = (int)(basket_entryoffset[i + 1] - basket_entryoffset[i]);
+        int local_entrystop = (int)(entrystop - basket_entryoffset[i]);
+        if (local_entrystop > local_numentries) {
+            local_entrystop = local_numentries;
+        }
+        if (local_entrystop < 0) {
+            local_entrystop = 0;
+        }
+
+        RawArray basketdata = getbasket.dataWithoutKey(i);
+        Array source = null;
+        if (basketkeys[i].fObjlen == basketkeys[i].fLast - basketkeys[i].fKeylen) {
+            source = interpretation.fromroot(basketdata, null, local_entrystart, local_entrystop);
+        }
+        else {
+            // get byteoffsets from basketdata for jagged arrays
+            throw new UnsupportedOperationException("not done yet");
+        }
+
+        int expecteditems = basket_itemoffset[j + 1] - basket_itemoffset[j];
+        int source_numitems = interpretation.source_numitems(source);
+
+        int expectedentries = basket_entryoffset[j + 1] - basket_entryoffset[j];
+        int source_numentries = local_entrystop - local_entrystart;
+
+        if (j + 1 == basketstop - basketstart) {
+            if (expecteditems > source_numitems) {
+                basket_itemoffset[j + 1] -= expecteditems - source_numitems;
+            }
+            if (expectedentries > source_numentries) {
+                basket_entryoffset[j + 1] -= expectedentries - source_numentries;
+            }
+        }
+        else if (j == 0) {
+            if (expecteditems > source_numitems) {
+                basket_itemoffset[j] += expecteditems - source_numitems;
+            }
+            if (expectedentries > source_numentries) {
+                basket_entryoffset[j] += expectedentries - source_numentries;
+            }
+        }
+
+        interpretation.fill(source,
+                            destination,
+                            basket_itemoffset[j],
+                            basket_itemoffset[j + 1],
+                            basket_entryoffset[j],
+                            basket_entryoffset[j + 1]);
     }
 }
