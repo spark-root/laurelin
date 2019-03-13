@@ -10,22 +10,6 @@ import edu.vanderbilt.accre.array.RawArray;
 import edu.vanderbilt.accre.interpretation.Interpretation;
 
 public class ArrayBuilder {
-    Interpretation interpretation;
-    long[] basketEntryOffsets;
-
-    public ArrayBuilder(Interpretation interpretation, long[] basketEntryOffsets) {
-        this.interpretation = interpretation;
-        this.basketEntryOffsets = basketEntryOffsets;
-        if (basketEntryOffsets.length == 0  ||  basketEntryOffsets[0] != 0) {
-            throw new IllegalArgumentException("basketEntryOffsets must start with zero");
-        }
-        for (int i = 1;  i < basketEntryOffsets.length;  i++) {
-            if (basketEntryOffsets[i] < basketEntryOffsets[i - 1]) {
-                throw new IllegalArgumentException("basketEntryOffsets must be monotonically increasing");
-            }
-        }
-    }
-
     static public class BasketKey {
         int fKeylen;
         int fLast;
@@ -41,7 +25,25 @@ public class ArrayBuilder {
         RawArray dataWithoutKey(int basketid);   // length must be fObjlen - fKeylen
     }
 
-    public Array build(GetBasket getbasket, Interpretation interpretation, long entrystart, long entrystop) {
+    GetBasket getbasket;
+    Interpretation interpretation;
+    long[] basketEntryOffsets;
+
+    public ArrayBuilder(GetBasket getbasket, Interpretation interpretation, long[] basketEntryOffsets) {
+        this.getbasket = getbasket;
+        this.interpretation = interpretation;
+        this.basketEntryOffsets = basketEntryOffsets;
+        if (basketEntryOffsets.length == 0  ||  basketEntryOffsets[0] != 0) {
+            throw new IllegalArgumentException("basketEntryOffsets must start with zero");
+        }
+        for (int i = 1;  i < basketEntryOffsets.length;  i++) {
+            if (basketEntryOffsets[i] < basketEntryOffsets[i - 1]) {
+                throw new IllegalArgumentException("basketEntryOffsets must be monotonically increasing");
+            }
+        }
+    }
+
+    public Array build(long entrystart, long entrystop) {
         int basketstart = -1;
         int basketstop = -1;
         for (int i = 0;  i < this.basketEntryOffsets.length - 1;  i++) {
@@ -63,7 +65,7 @@ public class ArrayBuilder {
         }
 
         if (basketstart == -1) {
-            return interpretation.empty();
+            return this.interpretation.empty();
         }
 
         BasketKey[] basketkeys = new BasketKey[basketstop - basketstart];
@@ -86,7 +88,7 @@ public class ArrayBuilder {
             }
 
             int numbytes = basketkeys[j - 1].fLast - basketkeys[j - 1].fKeylen;
-            long numitems = interpretation.numitems(numbytes, (int)numentries);
+            long numitems = this.interpretation.numitems(numbytes, (int)numentries);
             totalitems += numitems;
             if (totalitems != (int)totalitems) {
                 throw new IllegalArgumentException("number of items requested of ArrayBuilder.build must fit into a 32-bit integer");
@@ -96,23 +98,23 @@ public class ArrayBuilder {
             basket_entryoffset[j] = basket_entryoffset[j - 1] + (int)numentries;
         }
             
-        Array destination = interpretation.destination((int)totalitems, (int)totalentries);
+        Array destination = this.interpretation.destination((int)totalitems, (int)totalentries);
 
-        // this loop can be parallelized!
+        // This loop can be parallelized: instances change *different parts of* destination, basket_itemoffset, basket_entryoffset.
         for (int j = 0;  j < basketstop - basketstart;  j++) {
-            fill(j, getbasket, interpretation, basketkeys, destination, entrystart, entrystop, basketstart, basketstop, basket_itemoffset, basket_entryoffset);
+            fill(j, basketkeys, destination, entrystart, entrystop, basketstart, basketstop, basket_itemoffset, basket_entryoffset);
         }
 
-        Array clipped = interpretation.clip(destination,
-                                            basket_itemoffset[0],
-                                            basket_itemoffset[basket_itemoffset.length - 1],
-                                            basket_entryoffset[0],
-                                            basket_entryoffset[basket_entryoffset.length - 1]);
+        Array clipped = this.interpretation.clip(destination,
+                                                 basket_itemoffset[0],
+                                                 basket_itemoffset[basket_itemoffset.length - 1],
+                                                 basket_entryoffset[0],
+                                                 basket_entryoffset[basket_entryoffset.length - 1]);
 
-        return interpretation.finalize(clipped);
+        return this.interpretation.finalize(clipped);
     }
 
-    private void fill(int j, GetBasket getbasket, Interpretation interpretation, BasketKey[] basketkeys, Array destination, long entrystart, long entrystop, int basketstart, int basketstop, int[] basket_itemoffset, int[] basket_entryoffset) {
+    private void fill(int j, BasketKey[] basketkeys, Array destination, long entrystart, long entrystop, int basketstart, int basketstop, int[] basket_itemoffset, int[] basket_entryoffset) {
         int i = j + basketstart;
         
         int local_entrystart = (int)(entrystart - basket_entryoffset[i]);
@@ -132,7 +134,7 @@ public class ArrayBuilder {
         RawArray basketdata = getbasket.dataWithoutKey(i);
         Array source = null;
         if (basketkeys[i].fObjlen == basketkeys[i].fLast - basketkeys[i].fKeylen) {
-            source = interpretation.fromroot(basketdata, null, local_entrystart, local_entrystop);
+            source = this.interpretation.fromroot(basketdata, null, local_entrystart, local_entrystop);
         }
         else {
             // get byteoffsets from basketdata for jagged arrays
@@ -140,7 +142,7 @@ public class ArrayBuilder {
         }
 
         int expecteditems = basket_itemoffset[j + 1] - basket_itemoffset[j];
-        int source_numitems = interpretation.source_numitems(source);
+        int source_numitems = this.interpretation.source_numitems(source);
 
         int expectedentries = basket_entryoffset[j + 1] - basket_entryoffset[j];
         int source_numentries = local_entrystop - local_entrystart;
@@ -162,11 +164,11 @@ public class ArrayBuilder {
             }
         }
 
-        interpretation.fill(source,
-                            destination,
-                            basket_itemoffset[j],
-                            basket_itemoffset[j + 1],
-                            basket_entryoffset[j],
-                            basket_entryoffset[j + 1]);
+        this.interpretation.fill(source,
+                                 destination,
+                                 basket_itemoffset[j],
+                                 basket_itemoffset[j + 1],
+                                 basket_entryoffset[j],
+                                 basket_entryoffset[j + 1]);
     }
 }
