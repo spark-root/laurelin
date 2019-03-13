@@ -21,8 +21,8 @@ public class ArrayBuilder {
         }
     }
     static public interface GetBasket {
-        BasketKey basketkey(int basketid);
-        RawArray dataWithoutKey(int basketid);   // length must be fObjlen - fKeylen
+        public BasketKey basketkey(int basketid);
+        public RawArray dataWithoutKey(int basketid);   // length must be fObjlen - fKeylen
     }
 
     GetBasket getbasket;
