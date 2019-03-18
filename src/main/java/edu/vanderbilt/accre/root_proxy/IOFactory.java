@@ -4,10 +4,11 @@
 
 package edu.vanderbilt.accre.root_proxy;
 
+import java.io.IOException;
 import java.util.regex.Pattern;
 
 public class IOFactory {
-	public static FileInterface openForRead(String path) throws Exception {
+	public static FileInterface openForRead(String path) throws IOException {
 		/**
 		 * Depending on the incoming path, load an implementation
 		 */

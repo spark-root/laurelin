@@ -56,4 +56,17 @@ public class Constants {
 			this.flag = flag;
 		}
 	}
+	
+	// TObject stuff
+	static long kByteCountVMask = 0x4000;
+	static long kIsOnHeap = 0x01000000;
+	static long kIsReferenced = 1 << 4;
+	
+	// Streamer stuff
+	static int kByteCountMask = 0x40000000;
+	static int kNewClassTag = 0xFFFFFFFF;
+	static int kClassMask = 0x80000000;
+	static long kMapOffset = 2;
+	static int kOffsetP = 40;
+	
 }

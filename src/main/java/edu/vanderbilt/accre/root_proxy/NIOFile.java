@@ -38,4 +38,8 @@ public class NIOFile implements FileInterface {
 		channel.close();
 		fh.close();
 	}
+
+	public long getLimit() throws IOException {
+		return fh.length();
+	}
 }

@@ -45,7 +45,7 @@ public class IOTest {
 	public void readFromRootFile() throws Exception {
 		int offs[] = {0, 16, 2000, 16000};
 		int lens[] = {10000, 16, 20, 32};
-		RootFile rf = RootFile.getInputFile(testfile);
+		ROOTFile rf = ROOTFile.getInputFile(testfile);
 
 		for (int x = 0; x < offs.length; x += 1) {
 			assertArrayEquals(rf.read(offs[x], lens[x]).array(), getTestBytes(offs[x], lens[x]).array());
@@ -56,8 +56,8 @@ public class IOTest {
 	public void readFromRootFileCursor() throws Exception {
 		long offs[] = {0, 1024, 4096};
 		int lens[] = {12, 24, 1024, 96};
-		RootFile rf = RootFile.getInputFile(testfile);
-		RootFile.Cursor cursor = rf.getCursor();
+		ROOTFile rf = ROOTFile.getInputFile(testfile);
+		Cursor cursor = rf.getCursor(0);
 
 		assertEquals(cursor.readBuffer(100), getTestBytes(0,100));
 		assertEquals(cursor.readBuffer(100), getTestBytes(100,100));
@@ -77,33 +77,37 @@ public class IOTest {
 
 	@Test
 	public void compare8Bit() throws Exception {
-		RootFile rf = RootFile.getInputFile(testfile2);
-		assertEquals(255, rf.readU8(0));
-		assertEquals(-1, rf.readS8(0));
+		ROOTFile rf = ROOTFile.getInputFile(testfile2);
+		Cursor c = rf.getCursor(0);
+		assertEquals(255, c.readUChar(0));
+		assertEquals(-1, c.readChar(0));
 	}
 
 	@Test
 	public void compare16Bit() throws Exception {
-		RootFile rf = RootFile.getInputFile(testfile2);
-		assertEquals(65535, rf.readU16(0));
-		assertEquals(-1, rf.readS16(0));
+		ROOTFile rf = ROOTFile.getInputFile(testfile2);
+		Cursor c = rf.getCursor(0);
+		assertEquals(65535, c.readUShort(0));
+		assertEquals(-1, c.readShort(0));
 	}
 
 	@Test
 	public void compare32Bit() throws Exception {
-		RootFile rf = RootFile.getInputFile(testfile2);
-		assertEquals(4294967295L, rf.readU32(0));
-		assertEquals(-1, rf.readS32(0));
+		ROOTFile rf = ROOTFile.getInputFile(testfile2);
+		Cursor c = rf.getCursor(0);
+		assertEquals(4294967295L, c.readUInt(0));
+		assertEquals(-1, c.readInt(0));
 	}
 
 	@Test
 	public void compare64Bit() throws Exception {
-		RootFile rf = RootFile.getInputFile(testfile2);
-		assertEquals(-1, rf.readS64(0));
+		ROOTFile rf = ROOTFile.getInputFile(testfile2);
+		Cursor c = rf.getCursor(0);
+		assertEquals(-1, c.readLong(0));
 		// 2 ** 64 - 1
 		BigInteger twoToThe64 = BigInteger.valueOf(2).pow(64);
 		BigInteger twoToThe64Minus1 = twoToThe64.subtract(BigInteger.ONE);
-		assertEquals(twoToThe64Minus1, rf.readU64(0));
+		assertEquals(twoToThe64Minus1, c.readULong(0));
 	}
 
 

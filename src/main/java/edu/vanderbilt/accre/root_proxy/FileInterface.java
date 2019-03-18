@@ -10,5 +10,5 @@ public interface FileInterface {
 	public Future<ByteBuffer> readAsync(int offset, int len) throws IOException;
 	public Future<ByteBuffer>[] readvAsync(int[] offsets, int[] lens) throws IOException;
 	public void close() throws IOException;
-
+	public long getLimit() throws IOException;
 }
