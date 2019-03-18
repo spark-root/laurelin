@@ -28,7 +28,16 @@
     <!--   <artifactId>arrow-vector</artifactId> -->
     <!--   <version>0.12.0</version> -->
     <!-- </dependency> -->
-
+    <dependency>
+    	<groupId>org.apache.spark</groupId>
+    	<artifactId>spark-core_2.11</artifactId>
+    	<version>2.3.0</version>
+    </dependency>
+    <dependency>
+    	<groupId>org.apache.spark</groupId>
+    	<artifactId>spark-sql_2.11</artifactId>
+    	<version>2.3.0</version>
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
