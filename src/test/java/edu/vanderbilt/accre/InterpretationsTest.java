@@ -5,9 +5,9 @@ import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
 
-import edu.vanderbilt.accre.interpretation.AsDtype;
-import edu.vanderbilt.accre.array.Array;
-import edu.vanderbilt.accre.array.PrimitiveArray;
+import edu.vanderbilt.accre.laurelin.array.Array;
+import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
+import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 
 public class InterpretationsTest {
     @Test

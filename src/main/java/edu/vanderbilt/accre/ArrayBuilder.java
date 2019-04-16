@@ -4,10 +4,10 @@ import java.lang.String;
 import java.lang.IllegalArgumentException;
 import java.lang.UnsupportedOperationException;
 
-import edu.vanderbilt.accre.array.Array;
-import edu.vanderbilt.accre.array.PrimitiveArray;
-import edu.vanderbilt.accre.array.RawArray;
-import edu.vanderbilt.accre.interpretation.Interpretation;
+import edu.vanderbilt.accre.laurelin.array.Array;
+import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
+import edu.vanderbilt.accre.laurelin.array.RawArray;
+import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 
 public class ArrayBuilder {
     static public class BasketKey {
