@@ -7,6 +7,7 @@ package edu.vanderbilt.accre.laurelin.root_proxy;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.ArrayList;
 
 public class TFile {
@@ -146,7 +147,7 @@ public class TFile {
 		// Handle subdirectories .. later
 		TKey key = directory.get(name);
 		if (key == null) { 
-			return null;
+			throw new NoSuchElementException("Could not load \"" + name + "\"");
 		}
 		Cursor keyCursor = fh.getCursor(key.fSeekKey);
 		Cursor valCursor = keyCursor.getPossiblyCompressedSubcursor(key.KeyLen,

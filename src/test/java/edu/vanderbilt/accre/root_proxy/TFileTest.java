@@ -3,6 +3,7 @@ package edu.vanderbilt.accre.root_proxy;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.NoSuchElementException;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -17,6 +18,14 @@ public class TFileTest {
 	@Test
 	public void testOpen() throws IOException {
 		TFile testfile = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
+		Proxy events = testfile.getProxy("tree");
+		TTree tree = new TTree(events, testfile);
+		tree.iterate(new String[] {"N"});
+	}
+	
+	@Test(expected = NoSuchElementException.class)
+	public void testFail() throws IOException {
+		TFile testfile = TFile.getFromFile("testdata/nano_tree.root");
 		Proxy events = testfile.getProxy("tree");
 		TTree tree = new TTree(events, testfile);
 		tree.iterate(new String[] {"N"});
