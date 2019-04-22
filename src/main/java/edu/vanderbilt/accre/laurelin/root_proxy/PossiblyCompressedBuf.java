@@ -15,16 +15,21 @@ public class PossiblyCompressedBuf implements BackingBuf {
 	private int compressedLen;
 	private int uncompressedLen;
 	private Reference<ByteBuffer> decompressed;
-	public PossiblyCompressedBuf(Cursor parent, long off, int compressedLen, int uncompressedLen) {
+	public PossiblyCompressedBuf(Cursor parent, long base, int compressedLen, int uncompressedLen) {
 		this.parent = parent;
-		this.base = off; // + parent.getBase();
+		this.base = base; // + parent.getBase();
 		this.compressedLen = compressedLen;
 		this.uncompressedLen = uncompressedLen;
 		this.decompressed = new SoftReference<ByteBuffer>(null); 
 	}
 	
+	private PossiblyCompressedBuf(Cursor parent, long base, int compressedLen, int uncompressedLen, Reference<ByteBuffer> decompressed) {
+		this(parent, base, compressedLen, uncompressedLen);
+		this.decompressed = decompressed;
+	}
+	
 	@Override
-	public ByteBuffer read(long off, int len) throws IOException {
+	public ByteBuffer read(long off, long len) throws IOException {
 		if (compressedLen == uncompressedLen) {
 			// not compressed
 			return parent.readBuffer(base + off, len);
@@ -52,8 +57,12 @@ public class PossiblyCompressedBuf implements BackingBuf {
 
 	@Override
 	public long getLimit() throws IOException {
-		// TODO Auto-generated method stub
 		return uncompressedLen;
+	}
+
+	@Override
+	public BackingBuf duplicate() {
+		return new PossiblyCompressedBuf(parent.duplicate(), base, compressedLen, uncompressedLen, decompressed);
 	}
 
 }

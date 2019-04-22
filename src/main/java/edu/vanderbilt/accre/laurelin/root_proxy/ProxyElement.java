@@ -15,15 +15,5 @@ public class ProxyElement<T> extends Proxy {
 	public void setVal(T newval) {
 		val = newval;
 	}
-    @Override
-	public String dump(int depth) {
-		return dumpData(depth);
-	}
-    @Override
-	public String dumpData(int depth) {
-    	String ret = "";
-		String indent = "";
-		for (int i = 0; i <= depth; i += 1) { indent += "  "; }
-		return ret;
-	}
+
 }

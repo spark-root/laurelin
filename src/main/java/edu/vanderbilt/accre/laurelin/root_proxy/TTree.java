@@ -16,38 +16,28 @@ public class TTree {
 	private Proxy data;
 	private ArrayList<TBranch> branches;
 	private ArrayList<TLeaf> leaves;
-	private ArrayList<TBasket> baskets;
+	private TFile file;
 		
-	public TTree(Proxy data) {
+	public TTree(Proxy data, TFile file) {
 		this.data = data;
+		this.file = file;
 		branches = new ArrayList<TBranch>();
 		leaves = new ArrayList<TLeaf>();
-		baskets = new ArrayList<TBasket>();
 		ProxyArray fBranches = (ProxyArray) data.getProxy("fBranches");
 		for (Proxy val: fBranches) {
 			// Drop branches with neither subbranches nor leaves
-			TBranch branch = new TBranch(val);
+			TBranch branch = new TBranch(val, this, null);
 			if (branch.getBranches().size() != 0 || branch.getLeaves().size() != 0) {
 				branches.add(branch);
 			} else {
+				// TODO: would be good to have a "one-off" log4j log
 				System.out.println("Ignoring unparsable branch " + branch.getName());
 			}
 		}
-		
-		// TODO: fill leaves/baskets - the trick is to make sure that the right
-		// references are passed around instead of possibly duplicating objects	
-//		ProxyArray fLeaves = (ProxyArray) data.getProxy("fLeaves");
-//		for (Proxy val: fLeaves) {
-//			TLeaf leaf = new TLeaf(val);
-//			if (leaf.typeUnhandled()) {
-//				continue;
-//			}
-//			leaves.add(leaf);
-//		}		
-//		ProxyArray fBaskets = (ProxyArray) data.getProxy("fBaskets");
-//		for (Proxy val: fBaskets) {
-//			baskets.add(new TBasket(val));
-//		}
+	}
+	
+	public TFile getBackingFile() {
+		return file;
 	}
 	
 	public ArrayList<TBranch> getBranches() {
@@ -62,8 +52,8 @@ public class TTree {
 		return (String) data.getScalar("fName").getVal();
 	}
 	
-	public int getEntries() {
-		return (int) data.getScalar("fEntries").getVal();
+	public long getEntries() {
+		return (long) data.getScalar("fEntries").getVal();
 	}
 	
 	public double[] getIndexValues() {

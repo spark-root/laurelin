@@ -11,6 +11,7 @@ public class ClassDeserializer extends Proxy {
 	Streamer streamer;
 	public Proxy read(Cursor cursor, HashMap<Long,Proxy> classMap) throws IOException {
 		Proxy proxy = new Proxy();
+		proxy.createPlace = "class deserializer";
 		proxy.setDeserializer(this);
 		
 		Proxy newproxy = handleBuiltin(cursor, proxy, classMap);
@@ -39,6 +40,7 @@ public class ClassDeserializer extends Proxy {
 		case "TList":
 			check = new RangeCheck(cursor);
 			arrtarget = new ProxyArray();
+			arrtarget.createPlace = "tlistbuiltin";
 			parseTObject(cursor, arrtarget);
 			arrtarget.putScalar("fName", cursor.readTString());
 			size = cursor.readInt();
@@ -56,6 +58,7 @@ public class ClassDeserializer extends Proxy {
 		case "TObjString":
 			check = new RangeCheck(cursor);
 			stringtarget = new ProxyElement<String>();
+			stringtarget.createPlace = "tobjstringbuiltin";
 			parseTObject(cursor, stringtarget);
 			String stringbuf = cursor.readTString();
 			stringtarget.setVal(stringbuf);
@@ -72,6 +75,7 @@ public class ClassDeserializer extends Proxy {
 		case "TObjArray":
 			check = new RangeCheck(cursor);
 			arrtarget = new ProxyArray();
+			arrtarget.createPlace = "tobjarraybuiltin";
 			parseTObject(cursor, target);
 			arrtarget.putScalar("fName", cursor.readTString());
 			size = cursor.readInt();

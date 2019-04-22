@@ -142,7 +142,7 @@ public class TFile {
 		}
 	}
 	
-	public Proxy get(String name) throws IOException {
+	public Proxy getProxy(String name) throws IOException {
 		// Handle subdirectories .. later
 		TKey key = directory.get(name);
 		if (key == null) { 
@@ -156,4 +156,7 @@ public class TFile {
 		return streamerInfo.deserializeWithStreamer(key, valCursor);
 	}
 
+	public Cursor getCursorAt(long off) throws IOException {
+		return fh.getCursor(off);
+	}
 }

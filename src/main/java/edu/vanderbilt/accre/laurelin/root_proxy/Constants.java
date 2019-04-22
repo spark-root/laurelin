@@ -63,9 +63,9 @@ public class Constants {
 	static long kIsReferenced = 1 << 4;
 	
 	// Streamer stuff
-	static int kByteCountMask = 0x40000000;
-	static int kNewClassTag = 0xFFFFFFFF;
-	static int kClassMask = 0x80000000;
+	static long kByteCountMask = 0x0000000040000000L;
+	static long kNewClassTag = 0x00000000FFFFFFFFL;
+	static long kClassMask = 0x0000000080000000L;
 	static long kMapOffset = 2;
 	static int kOffsetP = 40;
 	

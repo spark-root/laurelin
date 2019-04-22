@@ -9,6 +9,8 @@ public class Proxy {
 	private Streamer streamerInfo;
 	protected String className;
 	protected String proxyType = "proxy";
+	public String createPlace = "";
+	
 	HashMap<String, Proxy> data;
 	public <T> void putScalar(String key, T val) {
 		data.put(key, new ProxyElement<T>(val));
@@ -38,29 +40,6 @@ public class Proxy {
 		className = "UNKNOWN";
 	}
 	
-	public String dump() {
-		return dump(0);
-	}
-	
-	public String dump(int depth) {
-		return dumpData(depth);
-	}
-
-	public String dumpData(int depth) {
-		String indent = "";
-		String ret = "";
-		ret += "dump";
-		for (int i = 0; i <= depth; i += 1) { indent += "  "; }
-		for (String key : data.keySet()) {
-			Proxy p = data.get(key);
-			if (p == null) {
-				ret += indent + " - " + key;
-			} else {
-				ret += data.get(key).dump(depth + 1);
-			}
-		}
-		return ret;
-	}
 	
 	public void setClass(String className) {
 		this.className = className;
@@ -69,10 +48,4 @@ public class Proxy {
 	public ClassDeserializer getDeserializer() { return cd; }
 	public void setDeserializer(ClassDeserializer newcd) { cd = newcd; }
 	
-	/**
-	 * @deprecated Use {@link Streamer#readObjAny(Cursor,HashMap<Long, Proxy>)} instead
-	 */
-//	static Proxy readObjAny(Cursor cursor, HashMap<Long,Proxy> classMap) throws IOException {
-//		return Streamer.readObjAny(cursor, classMap);
-//	}
 }

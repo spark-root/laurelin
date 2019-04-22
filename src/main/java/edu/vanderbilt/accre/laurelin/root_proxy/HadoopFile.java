@@ -15,7 +15,7 @@ public class HadoopFile implements FileInterface {
 	/*
 	 * Stubs for now to satisfy the interface 
 	 */
-	public ByteBuffer read(long offset, int len) throws IOException { throw new UnsupportedOperationException(); }
+	public ByteBuffer read(long offset, long len) throws IOException { throw new UnsupportedOperationException(); }
 	public ByteBuffer[] readv(int[] offsets, int[] lens) throws IOException { throw new UnsupportedOperationException(); }
 	public Future<ByteBuffer> readAsync(int offset, int len) throws IOException { throw new UnsupportedOperationException(); }
 	public Future<ByteBuffer>[] readvAsync(int[] offsets, int[] lens) throws IOException { throw new UnsupportedOperationException(); }

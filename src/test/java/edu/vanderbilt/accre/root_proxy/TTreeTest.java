@@ -15,12 +15,13 @@ public class TTreeTest {
 
 	private TTree getTestTree() throws IOException {
 		TFile currFile = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
-		return new TTree(currFile.get("tree"));
+		return new TTree(currFile.getProxy("tree"), currFile);
 	}
 	
 	@Test
-	public void testLoad() throws IOException {
+	public void testEntryCount() throws IOException {
 		TTree currTree = getTestTree();
+		assertEquals(100, currTree.getEntries());
 	}
 	
 	@Test

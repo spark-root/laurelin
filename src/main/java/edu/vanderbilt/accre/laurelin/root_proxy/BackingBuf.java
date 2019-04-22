@@ -17,8 +17,9 @@ public interface BackingBuf {
 	 * @return A ByteBuffer with the requested bytes
 	 * @throws IOException
 	 */
-	public ByteBuffer read(long off, int len) throws IOException;
+	public ByteBuffer read(long off, long len) throws IOException;
 	
 	public boolean hasLimit() throws IOException;
 	public long getLimit() throws IOException;
+	public BackingBuf duplicate();
 }

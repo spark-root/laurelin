@@ -23,6 +23,7 @@ public class TTreeDataSourceUnitTest {
 	@Test
 	public void testGetSchema() {
 		Map<String, String> optmap = new HashMap<String, String>();
+		optmap.put("path", "testdata/uproot-small-flat-tree.root");
 		DataSourceOptions opts = new DataSourceOptions(optmap);
 		TTreeDataSourceV2 source = new TTreeDataSourceV2();
 		TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
@@ -32,9 +33,11 @@ public class TTreeDataSourceUnitTest {
 		assertEquals(19, schemaCast.size());
 	}
 	
-	@Test(expected = IllegalStateException.class)
+	//@Test(expected = IllegalStateException.class)
+	@Test
 	public void testPlanInputPartitions() {
 		Map<String, String> optmap = new HashMap<String, String>();
+		optmap.put("path", "testdata/uproot-small-flat-tree.root");
 		DataSourceOptions opts = new DataSourceOptions(optmap);
 		TTreeDataSourceV2 source = new TTreeDataSourceV2();
 		TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
@@ -45,6 +48,7 @@ public class TTreeDataSourceUnitTest {
 	@Test
 	public void testPlanBatchInputPartitions() {
 		Map<String, String> optmap = new HashMap<String, String>();
+		optmap.put("path", "testdata/uproot-small-flat-tree.root");
 		DataSourceOptions opts = new DataSourceOptions(optmap);
 		TTreeDataSourceV2 source = new TTreeDataSourceV2();
 		TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);

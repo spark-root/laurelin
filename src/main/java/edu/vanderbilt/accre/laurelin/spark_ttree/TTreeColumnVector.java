@@ -1,5 +1,7 @@
 package edu.vanderbilt.accre.laurelin.spark_ttree;
 
+import java.util.List;
+
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.sql.vectorized.ColumnVector;
@@ -11,11 +13,11 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 
 public class TTreeColumnVector extends ColumnVector {
-	TBasket basket;
+	List<TBasket> baskets;
 	
-	protected TTreeColumnVector(DataType type, TBasket basket) {
+	protected TTreeColumnVector(DataType type, List<TBasket> baskets) {
 		super(type);
-		this.basket = basket;
+		this.baskets = baskets;
 		// TODO Auto-generated constructor stub
 	}
 

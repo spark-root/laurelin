@@ -16,7 +16,7 @@ public class ROOTFile {
 		protected FileBackedBuf(ROOTFile fh) {
 			this.fh = fh; 
 		}
-		public ByteBuffer read(long off, int len) throws IOException {
+		public ByteBuffer read(long off, long len) throws IOException {
 			return fh.read(off,  len);
 		}
 		
@@ -26,6 +26,10 @@ public class ROOTFile {
 		
 		public long getLimit() throws IOException {
 			return fh.getLimit();
+		}
+		@Override
+		public BackingBuf duplicate() {
+			return new FileBackedBuf(fh);
 		}
 	}
 	private FileInterface fh;
@@ -47,13 +51,13 @@ public class ROOTFile {
 	 * users must be copies of the internal ByteBuffers we have. Otherwise
 	 * we couldn't change the contents without breaking the users
 	 */
-	private ByteBuffer readUnsafe(long offset, int l) throws IOException {
+	private ByteBuffer readUnsafe(long offset, long l) throws IOException {
 		/*
 		 * This bytebuffer can be a copy of the internal cache
 		 */
 		return fh.read(offset, l);
 	}
-	public ByteBuffer read(long offset, int len) throws IOException {
+	public ByteBuffer read(long offset, long len) throws IOException {
 		/*
 		 * TODO: 
 		 * This bytebuffer must be a completely new and unlinked buffer, so

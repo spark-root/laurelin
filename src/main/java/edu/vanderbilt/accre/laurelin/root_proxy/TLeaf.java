@@ -1,19 +1,12 @@
 package edu.vanderbilt.accre.laurelin.root_proxy;
 
-public class TLeaf {
-	private Proxy data;
-	public TLeaf(Proxy data) {
-		this.data = data;
+public class TLeaf extends TBranch {
+
+	public TLeaf(Proxy data, TTree tree, TBranch parent) {
+		super(data, tree, parent);
 	}
-	
-	public String getName() {
-		return (String) data.getScalar("fName").getVal();
-	}
-	
-	public String getClassName() {
-		return data.getClassName();
-	}
-	
+
+	@Override
 	public boolean typeUnhandled() {
 		if (getClassName().equals("TLeafC")) {
 			System.out.println("Dropping " + getName());
@@ -21,7 +14,8 @@ public class TLeaf {
 		}
 		return false;
 	}
-	
+
+	@Override
 	public SimpleType getSimpleType() {
 		/*
 		 * An attempt to decode all the different ROOT type systems to 
@@ -61,8 +55,7 @@ public class TLeaf {
 		}
 	
 		if (ret == null) {
-			System.out.println(data.dump());
-			throw new RuntimeException("Unknown TLeaf type. Class name: " + data.className + "\n" + data.dump());
+			throw new RuntimeException("Unknown TLeaf type. Class name: " + data.className);
 		}
 		return ret;
 	}

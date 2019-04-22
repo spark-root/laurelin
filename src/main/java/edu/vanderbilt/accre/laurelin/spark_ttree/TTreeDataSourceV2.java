@@ -52,7 +52,7 @@ public class TTreeDataSourceV2 implements DataSourceV2, ReadSupport {
 		public InputPartitionReader<ColumnarBatch> createPartitionReader() {
 			try {
 				file = TFile.getFromFile(path);
-				tree = new TTree(file.get(treeName));
+				tree = new TTree(file.getProxy(treeName), file);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -101,9 +101,9 @@ public class TTreeDataSourceV2 implements DataSourceV2, ReadSupport {
 			try {
 				this.paths = options.paths();
 				// FIXME - More than one file, please
-				currFile = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
-				currTree = new TTree(currFile.get("tree"));
-			} catch (Exception e) {
+				currFile = TFile.getFromFile(this.paths[0]);
+				currTree = new TTree(currFile.getProxy("tree"), currFile);
+			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
 		}

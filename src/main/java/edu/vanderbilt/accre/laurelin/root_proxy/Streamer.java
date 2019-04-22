@@ -8,9 +8,7 @@ public class Streamer {
 	/*
 	 * Doesn't exist in ROOT, encapsulates Streamer functionality from all the different subclasses
 	 */
-	public Streamer() {
-		System.out.println("Constructing streamer");
-	}
+	public Streamer() { }
 	ArrayList<Proxy> streamerList;
 	HashMap<String, Proxy> streamerMap;
 	HashMap<Long, Proxy> classMap; 
@@ -31,6 +29,7 @@ public class Streamer {
 		int count = listInfo.size();
 		Cursor dataCursor = listInfo.getDataCursor();
 		ProxyArray arr = new ProxyArray();
+		arr.createPlace = "getfromcursor";
 		classMap = new HashMap<Long, Proxy>();
 		for (int i = 0; i < count; i += 1) {
 			Proxy data = readObjAny(dataCursor, classMap);
@@ -48,19 +47,6 @@ public class Streamer {
 		}
 	}
 	
-	public void dumpStreamers() {
-		for (String name: streamerMap.keySet()) {
-			Proxy streamer = streamerMap.get(name);
-			if (!name.contentEquals("TBranch")) {
-				continue;
-			}
-			ProxyArray fElements = (ProxyArray) streamer.getProxy("fElements");
-			for (Proxy ele: fElements) {
-			}	
-			streamer.dump();
-		}
-	}
-	
 	/**
 	 * Deserializes an object described with the given TKey
 	 * @param key
@@ -70,12 +56,14 @@ public class Streamer {
 	 */
 	public Proxy deserializeWithStreamer(TKey key, Cursor c) throws IOException {
 		Proxy ret = new Proxy();
+		ret.createPlace = "deserializeWithStreamer";
 		deserializeDepth = 0;
 		return deserializeWithStreamerImpl(key.fClassName, c, ret);
 	}
 	
 	public Proxy deserializeWithStreamer(String fClassName, Cursor c) throws IOException {
 		Proxy ret = new Proxy();
+		ret.createPlace = "deserializeWithStreamer2";
 		deserializeDepth = 0;
 		return deserializeWithStreamerImpl(fClassName, c, ret);
 	}
@@ -110,12 +98,14 @@ public class Streamer {
 			case "TStreamerObject":
 			case "TStreamerObjectAny":
 				subObj = new Proxy();
+				subObj.createPlace = "tstreamerobj";
 				subObj = deserializeWithStreamerImpl((String) ele.getScalar("fTypeName").getVal(), c, subObj);
 				subObj.setClass((String) ele.getScalar("fTypeName").getVal());
 				ret.putProxy((String) ele.getScalar("fName").getVal(), subObj);
 				break;
 			case "TStreamerObjectPointer":
 				subObj = new Proxy();
+				subObj.createPlace = "tstreamerobjpointer";
 				subObj = deserializeTStreamerObjectPointer(ele, c, subObj);
 				String fName = (String) ele.getScalar("fName").getVal();
 				ret.putProxy(fName, subObj);
@@ -131,7 +121,6 @@ public class Streamer {
 				}
 				break;
 			default:
-				ele.dump();
 				throw new IOException("Unknown TStreamerElement type " + ele.className);
 			}
 		}
@@ -173,6 +162,7 @@ public class Streamer {
 			ret = readObjAny(c, classMap);
 			if (ret == null) {
 				ret = new Proxy();
+				ret.createPlace = "deserializeWithtStreamerobjpointer";
 				ret.setClass((String) ele.getScalar("fTypeName").getVal());
 			}
 		} else {
@@ -191,12 +181,19 @@ public class Streamer {
 		ret.putScalar("fName", fName);
 		int size = c.readInt();
 		int low = c.readInt();
+		//System.out.println("tobjarray " + fName + " size " + size + " low " + low);
 		for (int i = 0; i < size; i += 1) {
+			Cursor preC = c.duplicate();
 			Proxy test = readObjAny(c, classMap);
+			//System.out.println( "    read " + test);
 			if (test == null) {
 				test = new Proxy();
+				test.createPlace = "tobjarraydeserialize";
+				test.setClass("TObjArrayUnknown");
+//				throw new RuntimeException("bad proxy");
 				//test.setClass((String) ele.getScalar("fTypeName").getVal());
 			}
+
 			arrret.add(test);
 		}
 		
@@ -258,10 +255,6 @@ public class Streamer {
 		if (fArrayLength != 0) { throw new IOException("oops"); }
 		int fType = (int) ele.getScalar("fType").getVal();
 		String fName = (String) ele.getScalar("fName").getVal();
-		String indent = "";
-		for (int i = -1; i < deserializeDepth; i+= 1) {
-			indent += "  ";
-		}
 		switch (fType) {
 		case 2:
 			// kShort
@@ -307,6 +300,9 @@ public class Streamer {
 	
 	private Proxy getStreamer(String name, int version) throws IOException {
 		Proxy ret = streamerMap.get(name);
+		if (!streamerMap.containsKey(name)) {
+			throw new IOException("Streamer not found");
+		}
 		int streamerVers = (int) ret.getScalar("fClassVersion").getVal();
 		if (streamerVers == version) {
 			return ret;
@@ -327,11 +323,7 @@ public class Streamer {
 				return streamer;
 			}
 		}
-		if (ret != null) {
-			return ret;
-		} else {
-			throw new IOException("Streamer not found");
-		}
+		return ret;
 	}
 	
 	// HACK - dedup with ClassDeserializer
@@ -350,6 +342,7 @@ public class Streamer {
 	    if ((fBits & Constants.kIsReferenced) != 0)
 	        cursor.skipBytes(2);
 	    target.putScalar("fBits", fBits);
+	    target.setClass("TObject");
 	}
 
 	public Proxy readObjAny(Cursor cursor, HashMap<Long,Proxy> classMap) throws IOException {
@@ -360,9 +353,9 @@ public class Streamer {
 			Cursor startCursor = cursor.duplicate();
 			long vers;
 			long start;
-			int tag;
+			long tag;
 			long beg = cursor.getOffset() - cursor.getOrigin();
-			int bcnt = cursor.readInt();
+			long bcnt = cursor.readUInt();
 	
 			if (((bcnt & Constants.kByteCountMask) == 0) || (bcnt == Constants.kNewClassTag)) {
 				vers = 0;
@@ -372,18 +365,19 @@ public class Streamer {
 			} else {
 				vers = 1;
 				start = cursor.getOffset() - cursor.getOrigin();
-				tag = cursor.readInt();
+				tag = cursor.readUInt();
 			}
+			//System.out.println(" val1 " + (tag & Constants.kClassMask));
+			//System.out.println(" val2 " + tag + " class tag " + Constants.kNewClassTag);
 			if ((tag & Constants.kClassMask) == 0) {
+				//System.out.println(" break1 " + (tag & Constants.kClassMask));
 				// Reference Object
 				if (tag == 0) {
-//					throw new IOException("no");
+					//System.out.println("zero ref at " + beg + " tag is " + tag + " bcnt " + bcnt + " vers " + vers + " start " + start);
 					return null;
 				} else if (tag == 1) {
 					// FixMe: tag == 1 means "self", but don't currently have self available.
-					throw new IOException("no");
-
-//					return null;
+					return null;
 				}
 				Object obj = classMap.get(new Long(tag));
 		        if ((obj == null) || !(obj instanceof Proxy)) {
@@ -393,6 +387,7 @@ public class Streamer {
 		        }
 		        return (Proxy) obj;
 			} else if (tag == Constants.kNewClassTag) {
+				//System.out.println(" break2 tag " + tag + " class tag " + Constants.kNewClassTag);
 				// New class and object
 				String cname = cursor.readCString();
 	            //GenericRootClass rootClass = (GenericRootClass) in.getFactory().create(className);
@@ -405,6 +400,7 @@ public class Streamer {
 	            else
 	            	classKey = classMap.size() + 1;
 	            
+	            //System.out.println("key1 " + classKey);
 	            classMap.put(new Long(classKey), rootClass);
 	            
 	            Proxy realRootClass = rootClass.read(cursor, classMap);
@@ -417,6 +413,7 @@ public class Streamer {
 	            
 				assert realRootClass != null;
 
+	            //System.out.println("key2 " + classKey);
 	            classMap.put(new Long(classKey), realRootClass);
 	            
 	            // realRootClass.readFromFile()
@@ -443,6 +440,7 @@ public class Streamer {
 				if (vers > 0)
 				{
 					Long offset = new Long(beg + Constants.kMapOffset);
+		            //System.out.println("key3 " + offset);
 					classMap.put(offset, instance);
 	
 				}

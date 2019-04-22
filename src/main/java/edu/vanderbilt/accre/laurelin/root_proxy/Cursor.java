@@ -43,10 +43,28 @@ public class Cursor {
 		this.origin = 0;
 	}
 	
+	public Cursor getParent() {
+		return parent;
+	}
+	
+	/**
+	 * 
+	 * @return The oldest ancestor of this cursor
+	 */
+	public Cursor getOldestParent() {
+		if (parent == null) {
+			return this;
+		} else {
+			return parent.getParent();
+		}
+	}
+	
 	public Cursor duplicate() {
-		Cursor ret = new Cursor(buf, base);
+		Cursor ret = new Cursor(buf.duplicate(), base);
 		ret.setOffset(off);
-		ret.parent = this.parent;
+		if (this.parent != null) {
+			ret.parent = this.parent.duplicate();
+		}
 		ret.origin = this.origin;
 		return ret;
 	}
@@ -67,6 +85,10 @@ public class Cursor {
 		} else {
 			return base;
 		}
+	}
+	
+	public long getLimit() throws IOException {
+		return buf.getLimit();
 	}
 	
 	/*
@@ -110,6 +132,7 @@ public class Cursor {
 	 * @param off Beginning of this possibly compressed byterange
 	 * @param compressedLen Length of this byterange in the parent
 	 * @param uncompressedLen Length of this byterange after (possible) decompression
+	 * @param keyLen length of the key to skip
 	 * @return Cursor pointing into new byterange
 	 */
 	public Cursor getPossiblyCompressedSubcursor(long off, int compressedLen, int uncompressedLen, int keyLen) {
@@ -123,7 +146,6 @@ public class Cursor {
 		ret.parent = this;
 		return ret;
 	}
-	
 
 	public long getOffset() { return off; }
 
@@ -131,11 +153,11 @@ public class Cursor {
 
 	public void skipBytes(long amount) { off += amount; }
 
-	public ByteBuffer readBuffer(long offset, int len) throws IOException {
+	public ByteBuffer readBuffer(long offset, long len) throws IOException {
 		return buf.read(base + offset, len);
 	}
 
-	public ByteBuffer readBuffer(int len) throws IOException {
+	public ByteBuffer readBuffer(long len) throws IOException {
 		ByteBuffer ret = buf.read(off, len);
 		off += ret.limit();
 		return ret;
@@ -212,7 +234,7 @@ public class Cursor {
 		long ret = buf.read(base + offset, 4).getInt(0);
 		if (ret < 0)
 			ret += 4294967296L;
-		return ret;
+		return (ret & 0xFFFFFFFFL);
 	}
 	
 	public long readUInt() throws IOException {
@@ -226,7 +248,7 @@ public class Cursor {
 	}
 	
 	public long readLong() throws IOException {
-		byte ret = readChar(off);
+		long ret = readLong(off);
 		off += 8;
 		return ret;
 	}

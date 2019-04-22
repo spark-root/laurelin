@@ -33,12 +33,12 @@ public class TTreeDataSourceIntegrationTest {
 				.appName("test").getOrCreate();
 	}
 
-	@Test
-	public void testCreateReader() {
-		spark
-          .read()
-          .format("edu.vanderbilt.accre.spark_ttree.TTreeDataSourceV2");
-	}
+//	@Test
+//	public void testCreateReader() {
+//		spark
+//          .read()
+//          .format("edu.vanderbilt.accre.spark_ttree.TTreeDataSourceV2");
+//	}
 	
 //	@Test
 //	public void testLoadFile() {

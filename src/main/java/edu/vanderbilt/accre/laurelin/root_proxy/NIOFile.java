@@ -18,9 +18,13 @@ public class NIOFile implements FileInterface {
 		this.fh = new RandomAccessFile(path, "r");
 	    this.channel = fh.getChannel();
 	}
-	public ByteBuffer read(long offset, int len) throws IOException {
-		ByteBuffer ret = ByteBuffer.allocate(len);
-		if (this.channel.read(ret, offset) != len) {
+	public ByteBuffer read(long offset, long len) throws IOException {
+		int shortLen = (int) len;
+		if (shortLen != len) {
+			throw new IllegalArgumentException("Attempting to read > 2GBytes");
+		}
+		ByteBuffer ret = ByteBuffer.allocate(shortLen);
+		if (this.channel.read(ret, offset) != shortLen) {
 			throw new IOException("Short read");
 		}
 		return ret;
