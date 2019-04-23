@@ -307,12 +307,9 @@ public class Cursor {
 	public String readTString(long offset) throws IOException {
 		int l = readUChar(offset);
 		offset += 1;
-		if (l < 0)                                                             
-			l += 256;
 
 		if (l == 255) {
-			offset -= 1;
-			l = readInt(offset) & 0x00FFFFFF;
+			l = readInt(offset);
 			offset += 4;
 		}
 		ByteBuffer bytes = buf.read(base + offset, l);
@@ -325,6 +322,9 @@ public class Cursor {
 		} else {
 			ret = new String(rawbytes);
 		}
+		if (l != ret.length()) {
+			throw new RuntimeException("Weird string length");
+		}
 		return ret;
 	}
 	
@@ -334,8 +334,8 @@ public class Cursor {
 			// only one length byte
 			off += ret.length() + 1;
 		} else {
-			// first length byte is 255, then the next 3 bytes
-			off += ret.length() + 1 + 3;
+			// first length byte is 255, then the next 4 bytes for the rest
+			off += ret.length() + 1 + 4;
 		}
 		return ret;
 	}
