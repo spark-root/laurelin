@@ -264,6 +264,10 @@ public class Streamer {
 		int fType = (int) ele.getScalar("fType").getVal();
 		String fName = (String) ele.getScalar("fName").getVal();
 		switch (fType) {
+		case 1:
+			// kChar
+			ret.putScalar(fName,  c.readChar());
+			break;
 		case 2:
 			// kShort
 			ret.putScalar(fName, c.readShort());
@@ -283,6 +287,10 @@ public class Streamer {
 		case 8:
 			// kDouble
 			ret.putScalar(fName,  c.readDouble());
+			break;
+		case 11:
+			// kUChar
+			ret.putScalar(fName,  c.readUChar());
 			break;
 		case 13:
 			// kUInt
