@@ -3,7 +3,6 @@ package edu.vanderbilt.accre.laurelin.spark_ttree;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.DataSourceV2;
@@ -37,17 +36,17 @@ public class TTreeDataSourceV2 implements DataSourceV2, ReadSupport {
 		private StructType schema;
 		private TFile file;
 		private TTree tree;
-		
+
 		public TTreeDataSourceV2Partition(String path, String treeName, StructType schema) {
 			this.path = path;
 			this.treeName = treeName;
 			this.schema = schema;
 		}
-		
+
 		/*
 		 * Begin InputPartition overrides
 		 */
-		
+
 		@Override
 		public InputPartitionReader<ColumnarBatch> createPartitionReader() {
 			try {
@@ -58,7 +57,7 @@ public class TTreeDataSourceV2 implements DataSourceV2, ReadSupport {
 			}
 			return this;
 		}
-		
+
 		/*
 		 * Begin InputPartitionReader overrides
 		 */
@@ -91,8 +90,8 @@ public class TTreeDataSourceV2 implements DataSourceV2, ReadSupport {
 			return ret;
 		}
 	}
-	
-	public class TTreeDataSourceV2Reader implements DataSourceReader, 
+
+	public class TTreeDataSourceV2Reader implements DataSourceReader,
 													SupportsScanColumnarBatch {
 		private String[] paths;
 		private TTree currTree;
@@ -102,7 +101,8 @@ public class TTreeDataSourceV2 implements DataSourceV2, ReadSupport {
 				this.paths = options.paths();
 				// FIXME - More than one file, please
 				currFile = TFile.getFromFile(this.paths[0]);
-				currTree = new TTree(currFile.getProxy("tree"), currFile);
+				String treeOpt = options.get("tree").orElse("Events");
+				currTree = new TTree(currFile.getProxy(treeOpt), currFile);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -113,18 +113,18 @@ public class TTreeDataSourceV2 implements DataSourceV2, ReadSupport {
 			List<TBranch> branches = currTree.getBranches();
 			List<StructField> fields = readSchemaPart(branches, "");
 			StructField[] fieldArray = new StructField[fields.size()];
-			fieldArray = (StructField[]) fields.toArray(fieldArray);
+			fieldArray = fields.toArray(fieldArray);
 			StructType schema = new StructType(fieldArray);
 			return schema;
 		}
-		
+
 		private List<StructField> readSchemaPart(List<TBranch> branches, String prefix) {
 			List<StructField> fields = new ArrayList<StructField>();
 			for (TBranch branch: branches ) {
 				if (branch.getBranches().size() != 0) {
 					List<StructField> subFields = readSchemaPart(branch.getBranches(), prefix);
 					StructField[] subFieldArray = new StructField[subFields.size()];
-					subFieldArray = (StructField[]) subFields.toArray(subFieldArray);
+					subFieldArray = subFields.toArray(subFieldArray);
 					StructType subStruct = new StructType(subFieldArray);
 					fields.add(new StructField(branch.getName(), subStruct, false, null));
 				}
@@ -135,7 +135,7 @@ public class TTreeDataSourceV2 implements DataSourceV2, ReadSupport {
 			}
 			return fields;
 		}
-		
+
 		private DataType rootToSparkType(SimpleType simpleType) {
 			DataType ret = null;
 			if (simpleType instanceof SimpleType.ScalarType) {
@@ -181,5 +181,5 @@ public class TTreeDataSourceV2 implements DataSourceV2, ReadSupport {
 	public DataSourceReader createReader(DataSourceOptions options) {
 		return new TTreeDataSourceV2Reader(options);
 	}
-	
+
 }
