@@ -60,20 +60,28 @@ public class Streamer {
 		deserializeDepth = 0;
 		return deserializeWithStreamerImpl(key.fClassName, c, ret);
 	}
-	
+
 	public Proxy deserializeWithStreamer(String fClassName, Cursor c) throws IOException {
 		Proxy ret = new Proxy();
 		ret.createPlace = "deserializeWithStreamer2";
 		deserializeDepth = 0;
 		return deserializeWithStreamerImpl(fClassName, c, ret);
 	}
-	
+
 	private int deserializeDepth;
 	private Proxy deserializeWithStreamerImpl(String fClassName, Cursor c, Proxy ret) throws IOException {
 		if (fClassName.equals("TObjArray")) {
 			return deserializeTObjArray(c, ret);
 		} else if (fClassName.startsWith("TArray")) {
 			return deserializeTArray(c, ret, fClassName);
+		} else if (fClassName.contentEquals("ROOT::TIOFeatures")) {
+			/*
+			 * These objects store nothing useful and don't follow the regular
+			 * streamer description, so lets just fast forward and skip it
+			 */
+			RangeCheck check = new RangeCheck(c);
+			c.setOffset(check.getStart() + check.getCount());
+			return new ProxyElement<String>("TIOFeatures-Ignored");
 		}
 		deserializeDepth += 1;
 
