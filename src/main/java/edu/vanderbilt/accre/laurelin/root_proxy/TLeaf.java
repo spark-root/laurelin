@@ -9,7 +9,6 @@ public class TLeaf extends TBranch {
 	@Override
 	public boolean typeUnhandled() {
 		if (getClassName().equals("TLeafC")) {
-			System.out.println("Dropping " + getName());
 			return true;
 		}
 		return false;
