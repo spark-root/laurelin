@@ -5,7 +5,7 @@ import java.util.HashMap;
 
 public class ClassDeserializer extends Proxy {
 	public ClassDeserializer(String name, Streamer streamer) {
-		className = name; 
+		className = name;
 		this.streamer = streamer;
 	}
 	Streamer streamer;
@@ -13,7 +13,7 @@ public class ClassDeserializer extends Proxy {
 		Proxy proxy = new Proxy();
 		proxy.createPlace = "class deserializer";
 		proxy.setDeserializer(this);
-		
+
 		Proxy newproxy = handleBuiltin(cursor, proxy, classMap);
 		if (newproxy == null) {
 			// If we can't process it with the builtins, skip it
@@ -25,11 +25,11 @@ public class ClassDeserializer extends Proxy {
 		newproxy.className = className;
 		return newproxy;
 	}
-	
+
 	private Proxy handleBuiltin(Cursor cursor, Proxy target, HashMap<Long,Proxy> classMap) throws IOException {
 		return handleBuiltin(cursor, target, classMap, className);
 	}
-	
+
 	private Proxy handleBuiltin(Cursor cursor, Proxy target, HashMap<Long,Proxy> classMap, String className) throws IOException {
 		RangeCheck check;
 		ProxyArray arrtarget;
@@ -51,9 +51,9 @@ public class ClassDeserializer extends Proxy {
 				short n = cursor.readUChar();
 				cursor.setOffset(cursor.getOffset() + n);
 			}
-			target = (Proxy)arrtarget;
+			target = arrtarget;
 			check.verify(cursor);
-			
+
 			break;
 		case "TObjString":
 			check = new RangeCheck(cursor);
@@ -84,7 +84,7 @@ public class ClassDeserializer extends Proxy {
 			for (int i = 0; i < size; i += 1) {
 				arrtarget.add(streamer.readObjAny(cursor, classMap));
 			}
-			target = (Proxy)arrtarget;
+			target = arrtarget;
 			check.verify(cursor);
 			break;
 		case "TStreamerElement":
@@ -96,19 +96,19 @@ public class ClassDeserializer extends Proxy {
 			target.putScalar("fArrayLength", cursor.readInt());
 			target.putScalar("fArrayDim", cursor.readInt());
 			int classversion = check.getVers();
-			
+
 			/* skip maxindex because we don't need it */
 			int n = 5;
 			if (classversion == 1) {
 				n = cursor.readUChar();
 			}
 			cursor.setOffset(cursor.getOffset() + (n * 4));
-			
+
 			target.putScalar("fTypeName", cursor.readTString());
 			/*
 			 * uproot does some tidying up too
 			 */
-			
+
 			if (classversion == 3) {
 				throw new IOException("classversion 3 isn't supported");
 			}
@@ -167,7 +167,11 @@ public class ClassDeserializer extends Proxy {
 			target.putScalar("fCtype", cursor.readInt());
 			check.verify(cursor);
 			break;
-		case "TStreamerSTLString":
+		// Are there really both capitalizations? I needed to add the lowercase
+		// version to parse NANOAOD, but I don't remember if the uppercase
+		// version is also needed
+		//case "TStreamerSTLString":
+		case "TStreamerSTLstring":
 			check = new RangeCheck(cursor);
 			target = handleBuiltin(cursor, target, classMap, "TStreamerSTL");
 			check.verify(cursor);
@@ -182,7 +186,7 @@ public class ClassDeserializer extends Proxy {
 		}
 		return target;
 	}
-	
+
 	private void parseTNamed(Cursor cursor, Proxy target) throws IOException {
 		RangeCheck check = new RangeCheck(cursor);
 		parseTObject(cursor, target);
@@ -190,7 +194,7 @@ public class ClassDeserializer extends Proxy {
 		target.putScalar("fTitle", cursor.readTString());
 		check.verify(cursor);
 	}
-	
+
 	private void parseTObject(Cursor cursor, Proxy target) throws IOException {
 		// Stolen from uproot
 		short version;
@@ -202,7 +206,7 @@ public class ClassDeserializer extends Proxy {
 	    target.putScalar("fUniqueID", cursor.readUInt());
 	    fBits = cursor.readUInt();
 	    fBits = fBits | Constants.kIsOnHeap;
-	    		
+
 	    if ((fBits & Constants.kIsReferenced) != 0)
 	        cursor.skipBytes(2);
 	    target.putScalar("fBits", fBits);
