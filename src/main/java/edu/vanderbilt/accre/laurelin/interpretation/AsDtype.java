@@ -1,9 +1,5 @@
 package edu.vanderbilt.accre.laurelin.interpretation;
 
-import java.lang.Integer;
-import java.lang.String;
-import java.lang.UnsupportedOperationException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -11,7 +7,6 @@ import java.util.List;
 import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
-import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 
 public class AsDtype implements Interpretation {
     public enum Dtype {
@@ -86,6 +81,7 @@ public class AsDtype implements Interpretation {
         }
     }
 
+    @Override
     public Array empty() {
         switch (this.dtype) {
         case BOOL:
@@ -114,19 +110,24 @@ public class AsDtype implements Interpretation {
             throw new AssertionError("unrecognized dtype");
         }
     }
-    
+
+    @Override
     public int numitems(int numbytes, int numentries) {
         if (numbytes % this.itemsize() != 0) {
-            throw new AssertionError(String.format("%d byte buffer does not divide evenly into %s", numbytes, this.dtype.toString()));
+            throw new AssertionError(
+                    String.format("%d byte buffer does not divide evenly into %s", numbytes, this.dtype.toString()));
         }
         return numbytes / this.itemsize();
     }
-    
+
+    @Override
     public int source_numitems(Array source) {
-        return ((PrimitiveArray)source).numitems();
+        return ((PrimitiveArray) source).numitems();
     }
-    
-    public Array fromroot(RawArray bytedata, PrimitiveArray.Int4 byteoffsets, int local_entrystart, int local_entrystop) {
+
+    @Override
+    public Array fromroot(RawArray bytedata, PrimitiveArray.Int4 byteoffsets, int local_entrystart,
+            int local_entrystop) {
         if (byteoffsets != null) {
             throw new AssertionError("byteoffsets must be null for AsDtype");
         }
@@ -160,9 +161,11 @@ public class AsDtype implements Interpretation {
         }
     }
 
+    @Override
     public Array destination(int numitems, int numentries) {
         if (numitems % this.multiplicity() != 0) {
-            throw new AssertionError(String.format("%d items do not divide evenly into multiplicity %d", numitems, this.multiplicity()));
+            throw new AssertionError(
+                    String.format("%d items do not divide evenly into multiplicity %d", numitems, this.multiplicity()));
         }
         int length = numitems / this.multiplicity();
         switch (this.dtype) {
@@ -193,18 +196,23 @@ public class AsDtype implements Interpretation {
         }
     }
 
+    @Override
     public void fill(Array source, Array destination, int itemstart, int itemstop, int entrystart, int entrystop) {
-        ((PrimitiveArray)destination).copyitems((PrimitiveArray)source, itemstart, itemstop);
+        ((PrimitiveArray) destination).copyitems((PrimitiveArray) source, itemstart, itemstop);
     }
 
+    @Override
     public Array clip(Array destination, int itemstart, int itemstop, int entrystart, int entrystop) {
         int mult = this.multiplicity();
-        if ((itemstart % mult != 0)  ||  (itemstop % mult != 0)) {
-            throw new AssertionError(String.format("itemstart (%d) or itemstop (%d) do not divide evenly into multiplicty %d", itemstart, itemstop, mult));
+        if ((itemstart % mult != 0) || (itemstop % mult != 0)) {
+            throw new AssertionError(
+                    String.format("itemstart (%d) or itemstop (%d) do not divide evenly into multiplicty %d", itemstart,
+                            itemstop, mult));
         }
         return destination.clip(itemstart / mult, itemstop / mult);
     }
-    
+
+    @Override
     public Array finalize(Array destination) {
         return destination;
     }
