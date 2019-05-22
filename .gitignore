@@ -33,3 +33,6 @@ hs_err_pid*
 # Temporary unit test files
 ttree-unit-input
 ttree-unit-input2
+
+# Magic unittests to be replaced from scikit-testdata
+testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root
