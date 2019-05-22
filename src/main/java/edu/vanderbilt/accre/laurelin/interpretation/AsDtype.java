@@ -107,7 +107,7 @@ public class AsDtype implements Interpretation {
         case UINT8:
             throw new UnsupportedOperationException("not implemented yet");
         case FLOAT4:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Float4(this, 0);
         case FLOAT8:
             return new PrimitiveArray.Float8(this, 0);
         default:
@@ -152,7 +152,7 @@ public class AsDtype implements Interpretation {
         case UINT8:
             throw new UnsupportedOperationException("not implemented yet");
         case FLOAT4:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Float4(this, sliced);
         case FLOAT8:
             return new PrimitiveArray.Float8(this, sliced);
         default:
@@ -185,7 +185,7 @@ public class AsDtype implements Interpretation {
         case UINT8:
             throw new UnsupportedOperationException("not implemented yet");
         case FLOAT4:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Float4(this, length);
         case FLOAT8:
             return new PrimitiveArray.Float8(this, length);
         default:

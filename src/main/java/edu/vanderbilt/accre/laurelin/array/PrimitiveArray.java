@@ -4,6 +4,7 @@ import java.lang.Integer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import edu.vanderbilt.accre.laurelin.array.Array;
@@ -139,5 +140,41 @@ public abstract class PrimitiveArray extends Array {
             return new Float8(this.interpretation, out);
         }
     }
-    
+
+    /////////////////////////////////////////////////////////////////////////// Float4
+
+    public static class Float4 extends PrimitiveArray {
+        public Float4(Interpretation interpretation, int length) {
+            super(interpretation, length);
+        }
+
+        public Float4(Interpretation interpretation, RawArray rawarray) {
+            super(interpretation, rawarray);
+        }
+
+        protected Float4(Interpretation interpretation, ByteBuffer buffer) {
+            super(interpretation, buffer);
+        }
+
+        public Float4(float[] data, boolean bigEndian) {
+            super(new AsDtype(AsDtype.Dtype.FLOAT4), data.length);
+            this.buffer = ByteBuffer.allocate(data.length * this.itemsize());
+            this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
+            this.buffer.asFloatBuffer().put(data, 0, data.length);
+        }
+
+        @Override
+        public Object toArray(boolean bigEndian) {
+            this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
+            FloatBuffer buf = this.buffer.asFloatBuffer();
+            float[] out = new float[buf.limit() - buf.position()];
+            buf.get(out);
+            return out;
+        }
+
+        @Override
+        protected Array make(ByteBuffer out) {
+            return new Float4(this.interpretation, out);
+        }
+    }
 }
