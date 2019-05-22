@@ -2,10 +2,6 @@ package edu.vanderbilt.accre.laurelin.array;
 
 import java.nio.ByteBuffer;
 
-import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
-
-import java.lang.UnsupportedOperationException;
-
 public class RawArray extends PrimitiveArray {
     RawArray(int length) {
         super(null, length);
@@ -17,15 +13,17 @@ public class RawArray extends PrimitiveArray {
         this.buffer = rawarray.raw();
     }
 
-    protected RawArray(ByteBuffer buffer) {
+    public RawArray(ByteBuffer buffer) {
         super(null, buffer.limit());
         this.buffer = buffer;
     }
 
+    @Override
     public int itemsize() {
         return 1;
     }
 
+    @Override
     public int multiplicity() {
         return 1;
     }
@@ -37,16 +35,19 @@ public class RawArray extends PrimitiveArray {
         return new RawArray(tmp.slice());
     }
 
+    @Override
     public Array clip(int start, int stop) {
         throw new UnsupportedOperationException("not implemented yet");
     }
 
+    @Override
     public Object toArray(boolean bigEndian) {
         byte[] out = new byte[this.buffer.limit() - this.buffer.position()];
         this.buffer.get(out);
         return out;
     }
-    
+
+    @Override
     protected Array make(ByteBuffer out) {
         return new RawArray(out);
     }

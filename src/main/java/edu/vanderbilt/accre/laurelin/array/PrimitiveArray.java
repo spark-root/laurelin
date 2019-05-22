@@ -1,14 +1,11 @@
 package edu.vanderbilt.accre.laurelin.array;
 
-import java.lang.Integer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
-import edu.vanderbilt.accre.laurelin.array.Array;
-import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 
@@ -51,6 +48,7 @@ public abstract class PrimitiveArray extends Array {
         tmp.put(source.raw());
     }
 
+    @Override
     public Array clip(int start, int stop) {
         int mult = this.multiplicity();
         int bytestart = start * mult * this.itemsize();
@@ -60,7 +58,7 @@ public abstract class PrimitiveArray extends Array {
         out.limit(bytestop);
         return this.make(out);
     }
-    
+
     public RawArray rawarray() {
         return new RawArray(this.buffer);
     }
@@ -93,6 +91,7 @@ public abstract class PrimitiveArray extends Array {
             this.buffer.asIntBuffer().put(data, 0, data.length);
         }
 
+        @Override
         public Object toArray(boolean bigEndian) {
             this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             IntBuffer buf = this.buffer.asIntBuffer();
@@ -100,7 +99,8 @@ public abstract class PrimitiveArray extends Array {
             buf.get(out);
             return out;
         }
-    
+
+        @Override
         protected Array make(ByteBuffer out) {
             return new Int4(this.interpretation, out);
         }
@@ -128,6 +128,7 @@ public abstract class PrimitiveArray extends Array {
             this.buffer.asDoubleBuffer().put(data, 0, data.length);
         }
 
+        @Override
         public Object toArray(boolean bigEndian) {
             this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             DoubleBuffer buf = this.buffer.asDoubleBuffer();
@@ -136,6 +137,7 @@ public abstract class PrimitiveArray extends Array {
             return out;
         }
 
+        @Override
         protected Array make(ByteBuffer out) {
             return new Float8(this.interpretation, out);
         }
