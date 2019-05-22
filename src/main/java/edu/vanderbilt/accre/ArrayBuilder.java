@@ -1,15 +1,15 @@
 package edu.vanderbilt.accre;
 
-import java.lang.String;
-import java.lang.IllegalArgumentException;
-import java.lang.UnsupportedOperationException;
-
 import edu.vanderbilt.accre.laurelin.array.Array;
-import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 
 public class ArrayBuilder {
+
+    /**
+     * Subset of only the values in TKey which describes the basket on-disk
+     *
+     */
     static public class BasketKey {
         int fKeylen;
         int fLast;
@@ -20,11 +20,31 @@ public class ArrayBuilder {
             this.fObjlen = fObjlen;
         }
     }
+
+    /**
+     * Callback interface used by the array interface to request additional info
+     * about baskets from the root_proxy layer
+     */
     static public interface GetBasket {
+        /**
+         * Get the BasketKey describing a certain basketid
+         * @param basketid the zero-indexed basket index for the given branch
+         * @return BasketKey filled with info about the chosen basket
+         */
         public BasketKey basketkey(int basketid);
+
+        /**
+         * Retrieves the decompressed bytes within the basket, excluding the
+         * TKey header
+         * @param basketid the zero-indexed basket index for the given branch
+         * @return a RawArray with the decompressed bytes
+         */
         public RawArray dataWithoutKey(int basketid);   // length must be fObjlen - fKeylen
     }
 
+    /**
+     * Callbacks to get info about a basket from root_proxy
+     */
     GetBasket getbasket;
     Interpretation interpretation;
     long[] basketEntryOffsets;
@@ -46,6 +66,7 @@ public class ArrayBuilder {
     public Array build(long entrystart, long entrystop) {
         int basketstart = -1;
         int basketstop = -1;
+
         for (int i = 0;  i < this.basketEntryOffsets.length - 1;  i++) {
             if (basketstart == -1) {
                 if (entrystart < this.basketEntryOffsets[i + 1]  &&  this.basketEntryOffsets[i] < entrystop) {
@@ -97,7 +118,7 @@ public class ArrayBuilder {
             basket_itemoffset[j] = basket_itemoffset[j - 1] + (int)numitems;
             basket_entryoffset[j] = basket_entryoffset[j - 1] + (int)numentries;
         }
-            
+
         Array destination = this.interpretation.destination((int)totalitems, (int)totalentries);
 
         // This loop can be parallelized: instances change *different parts of* destination, basket_itemoffset, basket_entryoffset.
@@ -106,23 +127,23 @@ public class ArrayBuilder {
         }
 
         Array clipped = this.interpretation.clip(destination,
-                                                 basket_itemoffset[0],
-                                                 basket_itemoffset[basket_itemoffset.length - 1],
-                                                 basket_entryoffset[0],
-                                                 basket_entryoffset[basket_entryoffset.length - 1]);
+                basket_itemoffset[0],
+                basket_itemoffset[basket_itemoffset.length - 1],
+                basket_entryoffset[0],
+                basket_entryoffset[basket_entryoffset.length - 1]);
 
         return this.interpretation.finalize(clipped);
     }
 
     private void fill(int j, BasketKey[] basketkeys, Array destination, long entrystart, long entrystop, int basketstart, int basketstop, int[] basket_itemoffset, int[] basket_entryoffset) {
         int i = j + basketstart;
-        
+
         int local_entrystart = (int)(entrystart - basket_entryoffset[i]);
         if (local_entrystart < 0) {
             local_entrystart = 0;
         }
 
-        int local_numentries = (int)(basket_entryoffset[i + 1] - basket_entryoffset[i]);
+        int local_numentries = basket_entryoffset[i + 1] - basket_entryoffset[i];
         int local_entrystop = (int)(entrystop - basket_entryoffset[i]);
         if (local_entrystop > local_numentries) {
             local_entrystop = local_numentries;
@@ -165,10 +186,10 @@ public class ArrayBuilder {
         }
 
         this.interpretation.fill(source,
-                                 destination,
-                                 basket_itemoffset[j],
-                                 basket_itemoffset[j + 1],
-                                 basket_entryoffset[j],
-                                 basket_entryoffset[j + 1]);
+                destination,
+                basket_itemoffset[j],
+                basket_itemoffset[j + 1],
+                basket_entryoffset[j],
+                basket_entryoffset[j + 1]);
     }
 }
