@@ -19,6 +19,7 @@ public class TTreeColumnVector extends ColumnVector {
     private TBranch branch;
     private int basketIndex = 0;
     private long [] basketEntryOffsets;
+    private Array backingArray;
 
     public TTreeColumnVector(DataType type, TBranch branch) {
         super(type);
@@ -83,15 +84,7 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public float getFloat(int rowId) {
-        // Very obviously not what we want to do long-term. We should keep the
-        // underlying Array cached as long as possible
-        ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback();
-        basketEntryOffsets = branch.getBasketEntryOffsets();
-        AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);
-        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets);
-        Array test = builder.build(rowId, rowId + 1);
-        float []testarray = (float [])test.toArray();
-        return testarray[0];
+        return getFloats(rowId, 1)[0];
     }
 
     @Override
@@ -172,8 +165,16 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public float[] getFloats(int rowId, int count) {
-        // TODO Auto-generated method stub
-        return super.getFloats(rowId, count);
+        // Very obviously not what we want to do long-term. We should keep the
+        // underlying Array cached as long as possible
+        ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback();
+        basketEntryOffsets = branch.getBasketEntryOffsets();
+        AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);
+        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets);
+        backingArray = builder.build(rowId, rowId + count);
+        Object temparr = backingArray.toArray();
+        float []testarray = (float [])temparr;
+        return testarray;
     }
 
     @Override
