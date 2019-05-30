@@ -1,7 +1,13 @@
 package edu.vanderbilt.accre.laurelin.array;
 
+import java.util.ArrayList;
 import java.util.concurrent.Executor;
-import java.lang.Runnable;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 
@@ -46,13 +52,15 @@ public class ArrayBuilder {
     /**
      * Callbacks to get info about a basket from root_proxy
      */
+    Interpretation interpretation;
+    int[] basket_itemoffset;
+    int[] basket_entryoffset;
     Array array;
-
-    public Array get() {
-        return array;
-    }
+    ArrayList<FutureTask<Boolean>> tasks;
 
     public ArrayBuilder(GetBasket getbasket, Interpretation interpretation, long[] basketEntryOffsets, long entrystart, long entrystop) {
+        this.interpretation = interpretation;
+
         if (basketEntryOffsets.length == 0  ||  basketEntryOffsets[0] != 0) {
             throw new IllegalArgumentException("basketEntryOffsets must start with zero");
         }
@@ -84,6 +92,8 @@ public class ArrayBuilder {
         }
 
         if (basketstart == -1) {
+            basket_itemoffset = null;
+            basket_entryoffset = null;
             array = interpretation.empty();
         }
         else {
@@ -94,8 +104,8 @@ public class ArrayBuilder {
 
             long totalitems = 0;
             long totalentries = 0;
-            int[] basket_itemoffset = new int[1 + basketstop - basketstart];
-            int[] basket_entryoffset = new int[1 + basketstop - basketstart];
+            basket_itemoffset = new int[1 + basketstop - basketstart];
+            basket_entryoffset = new int[1 + basketstop - basketstart];
 
             basket_itemoffset[0] = 0;
             basket_entryoffset[0] = 0;
@@ -117,25 +127,50 @@ public class ArrayBuilder {
                 basket_entryoffset[j] = basket_entryoffset[j - 1] + (int)numentries;
             }
 
-            Array destination = interpretation.destination((int)totalitems, (int)totalentries);
+            array = interpretation.destination((int)totalitems, (int)totalentries);
 
-            // This loop can be parallelized: instances change *different parts of* destination, basket_itemoffset, basket_entryoffset.
+            tasks = new ArrayList<FutureTask<Boolean>>(basketstop - basketstart);
             for (int j = 0;  j < basketstop - basketstart;  j++) {
-                Runnable runnable = new FillRunnable(interpretation, getbasket, j, basketkeys, destination, entrystart, entrystop, basketstart, basketstop, basket_itemoffset, basket_entryoffset);
-                runnable.run();
+                FutureTask<Boolean> task = new FutureTask<Boolean>(new CallableFill(interpretation, getbasket, j, basketkeys, array, entrystart, entrystop, basketstart, basketstop, basket_itemoffset, basket_entryoffset));
+                tasks.add(task);
             }
 
-            Array clipped = interpretation.clip(destination,
+            ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
+            for (FutureTask<Boolean> task : tasks) {
+                executor.execute(task);
+            }
+
+        }
+    }
+
+    public Array get() {
+        for (FutureTask<Boolean> task : tasks) {
+            try {
+                task.get();
+            }
+            catch (InterruptedException e) {
+                throw new RuntimeException(e.toString());
+            }
+            catch (ExecutionException e) {
+                throw new RuntimeException(e.toString());
+            }
+        }
+
+        if (basket_itemoffset == null) {
+            return array;
+        }
+        else {
+            Array clipped = interpretation.clip(array,
                                                 basket_itemoffset[0],
                                                 basket_itemoffset[basket_itemoffset.length - 1],
                                                 basket_entryoffset[0],
                                                 basket_entryoffset[basket_entryoffset.length - 1]);
 
-            array = interpretation.finalize(clipped);
+            return interpretation.finalize(clipped);
         }
     }
 
-    static private class FillRunnable implements Runnable {
+    static private class CallableFill implements Callable<Boolean> {
         Interpretation interpretation;
         GetBasket getbasket;
         int j;
@@ -148,7 +183,7 @@ public class ArrayBuilder {
         int[] basket_itemoffset;
         int[] basket_entryoffset;
 
-        FillRunnable(Interpretation interpretation, GetBasket getbasket, int j, BasketKey[] basketkeys, Array destination, long entrystart, long entrystop, int basketstart, int basketstop, int[] basket_itemoffset, int[] basket_entryoffset) {
+        CallableFill(Interpretation interpretation, GetBasket getbasket, int j, BasketKey[] basketkeys, Array destination, long entrystart, long entrystop, int basketstart, int basketstop, int[] basket_itemoffset, int[] basket_entryoffset) {
             this.interpretation = interpretation;
             this.getbasket = getbasket;
             this.j = j;
@@ -162,7 +197,7 @@ public class ArrayBuilder {
             this.basket_entryoffset = basket_entryoffset;
         }
 
-        public void run() {
+        public Boolean call() {
             int i = j + basketstart;
 
             int local_entrystart = (int)(entrystart - basket_entryoffset[i]);
@@ -218,6 +253,7 @@ public class ArrayBuilder {
                                 basket_itemoffset[j + 1],
                                 basket_entryoffset[j],
                                 basket_entryoffset[j + 1]);
+            return true;
         }
     }
 }
