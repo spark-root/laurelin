@@ -10,8 +10,8 @@ import java.util.List;
 
 import org.junit.Test;
 
-import edu.vanderbilt.accre.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.Array;
+import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;

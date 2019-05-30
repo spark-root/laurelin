@@ -1,7 +1,5 @@
-package edu.vanderbilt.accre;
+package edu.vanderbilt.accre.laurelin.array;
 
-import edu.vanderbilt.accre.laurelin.array.Array;
-import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 
 public class ArrayBuilder {

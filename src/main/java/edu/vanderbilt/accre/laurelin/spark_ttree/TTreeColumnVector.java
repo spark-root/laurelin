@@ -9,8 +9,8 @@ import org.apache.spark.sql.vectorized.ColumnarArray;
 import org.apache.spark.sql.vectorized.ColumnarMap;
 import org.apache.spark.unsafe.types.UTF8String;
 
-import edu.vanderbilt.accre.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.Array;
+import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
