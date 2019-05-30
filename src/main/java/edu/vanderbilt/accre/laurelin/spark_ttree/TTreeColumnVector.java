@@ -174,8 +174,8 @@ public class TTreeColumnVector extends ColumnVector {
         ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback();
         basketEntryOffsets = branch.getBasketEntryOffsets();
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);
-        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets);
-        backingArray = builder.build(rowId, rowId + count);
+        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, rowId, rowId + count);
+        backingArray = builder.get();
         Object temparr = backingArray.toArray();
         float []testarray = (float [])temparr;
         return testarray;
