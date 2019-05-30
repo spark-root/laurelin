@@ -25,7 +25,7 @@ public class TTreeColumnVector extends ColumnVector {
     private ArrayBuilder.GetBasket getbasket;
     private ArrayBuilder builder;
 
-    public TTreeColumnVector(DataType type, TBranch branch, Cache basketCache) {
+    public TTreeColumnVector(DataType type, TBranch branch, Cache basketCache, long entrystart, long entrystop) {
         super(type);
         this.branch = branch;
 
@@ -37,7 +37,7 @@ public class TTreeColumnVector extends ColumnVector {
 
         ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
 
-        this.builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, rowId, rowId + count);
+        this.builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, entrystart, entrystop);
     }
 
     @Override
@@ -107,12 +107,13 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public ColumnarArray getArray(int rowId) {
-        TBranch.ArrayDescriptor desc = branch.getArrayDescriptor();
-        if (desc.isFixed()) {
-            return new ColumnarArray(this, rowId * desc.getFixedLength(), desc.getFixedLength());
-        } else {
-            throw new RuntimeException("Jagged arrays not supported yet");
-        }
+        // TBranch.ArrayDescriptor desc = branch.getArrayDescriptor();
+        // if (desc.isFixed()) {
+        //     return new ColumnarArray(this, rowId * desc.getFixedLength(), desc.getFixedLength());
+        // } else {
+        //     throw new RuntimeException("Jagged arrays not supported yet");
+        // }
+        return null;
     }
 
     @Override
@@ -181,7 +182,7 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public float[] getFloats(int rowId, int count) {
-        Object temparr = builder.get().toArray();
+        Object temparr = builder.get(rowId, count).toArray();
         float []testarray = (float [])temparr;
         return testarray;
     }

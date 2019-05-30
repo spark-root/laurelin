@@ -17,7 +17,7 @@ public interface Interpretation {
 
     public void fill(Array source, Array destination, int itemstart, int itemstop, int entrystart, int entrystop);
 
-    public Array clip(Array destination, int itemstart, int itemstop, int entrystart, int entrystop);
+    public Array clip(Array destination, int entrystart, int entrystop);
 
     public Array finalize(Array destination);
 }

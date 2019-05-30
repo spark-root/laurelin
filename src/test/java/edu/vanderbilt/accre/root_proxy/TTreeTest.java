@@ -52,14 +52,14 @@ public class TTreeTest {
     public void testGetBranches_all() throws IOException {
         TTree currTree = getTestTree();
         List<TBranch> branches = currTree.getBranches();
-        assertEquals(19, branches.size());
+        assertEquals(7, branches.size());
     }
 
     @Test
     public void testGetBranchBasket_float64() throws IOException {
         TTree currTree = getTestTree();
         List<TBranch> branches = currTree.getBranches();
-        assertEquals(19, branches.size());
+        assertEquals(7, branches.size());
         for (TBranch branch: branches) {
             System.out.println(branch.getName() + " - " + branch.getTitle());
             for (TLeaf leaf: branch.getLeaves()) {
@@ -85,10 +85,10 @@ public class TTreeTest {
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT8);
         ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9);
         System.out.println(builder);
-        builder.get();
-        System.out.println("test1 " + builder.get().toArray());
-        System.out.println("test2 " + builder.get().toString());
-        Array test = builder.get();
+        builder.get(0, 8);
+        System.out.println("test1 " + builder.get(0, 8).toArray());
+        System.out.println("test2 " + builder.get(0, 8).toString());
+        Array test = builder.get(0, 8);
         double []testarray = (double [])test.toArray();
         System.out.println("test3 " + testarray.toString());
         System.out.println("test3 " + testarray.length);
@@ -125,10 +125,10 @@ public class TTreeTest {
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);
         ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9);
         System.out.println(builder);
-        builder.get();
-        System.out.println("test1 " + builder.get().toArray());
-        System.out.println("test2 " + builder.get().toString());
-        Array test = builder.get();
+        builder.get(0, 8);
+        System.out.println("test1 " + builder.get(0, 8).toArray());
+        System.out.println("test2 " + builder.get(0, 8).toString());
+        Array test = builder.get(0, 8);
         float []testarray = (float [])test.toArray();
         System.out.println("test3 " + testarray.toString());
         System.out.println("test3 " + testarray.length);

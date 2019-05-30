@@ -202,14 +202,14 @@ public class AsDtype implements Interpretation {
     }
 
     @Override
-    public Array clip(Array destination, int itemstart, int itemstop, int entrystart, int entrystop) {
+    public Array clip(Array destination, int entrystart, int entrystop) {
         int mult = this.multiplicity();
-        if ((itemstart % mult != 0) || (itemstop % mult != 0)) {
+        if ((entrystart % mult != 0) || (entrystop % mult != 0)) {
             throw new AssertionError(
-                    String.format("itemstart (%d) or itemstop (%d) do not divide evenly into multiplicty %d", itemstart,
-                            itemstop, mult));
+                    String.format("entrystart (%d) or entrystop (%d) do not divide evenly into multiplicty %d", entrystart,
+                            entrystop, mult));
         }
-        return destination.clip(itemstart / mult, itemstop / mult);
+        return destination.clip(entrystart / mult, entrystop / mult);
     }
 
     @Override

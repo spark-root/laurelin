@@ -120,7 +120,7 @@ public class Root implements DataSourceV2, ReadSupport {
                 }
                 ArrayList<TBranch> branchList = tree.getBranches(field.name());
                 assert branchList.size() == 1;
-                vecs[idx] = new TTreeColumnVector(field.dataType(), branchList.get(0), basketCache);
+                vecs[idx] = new TTreeColumnVector(field.dataType(), branchList.get(0), basketCache, 0, tree.getEntries());   // FIXME: entrystart, entrystop for a partition
                 idx += 1;
             }
             ColumnarBatch ret = new ColumnarBatch(vecs);
