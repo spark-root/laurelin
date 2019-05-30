@@ -38,22 +38,24 @@ public class Root implements DataSourceV2, ReadSupport {
      * Future improvements will split this up per-basket. Big files = big mem
      * usage!
      *
+     * This is instantiated on the driver, then serialized and transmitted to
+     * the executor
      */
-    static class TTreeDataSourceV2Partition implements InputPartition<ColumnarBatch>,
-    InputPartitionReader<ColumnarBatch> {
+    static class TTreeDataSourceV2Partition implements InputPartition<ColumnarBatch> {
         private static final long serialVersionUID = -6598704946339913432L;
         private String path;
         private String treeName;
         private StructType schema;
-        private TFile file;
-        private TTree tree;
-        int currBasket = -1;
 
-        public TTreeDataSourceV2Partition(String path, String treeName, StructType schema) {
+        private CacheFactory basketCacheFactory;
+
+
+        public TTreeDataSourceV2Partition(String path, String treeName, StructType schema, CacheFactory basketCacheFactory) {
             logger.trace("dsv2partition new");
             this.path = path;
             this.treeName = treeName;
             this.schema = schema;
+            this.basketCacheFactory = basketCacheFactory;
         }
 
         /*
@@ -63,18 +65,29 @@ public class Root implements DataSourceV2, ReadSupport {
         @Override
         public InputPartitionReader<ColumnarBatch> createPartitionReader() {
             logger.trace("input partition reader");
+            return new TTreeDataSourceV2PartitionReader(path, treeName, basketCacheFactory, schema);
+        }
+    }
+
+    static class TTreeDataSourceV2PartitionReader implements InputPartitionReader<ColumnarBatch> {
+        private String path;
+        private TFile file;
+        private TTree tree;
+        private Cache basketCache;
+        private StructType schema;
+        int currBasket = -1;
+        public TTreeDataSourceV2PartitionReader(String path, String treeName, CacheFactory basketCacheFactory, StructType schema) {
+            this.path = path;
+            this.basketCache = basketCacheFactory.getCache();
+            this.schema = schema;
             try {
                 file = TFile.getFromFile(path);
                 tree = new TTree(file.getProxy(treeName), file);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            return this;
-        }
 
-        /*
-         * Begin InputPartitionReader overrides
-         */
+        }
 
         @Override
         public void close() throws IOException {
@@ -107,7 +120,7 @@ public class Root implements DataSourceV2, ReadSupport {
                 }
                 ArrayList<TBranch> branchList = tree.getBranches(field.name());
                 assert branchList.size() == 1;
-                vecs[idx] = new TTreeColumnVector(field.dataType(), branchList.get(0));
+                vecs[idx] = new TTreeColumnVector(field.dataType(), branchList.get(0), basketCache);
                 idx += 1;
             }
             ColumnarBatch ret = new ColumnarBatch(vecs);
@@ -122,7 +135,8 @@ public class Root implements DataSourceV2, ReadSupport {
         private String treeName;
         private TTree currTree;
         private TFile currFile;
-        public TTreeDataSourceV2Reader(DataSourceOptions options) {
+        private CacheFactory basketCacheFactory;
+        public TTreeDataSourceV2Reader(DataSourceOptions options, CacheFactory basketCacheFactory) {
             logger.trace("construct ttreedatasourcev2reader");
             try {
                 this.paths = options.paths();
@@ -130,6 +144,7 @@ public class Root implements DataSourceV2, ReadSupport {
                 currFile = TFile.getFromFile(this.paths[0]);
                 treeName = options.get("tree").orElse("Events");
                 currTree = new TTree(currFile.getProxy(treeName), currFile);
+                this.basketCacheFactory = basketCacheFactory;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -205,7 +220,7 @@ public class Root implements DataSourceV2, ReadSupport {
             for (String path: paths) {
                 // TODO Add an option to pass through a tree name
                 // TODO split file based on clusters instead of partition-per-file
-                ret.add(new TTreeDataSourceV2Partition(path, treeName, readSchema()));
+                ret.add(new TTreeDataSourceV2Partition(path, treeName, readSchema(), basketCacheFactory));
             }
             return ret;
         }
@@ -214,7 +229,8 @@ public class Root implements DataSourceV2, ReadSupport {
     @Override
     public DataSourceReader createReader(DataSourceOptions options) {
         logger.trace("make new reader");
-        return new TTreeDataSourceV2Reader(options);
+        CacheFactory basketCacheFactory = new CacheFactory();
+        return new TTreeDataSourceV2Reader(options, basketCacheFactory);
     }
 
 }
