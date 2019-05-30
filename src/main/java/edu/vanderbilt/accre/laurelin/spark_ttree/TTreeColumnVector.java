@@ -1,6 +1,8 @@
 package edu.vanderbilt.accre.laurelin.spark_ttree;
 
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
@@ -169,13 +171,15 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public float[] getFloats(int rowId, int count) {
+        ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
+
         // Very obviously not what we want to do long-term. We should keep the
         // underlying Array cached as long as possible
         ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback();
         basketEntryOffsets = branch.getBasketEntryOffsets();
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);
-        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets);
-        backingArray = builder.build(rowId, rowId + count);
+        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, rowId, rowId + count);
+        backingArray = builder.get();
         Object temparr = backingArray.toArray();
         float []testarray = (float [])temparr;
         return testarray;

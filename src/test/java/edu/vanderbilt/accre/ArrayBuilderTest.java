@@ -1,6 +1,8 @@
 package edu.vanderbilt.accre;
 
 import java.util.Arrays;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,10 +29,10 @@ public class ArrayBuilderTest {
 
         long[] basketEntryOffsets = new long[]{0, 5, 10};
 
-        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets);
+        ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
 
-        Assert.assertEquals(Arrays.toString((double[])builder.build(0, 10).toArray()), Arrays.toString(new double[]{0.0, 1.1, 2.2, 3.3, 4.4, 0.0, 1.1, 2.2, 3.3, 4.4}));
+        Assert.assertEquals(Arrays.toString((double[])(new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 0, 10)).get().toArray()), Arrays.toString(new double[]{0.0, 1.1, 2.2, 3.3, 4.4, 0.0, 1.1, 2.2, 3.3, 4.4}));
 
-        Assert.assertEquals(Arrays.toString((double[])builder.build(1, 9).toArray()), Arrays.toString(new double[]{1.1, 2.2, 3.3, 4.4, 0.0, 1.1, 2.2, 3.3}));
+        Assert.assertEquals(Arrays.toString((double[])(new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9)).get().toArray()), Arrays.toString(new double[]{1.1, 2.2, 3.3, 4.4, 0.0, 1.1, 2.2, 3.3}));
     }
 }

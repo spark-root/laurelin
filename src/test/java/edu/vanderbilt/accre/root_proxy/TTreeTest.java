@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.junit.Test;
 
@@ -74,15 +76,17 @@ public class TTreeTest {
         // uncompressed basket size - 8 bytes/entry * 100 entries
         assertEquals(800, buf.limit());
 
+        ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
+
         ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback();
         long [] basketEntryOffsets = branch.getBasketEntryOffsets(); //{ 0, 100 };
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT8);
-        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets);
+        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9);
         System.out.println(builder);
-        builder.build(1, 9);
-        System.out.println("test1 " + builder.build(1, 9).toArray());
-        System.out.println("test2 " + builder.build(1, 9).toString());
-        Array test = builder.build(1, 9);
+        builder.get();
+        System.out.println("test1 " + builder.get().toArray());
+        System.out.println("test2 " + builder.get().toString());
+        Array test = builder.get();
         double []testarray = (double [])test.toArray();
         System.out.println("test3 " + testarray.toString());
         System.out.println("test3 " + testarray.length);
@@ -111,15 +115,17 @@ public class TTreeTest {
         // uncompressed basket size - 4 bytes/entry * 1000 entries
         assertEquals(4000, buf.limit());
 
+        ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
+
         ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback();
         long [] basketEntryOffsets = branch.getBasketEntryOffsets(); //{ 0, 100 };
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);
-        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets);
+        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9);
         System.out.println(builder);
-        builder.build(1, 9);
-        System.out.println("test1 " + builder.build(1, 9).toArray());
-        System.out.println("test2 " + builder.build(1, 9).toString());
-        Array test = builder.build(1, 9);
+        builder.get();
+        System.out.println("test1 " + builder.get().toArray());
+        System.out.println("test2 " + builder.get().toString());
+        Array test = builder.get();
         float []testarray = (float [])test.toArray();
         System.out.println("test3 " + testarray.toString());
         System.out.println("test3 " + testarray.length);
