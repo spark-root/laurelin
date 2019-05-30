@@ -6,12 +6,13 @@ package edu.vanderbilt.accre.laurelin.root_proxy;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.ArrayList;
 
 public class TFile {
 	ROOTFile fh;
+	private String fileName;
 
 	// Fields in the file header
 	public long fBEGIN;
@@ -29,15 +30,15 @@ public class TFile {
 	private int fUnits;
 	private int fVersion;
 	private int nfree;
-	
+
 	TKey streamerKey;
 	Streamer streamerInfo;
 	// Toplevel TDirectory
 	TDirectory directory;
-	
+
 	// Lists of subobjects
 	List<TKey> keys;
-	
+
 	private TFile() {
 		keys = new ArrayList<TKey>();
 		directory = new TDirectory();
@@ -50,13 +51,14 @@ public class TFile {
 	}
 
 	public void openForRead(String path) throws IOException {
+	    fileName = path;
 		fh = ROOTFile.getInputFile(path);
 		Cursor c = fh.getCursor(0);
 		parseHeaderImpl(false);
 		if (fVersion > 1000000) {
 			parseHeaderImpl(true);
 		}
-		
+
 		/*
 		 * Load the list of keys in the file (not sure if this is needed long-term)
 		 */
@@ -71,26 +73,26 @@ public class TFile {
 			TKey testkey = new TKey();
 			testkey.getFromFile(fh, position);
 			keys.add(testkey);
-			position += testkey.Nbytes;	
+			position += testkey.Nbytes;
 		}
 		/*
 		 * We don't need/want the TNamed stuff for now, which is why we're pushing
 		 * the inputs by fNbytesName bytes
 		 */
-		
+
 		/*
 		 * There is a TDirectory at position fBEGIN+fNbytesName
 		 * https://github.com/scikit-hep/uproot/blob/662d1f859f8ba7a5d908a249b3cae5b743e56a19/uproot/rootio.py#L193
 		 */
 		directory.getFromFile(fh, fBEGIN + fNbytesName);
-		
+
 		/*
 		 * And then the Streamers can be found at fSeekInfo
 		 */
 		streamerKey = new TKey();
 		streamerKey.getFromFile(fh, fSeekInfo);
 		Cursor fhCursor = fh.getCursor(0);
-		Cursor streamerCursor = 
+		Cursor streamerCursor =
 				fhCursor.getPossiblyCompressedSubcursor(
 						fSeekInfo + streamerKey.KeyLen,
 						streamerKey.Nbytes - streamerKey.KeyLen,
@@ -98,7 +100,7 @@ public class TFile {
 						streamerKey.KeyLen);
 		streamerInfo = new Streamer();
 		streamerInfo.getFromCursor(streamerCursor, 0);
-		
+
 	}
 
 	private void parseHeaderImpl(boolean largeFile) throws IOException {
@@ -127,7 +129,7 @@ public class TFile {
 			fUnits = buffer.readChar();
 			fCompress = buffer.readInt();
 			fSeekInfo = buffer.readLong();
-			fNBytesInfo = buffer.readInt();             
+			fNBytesInfo = buffer.readInt();
 		}
 		else
 		{
@@ -142,11 +144,11 @@ public class TFile {
 			fNBytesInfo = buffer.readInt();
 		}
 	}
-	
+
 	public Proxy getProxy(String name) throws IOException {
 		// Handle subdirectories .. later
 		TKey key = directory.get(name);
-		if (key == null) { 
+		if (key == null) {
 			throw new NoSuchElementException("Could not load \"" + name + "\"");
 		}
 		Cursor keyCursor = fh.getCursor(key.fSeekKey);
@@ -159,5 +161,9 @@ public class TFile {
 
 	public Cursor getCursorAt(long off) throws IOException {
 		return fh.getCursor(off);
+	}
+
+	public String getFileName() {
+	    return fileName;
 	}
 }
