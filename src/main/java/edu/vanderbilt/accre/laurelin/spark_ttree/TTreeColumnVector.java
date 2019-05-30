@@ -19,15 +19,21 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 
 public class TTreeColumnVector extends ColumnVector {
     private TBranch branch;
-    private int basketIndex = 0;
     private long [] basketEntryOffsets;
-    private Array backingArray;
+    private ArrayBuilder.GetBasket getbasket;
+    private ArrayBuilder builder;
 
     public TTreeColumnVector(DataType type, TBranch branch) {
         super(type);
         this.branch = branch;
+        this.basketEntryOffsets = branch.getBasketEntryOffsets();
+        this.getbasket = branch.getArrayBranchCallback();
 
-        List<TBasket> baskets = branch.getBaskets();
+        AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);   // FIXME
+
+        ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
+
+        this.builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, rowId, rowId + count);
     }
 
     @Override
@@ -171,16 +177,7 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public float[] getFloats(int rowId, int count) {
-        ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
-
-        // Very obviously not what we want to do long-term. We should keep the
-        // underlying Array cached as long as possible
-        ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback();
-        basketEntryOffsets = branch.getBasketEntryOffsets();
-        AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);
-        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, rowId, rowId + count);
-        backingArray = builder.get();
-        Object temparr = backingArray.toArray();
+        Object temparr = builder.get().toArray();
         float []testarray = (float [])temparr;
         return testarray;
     }
