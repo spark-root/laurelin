@@ -36,8 +36,7 @@ public class TTreeDataSourceUnitTest {
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
-        // Note - there's 20 branches, but we ignore one because I'm not trying to deserialize strings
-        assertEquals(19, schemaCast.size());
+        assertEquals(20, schemaCast.size());
     }
 
     @Test
@@ -125,8 +124,8 @@ public class TTreeDataSourceUnitTest {
         assertTrue(partitionReader.next());
         ColumnarBatch batch = partitionReader.get();
         assertFalse(partitionReader.next());
-        // 19 branches in this file
-        assertEquals(19, batch.numCols());
+        // 20 branches in this file
+        assertEquals(20, batch.numCols());
         // 100 events in this file
         assertEquals(100, batch.numRows());
 
@@ -164,8 +163,8 @@ public class TTreeDataSourceUnitTest {
         assertTrue(partitionReader.next());
         ColumnarBatch batch = partitionReader.get();
         assertFalse(partitionReader.next());
-        // 19 branches in this file
-        assertEquals(19, batch.numCols());
+        // 20 branches in this file
+        assertEquals(20, batch.numCols());
         // 100 events in this file
         assertEquals(100, batch.numRows());
 
@@ -174,6 +173,34 @@ public class TTreeDataSourceUnitTest {
         assertFloatArrayEquals(new float[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}, float32col.getArray(0).toFloatArray());
         assertFloatArrayEquals(new float[] { 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f}, float32col.getArray(10).toFloatArray());
         assertFloatArrayEquals(new float[] { 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f}, float32col.getArray(31).toFloatArray());
+    }
+
+    @Test
+    public void testLoadScalarString() throws IOException {
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", "testdata/uproot-small-flat-tree.root");
+        optmap.put("tree",  "tree");
+        DataSourceOptions opts = new DataSourceOptions(optmap);
+        Root source = new Root();
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        assertNotNull(partitions);
+        assertEquals(1, partitions.size());
+        StructType schema = reader.readSchema();
+
+
+        InputPartition<ColumnarBatch> partition = partitions.get(0);
+        InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
+        assertTrue(partitionReader.next());
+        ColumnarBatch batch = partitionReader.get();
+        assertFalse(partitionReader.next());
+        // 20 branches in this file
+        assertEquals(20, batch.numCols());
+        // 100 events in this file
+        assertEquals(100, batch.numRows());
+
+        ColumnVector float32col = batch.column((int)schema.getFieldIndex("Str").get());
+        assertEquals("Str", float32col.getUTF8String(0));
     }
 
     //	@Test

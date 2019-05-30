@@ -20,7 +20,8 @@ public class SimpleType {
 	public static class Float32Type extends NumericType { }
 	public static class Float64Type extends NumericType { }
 	public static class PointerType extends ScalarType {}
-	
+	public static class StringType extends ScalarType { }
+
 	public static final PointerType Pointer = new PointerType();
 	public static final BoolType Bool = new BoolType();
 	public static final Int8Type Int8 = new Int8Type();
@@ -29,4 +30,5 @@ public class SimpleType {
 	public static final Int64Type Int64 = new Int64Type();
 	public static final Float32Type Float32 = new Float32Type();
 	public static final Float64Type Float64 = new Float64Type();
+	public static final StringType String = new StringType();
 }

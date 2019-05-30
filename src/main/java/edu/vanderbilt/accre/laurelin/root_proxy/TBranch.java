@@ -59,6 +59,8 @@ public class TBranch {
                 // Drop branches with neither subbranches nor leaves
                 if (branch.getBranches().size() != 0 || branch.getLeaves().size() != 0) {
                     branches.add(branch);
+                } else {
+                    System.out.println("null branch");
                 }
             }
             ProxyArray fLeaves = (ProxyArray) data.getProxy("fLeaves");

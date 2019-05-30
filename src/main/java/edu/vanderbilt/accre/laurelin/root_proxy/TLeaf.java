@@ -8,9 +8,6 @@ public class TLeaf extends TBranch {
 
 	@Override
 	public boolean typeUnhandled() {
-		if (getClassName().equals("TLeafC")) {
-			return true;
-		}
 		return false;
 	}
 
@@ -45,6 +42,9 @@ public class TLeaf extends TBranch {
 		case ("TLeafD"):
 			ret = SimpleType.Float64;
 			break;
+		case ("TLeafC"):
+		    ret = SimpleType.String;
+		    break;
 		}
 
 		// Do I later want to separate fixed and not-fixed arrays?

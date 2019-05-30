@@ -117,8 +117,14 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public UTF8String getUTF8String(int rowId) {
-        // TODO Auto-generated method stub
-        return null;
+        ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback();
+        basketEntryOffsets = branch.getBasketEntryOffsets();
+        AsDtype asdtype = new AsDtype(AsDtype.Dtype.STRING);
+        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets);
+        backingArray = builder.build(rowId, 1);
+        Object temparr = backingArray.toArray();
+        String []testarray = (String [])temparr;
+        return UTF8String.fromString(testarray[0]);
     }
 
     @Override

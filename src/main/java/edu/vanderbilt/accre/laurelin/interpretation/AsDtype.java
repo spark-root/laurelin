@@ -20,7 +20,8 @@ public class AsDtype implements Interpretation {
         UINT4,
         UINT8,
         FLOAT4,
-        FLOAT8
+        FLOAT8,
+        STRING
     }
 
     Dtype dtype;

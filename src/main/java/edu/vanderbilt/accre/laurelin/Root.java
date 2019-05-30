@@ -187,6 +187,8 @@ public class Root implements DataSourceV2, ReadSupport {
                     ret = DataTypes.DoubleType;
                 } else if (simpleType == SimpleType.Pointer) {
                     ret = DataTypes.LongType;
+                } else if (simpleType == SimpleType.String) {
+                    ret = DataTypes.StringType;
                 }
             } else if (simpleType instanceof SimpleType.ArrayType) {
                 SimpleType nested = ((SimpleType.ArrayType) simpleType).getChildType();
