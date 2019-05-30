@@ -95,8 +95,12 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public ColumnarArray getArray(int rowId) {
-        // TODO Auto-generated method stub
-        return null;
+        TBranch.ArrayDescriptor desc = branch.getArrayDescriptor();
+        if (desc.isFixed()) {
+            return new ColumnarArray(this, rowId * desc.getFixedLength(), desc.getFixedLength());
+        } else {
+            throw new RuntimeException("Jagged arrays not supported yet");
+        }
     }
 
     @Override

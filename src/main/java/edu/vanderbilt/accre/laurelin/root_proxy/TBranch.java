@@ -3,6 +3,8 @@ package edu.vanderbilt.accre.laurelin.root_proxy;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import edu.vanderbilt.accre.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
@@ -16,6 +18,30 @@ public class TBranch {
     protected boolean isBranch;
     protected TBranch parent;
     protected TTree tree;
+
+    public static class ArrayDescriptor {
+        private boolean isFixed;
+        private int fixedLength;
+        private String branchName;
+        public static ArrayDescriptor newNumArray(String mag) {
+            ArrayDescriptor ret = new ArrayDescriptor();
+            ret.isFixed = true;
+            ret.fixedLength = Integer.parseInt(mag);
+            return ret;
+        }
+        public static ArrayDescriptor newVarArray(String mag) {
+            ArrayDescriptor ret = new ArrayDescriptor();
+            ret.isFixed = false;
+            ret.branchName = mag;
+            return ret;
+        }
+        public boolean isFixed() {
+            return isFixed;
+        }
+        public int getFixedLength() {
+            return fixedLength;
+        }
+    }
 
     public TBranch(Proxy data, TTree tree, TBranch parent) {
         this.data = data;
@@ -99,6 +125,50 @@ public class TBranch {
     public List<TBasket> getBaskets() {
         return baskets;
     }
+
+    /*
+     * Note: this will all have to be refactored to support multidimensional
+     *       arrays, but sufficient is today for its own troubles
+     */
+
+    // really wish java had a non-escaped string specifier
+    // I wanna grab everything out of the square brackets
+    //                                          \[(\d+)\]
+    Pattern arrayNumPattern = Pattern.compile("\\[(\\d+)\\]");
+    //                                          \[([^\]]+)\]
+    Pattern arrayVarPattern = Pattern.compile("\\[([^\\]]+)\\]");
+
+    /**
+     * Returns an ArrayDescriptor describing this branch
+     *
+     * @return ArrayDescriptor containing the array params if this is an array
+     *         null otherwise
+     */
+    public ArrayDescriptor getArrayDescriptor() {
+        if (getLeaves().size() != 1) {
+            throw new RuntimeException("Non-split branches are not supported");
+        }
+        TLeaf leaf = getLeaves().get(0);
+        String title = leaf.getTitle();
+        if (!title.contains("[")) {
+            // no square brackets means no possibility of being an array
+            return null;
+        } else if (title.indexOf("[") != title.lastIndexOf(("["))) {
+           throw new RuntimeException("Multidimensional arrays are not supported");
+        } else {
+            Matcher numMatcher = arrayNumPattern.matcher(title);
+            Matcher varMatcher = arrayVarPattern.matcher(title);
+            if (numMatcher.find()) {
+                return ArrayDescriptor.newNumArray(numMatcher.group(1));
+            } else if (varMatcher.find()) {
+                return ArrayDescriptor.newVarArray(varMatcher.group(1));
+            } else {
+                throw new RuntimeException("Unable to parse array indices");
+            }
+        }
+    }
+
+
 
     /**
      * Glue callback to integrate with edu.vanderbilt.accre.laurelin.array

@@ -96,7 +96,7 @@ public class TTreeDataSourceUnitTest {
 
     /**
      * Ideally implements the same call order as the full-up spark test
-     * [TRACE] 17:24:35.974 e.v.a.l.Root - planbatchinputpartitions
+     *  [TRACE] 17:24:35.974 e.v.a.l.Root - planbatchinputpartitions
      *  [TRACE] 17:24:35.974 e.v.a.l.Root - readschema
      *  [TRACE] 17:24:35.975 e.v.a.l.Root - dsv2partition new
      *  [TRACE] 17:24:36.093 e.v.a.l.Root - input partition reader
@@ -131,7 +131,6 @@ public class TTreeDataSourceUnitTest {
         assertEquals(100, batch.numRows());
 
         ColumnVector float32col = batch.column((int)schema.getFieldIndex("Float32").get());
-        System.out.println(" " + float32col);
         assertEquals(0.0f, float32col.getFloat(0), 0.001);
         assertEquals(99.0f, float32col.getFloat(99), 0.001);
 
@@ -139,11 +138,42 @@ public class TTreeDataSourceUnitTest {
         assertFloatArrayEquals(new float[] { 10.0f, 11.0f }, float32col.getFloats(10, 2));
         assertFloatArrayEquals(new float[] { 22.0f, 23.0f, 24.0f }, float32col.getFloats(22, 3));
     }
+
     private void assertFloatArrayEquals(float exp[], float act[]) {
         assertEquals("Arrays same length", exp.length, act.length);
         for (int i = 0; i < exp.length; i += 1) {
-            assertEquals("Array index " + i + " the same", exp[i], act[i], 0.001);
+            assertEquals("Array index " + i + " mismatched", exp[i], act[i], 0.001);
         }
+    }
+
+    @Test
+    public void testLoadFixedArrayFloat32() throws IOException {
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", "testdata/uproot-small-flat-tree.root");
+        optmap.put("tree",  "tree");
+        DataSourceOptions opts = new DataSourceOptions(optmap);
+        Root source = new Root();
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        assertNotNull(partitions);
+        assertEquals(1, partitions.size());
+        StructType schema = reader.readSchema();
+
+        InputPartition<ColumnarBatch> partition = partitions.get(0);
+        InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
+        assertTrue(partitionReader.next());
+        ColumnarBatch batch = partitionReader.get();
+        assertFalse(partitionReader.next());
+        // 19 branches in this file
+        assertEquals(19, batch.numCols());
+        // 100 events in this file
+        assertEquals(100, batch.numRows());
+
+        ColumnVector float32col = batch.column((int)schema.getFieldIndex("ArrayFloat32").get());
+
+        assertFloatArrayEquals(new float[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}, float32col.getArray(0).toFloatArray());
+        assertFloatArrayEquals(new float[] { 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f}, float32col.getArray(10).toFloatArray());
+        assertFloatArrayEquals(new float[] { 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f}, float32col.getArray(31).toFloatArray());
     }
 
     //	@Test

@@ -155,10 +155,14 @@ public class Root implements DataSourceV2, ReadSupport {
                     subFieldArray = subFields.toArray(subFieldArray);
                     StructType subStruct = new StructType(subFieldArray);
                     fields.add(new StructField(branch.getName(), subStruct, false, Metadata.empty()));
-                }
-                for (TLeaf leaf: branch.getLeaves()) {
-                    DataType sparkType = rootToSparkType(leaf.getSimpleType());
-                    fields.add(new StructField(leaf.getName(), sparkType, false, Metadata.empty()));
+                } else {
+                    if (branch.getLeaves().size() > 1) {
+                        throw new RuntimeException("Un-split branches are not supported. Current branch: " + branch.getName());
+                    } else {
+                        TLeaf leaf = branch.getLeaves().get(0);
+                        DataType sparkType = rootToSparkType(leaf.getSimpleType());
+                        fields.add(new StructField(leaf.getName(), sparkType, false, Metadata.empty()));
+                    }
                 }
             }
             return fields;
