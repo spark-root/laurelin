@@ -27,8 +27,7 @@ public class TTreeDataSourceIntegrationTest {
                 .format("edu.vanderbilt.accre.laurelin.Root")
                 .option("tree",  "tree")
                 .load("testdata/uproot-small-flat-tree.root");
-        df = df.select("Float32");
-        df.printSchema();
+        df = df.select("Float32", "ArrayFloat32");
         df.show();
         assertEquals(100, df.count());
     }

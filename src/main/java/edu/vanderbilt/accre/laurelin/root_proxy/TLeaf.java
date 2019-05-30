@@ -3,7 +3,7 @@ package edu.vanderbilt.accre.laurelin.root_proxy;
 public class TLeaf extends TBranch {
 
 	public TLeaf(Proxy data, TTree tree, TBranch parent) {
-		super(data, tree, parent);
+	    super(data, tree, parent);
 	}
 
 	@Override
