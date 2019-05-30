@@ -52,14 +52,14 @@ public class TTreeTest {
     public void testGetBranches_all() throws IOException {
         TTree currTree = getTestTree();
         List<TBranch> branches = currTree.getBranches();
-        assertEquals(7, branches.size());
+        assertEquals(19, branches.size());
     }
 
     @Test
     public void testGetBranchBasket_float64() throws IOException {
         TTree currTree = getTestTree();
         List<TBranch> branches = currTree.getBranches();
-        assertEquals(7, branches.size());
+        assertEquals(19, branches.size());
         for (TBranch branch: branches) {
             System.out.println(branch.getName() + " - " + branch.getTitle());
             for (TLeaf leaf: branch.getLeaves()) {
@@ -85,11 +85,9 @@ public class TTreeTest {
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT8);
         ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9);
         System.out.println(builder);
-        builder.get(0, 8);
-        System.out.println("test1 " + builder.get(0, 8).toArray());
-        System.out.println("test2 " + builder.get(0, 8).toString());
-        Array test = builder.get(0, 8);
-        double []testarray = (double [])test.toArray();
+        System.out.println("test1 " + builder.getDoubles(0, 8));
+        System.out.println("test2 " + builder.getDoubles(0, 8).toString());
+        double [] testarray = builder.getDoubles(0, 8);
         System.out.println("test3 " + testarray.toString());
         System.out.println("test3 " + testarray.length);
         //        long []basketEntryOffsets = basket.getBasketEntryOffsets();
@@ -125,11 +123,9 @@ public class TTreeTest {
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);
         ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9);
         System.out.println(builder);
-        builder.get(0, 8);
-        System.out.println("test1 " + builder.get(0, 8).toArray());
-        System.out.println("test2 " + builder.get(0, 8).toString());
-        Array test = builder.get(0, 8);
-        float []testarray = (float [])test.toArray();
+        System.out.println("test1 " + builder.getFloats(0, 8));
+        System.out.println("test2 " + builder.getFloats(0, 8).toString());
+        float []testarray = (float [])builder.getFloats(0, 8);
         System.out.println("test3 " + testarray.toString());
         System.out.println("test3 " + testarray.length);
         //        long []basketEntryOffsets = basket.getBasketEntryOffsets();

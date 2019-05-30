@@ -11,9 +11,6 @@ public class TLeaf extends TBranch {
 		if (getClassName().equals("TLeafC")) {
 			return true;
 		}
-                else if (getName().startsWith("Array")  ||  getName().startsWith("Slice")) {
-                        return true;
-                }
 		return false;
 	}
 

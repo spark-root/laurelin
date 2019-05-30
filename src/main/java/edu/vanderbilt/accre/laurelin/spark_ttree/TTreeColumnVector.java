@@ -1,6 +1,7 @@
 package edu.vanderbilt.accre.laurelin.spark_ttree;
 
 import java.util.List;
+import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -14,6 +15,7 @@ import org.apache.spark.unsafe.types.UTF8String;
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
+import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
@@ -33,11 +35,19 @@ public class TTreeColumnVector extends ColumnVector {
         this.getbasket = branch.getArrayBranchCallback(basketCache);
         this.basketCache = basketCache;
 
-        AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);   // FIXME
-
         ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
 
-        this.builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, entrystart, entrystop);
+        TBranch.ArrayDescriptor desc = branch.getArrayDescriptor();
+        if (desc == null) {
+            AsDtype interpretation = new AsDtype(AsDtype.Dtype.FLOAT4);   // FIXME
+            this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
+        }
+        else if (desc.isFixed()) {
+            AsDtype interpretation = new AsDtype(AsDtype.Dtype.FLOAT4, Arrays.asList(desc.getFixedLength()));   // FIXME
+            this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
+        } else {
+            //
+        }
     }
 
     @Override
@@ -107,12 +117,6 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public ColumnarArray getArray(int rowId) {
-        // TBranch.ArrayDescriptor desc = branch.getArrayDescriptor();
-        // if (desc.isFixed()) {
-        //     return new ColumnarArray(this, rowId * desc.getFixedLength(), desc.getFixedLength());
-        // } else {
-        //     throw new RuntimeException("Jagged arrays not supported yet");
-        // }
         return null;
     }
 
@@ -182,14 +186,11 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public float[] getFloats(int rowId, int count) {
-        Object temparr = builder.get(rowId, count).toArray();
-        float []testarray = (float [])temparr;
-        return testarray;
+        return builder.getFloats(rowId, count);
     }
 
     @Override
     public double[] getDoubles(int rowId, int count) {
-        // TODO Auto-generated method stub
-        return super.getDoubles(rowId, count);
+        return builder.getDoubles(rowId, count);
     }
 }

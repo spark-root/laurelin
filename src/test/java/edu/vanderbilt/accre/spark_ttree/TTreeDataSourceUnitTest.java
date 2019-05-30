@@ -37,7 +37,7 @@ public class TTreeDataSourceUnitTest {
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         // Note - there's 20 branches, but we ignore one because I'm not trying to deserialize strings
-        assertEquals(7, schemaCast.size());
+        assertEquals(19, schemaCast.size());
     }
 
     @Test
@@ -125,8 +125,8 @@ public class TTreeDataSourceUnitTest {
         assertTrue(partitionReader.next());
         ColumnarBatch batch = partitionReader.get();
         assertFalse(partitionReader.next());
-        // 7 branches in this file
-        assertEquals(7, batch.numCols());
+        // 19 branches in this file
+        assertEquals(19, batch.numCols());
         // 100 events in this file
         assertEquals(100, batch.numRows());
 
@@ -164,8 +164,8 @@ public class TTreeDataSourceUnitTest {
     //     assertTrue(partitionReader.next());
     //     ColumnarBatch batch = partitionReader.get();
     //     assertFalse(partitionReader.next());
-    //     // 7 branches in this file
-    //     assertEquals(7, batch.numCols());
+    //     // 19 branches in this file
+    //     assertEquals(19, batch.numCols());
     //     // 100 events in this file
     //     assertEquals(100, batch.numRows());
 
