@@ -85,9 +85,9 @@ public class TTreeTest {
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT8);
         ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9);
         System.out.println(builder);
-        System.out.println("test1 " + builder.getDoubles(0, 8));
-        System.out.println("test2 " + builder.getDoubles(0, 8).toString());
-        double [] testarray = builder.getDoubles(0, 8);
+        System.out.println("test1 " + (double[])builder.getArray(0, 8).toArray());
+        System.out.println("test2 " + builder.getArray(0, 8).toArray().toString());
+        double [] testarray = (double[])builder.getArray(0, 8).toArray();
         System.out.println("test3 " + testarray.toString());
         System.out.println("test3 " + testarray.length);
         //        long []basketEntryOffsets = basket.getBasketEntryOffsets();
@@ -123,9 +123,9 @@ public class TTreeTest {
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);
         ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9);
         System.out.println(builder);
-        System.out.println("test1 " + builder.getFloats(0, 8));
-        System.out.println("test2 " + builder.getFloats(0, 8).toString());
-        float []testarray = (float [])builder.getFloats(0, 8);
+        System.out.println("test1 " + (float[])builder.getArray(0, 8).toArray());
+        System.out.println("test2 " + builder.getArray(0, 8).toArray().toString());
+        float []testarray = (float [])builder.getArray(0, 8).toArray();
         System.out.println("test3 " + testarray.toString());
         System.out.println("test3 " + testarray.length);
         //        long []basketEntryOffsets = basket.getBasketEntryOffsets();

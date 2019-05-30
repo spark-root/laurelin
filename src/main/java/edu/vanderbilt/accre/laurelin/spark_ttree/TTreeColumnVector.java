@@ -186,11 +186,11 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public float[] getFloats(int rowId, int count) {
-        return builder.getFloats(rowId, count);
+        return (float[])(builder.getArray(rowId, count).toArray());
     }
 
     @Override
     public double[] getDoubles(int rowId, int count) {
-        return builder.getDoubles(rowId, count);
+        return (double[])(builder.getArray(rowId, count).toArray());
     }
 }

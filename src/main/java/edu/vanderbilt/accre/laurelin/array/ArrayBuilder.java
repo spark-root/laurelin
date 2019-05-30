@@ -144,7 +144,7 @@ public class ArrayBuilder {
         }
     }
 
-    private Array get(int rowId, int count) {
+    public Array getArray(int rowId, int count) {
         for (FutureTask<Boolean> task : tasks) {
             try {
                 task.get();
@@ -166,14 +166,6 @@ public class ArrayBuilder {
                                                 basket_entryoffset[0] + rowId + count);
             return interpretation.finalize(clipped);
         }
-    }
-
-    public float[] getFloats(int rowId, int count) {
-        return (float[])get(rowId, count).toArray();
-    }
-
-    public double[] getDoubles(int rowId, int count) {
-        return (double[])get(rowId, count).toArray();
     }
 
     static private class CallableFill implements Callable<Boolean> {
