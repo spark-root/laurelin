@@ -20,4 +20,6 @@ public interface Interpretation {
     public Array clip(Array destination, int entrystart, int entrystop);
 
     public Array finalize(Array destination);
+
+    public Interpretation subarray();
 }

@@ -51,4 +51,9 @@ public class RawArray extends PrimitiveArray {
     protected Array make(ByteBuffer out) {
         return new RawArray(out);
     }
+
+    @Override
+    public Array subarray() {
+        throw new UnsupportedOperationException("RawArray is not subarrayable");
+    }
 }

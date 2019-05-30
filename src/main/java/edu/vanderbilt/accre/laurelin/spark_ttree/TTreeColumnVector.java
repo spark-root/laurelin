@@ -6,6 +6,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.spark.sql.types.DataType;
+import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarArray;
@@ -19,6 +20,7 @@ import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
+import edu.vanderbilt.accre.laurelin.spark_ttree.ArrayColumnVector;
 
 public class TTreeColumnVector extends ColumnVector {
     private Cache basketCache;
@@ -117,7 +119,8 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public ColumnarArray getArray(int rowId) {
-        return null;
+        Array array = builder.getArray(rowId, 1).subarray();
+        return new ColumnarArray(new ArrayColumnVector(((ArrayType)dataType()).elementType(), array), 0, array.length());
     }
 
     @Override
