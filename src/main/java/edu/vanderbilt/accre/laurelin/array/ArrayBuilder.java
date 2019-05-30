@@ -6,9 +6,6 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 
 public class ArrayBuilder {
@@ -58,7 +55,7 @@ public class ArrayBuilder {
     Array array;
     ArrayList<FutureTask<Boolean>> tasks;
 
-    public ArrayBuilder(GetBasket getbasket, Interpretation interpretation, long[] basketEntryOffsets, long entrystart, long entrystop) {
+    public ArrayBuilder(GetBasket getbasket, Interpretation interpretation, long[] basketEntryOffsets, Executor executor, long entrystart, long entrystop) {
         this.interpretation = interpretation;
 
         if (basketEntryOffsets.length == 0  ||  basketEntryOffsets[0] != 0) {
@@ -135,9 +132,13 @@ public class ArrayBuilder {
                 tasks.add(task);
             }
 
-            ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
             for (FutureTask<Boolean> task : tasks) {
-                executor.execute(task);
+                if (executor == null) {
+                    task.run();
+                }
+                else {
+                    executor.execute(task);
+                }
             }
 
         }

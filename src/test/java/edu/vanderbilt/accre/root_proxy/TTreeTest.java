@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.junit.Test;
 
@@ -74,10 +76,12 @@ public class TTreeTest {
         // uncompressed basket size - 8 bytes/entry * 100 entries
         assertEquals(800, buf.limit());
 
+        ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
+
         ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback();
         long [] basketEntryOffsets = branch.getBasketEntryOffsets(); //{ 0, 100 };
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT8);
-        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, 1, 9);
+        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9);
         System.out.println(builder);
         builder.get();
         System.out.println("test1 " + builder.get().toArray());
@@ -111,10 +115,12 @@ public class TTreeTest {
         // uncompressed basket size - 4 bytes/entry * 1000 entries
         assertEquals(4000, buf.limit());
 
+        ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
+
         ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback();
         long [] basketEntryOffsets = branch.getBasketEntryOffsets(); //{ 0, 100 };
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);
-        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, 1, 9);
+        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9);
         System.out.println(builder);
         builder.get();
         System.out.println("test1 " + builder.get().toArray());
