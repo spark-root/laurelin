@@ -9,6 +9,7 @@ import org.apache.spark.sql.vectorized.ColumnarArray;
 import org.apache.spark.sql.vectorized.ColumnarMap;
 import org.apache.spark.unsafe.types.UTF8String;
 
+import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
@@ -16,14 +17,16 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 
 public class TTreeColumnVector extends ColumnVector {
+    private Cache basketCache;
     private TBranch branch;
     private int basketIndex = 0;
     private long [] basketEntryOffsets;
     private Array backingArray;
 
-    public TTreeColumnVector(DataType type, TBranch branch) {
+    public TTreeColumnVector(DataType type, TBranch branch, Cache basketCache) {
         super(type);
         this.branch = branch;
+        this.basketCache = basketCache;
 
         List<TBasket> baskets = branch.getBaskets();
     }
@@ -171,7 +174,7 @@ public class TTreeColumnVector extends ColumnVector {
     public float[] getFloats(int rowId, int count) {
         // Very obviously not what we want to do long-term. We should keep the
         // underlying Array cached as long as possible
-        ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback();
+        ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback(basketCache);
         basketEntryOffsets = branch.getBasketEntryOffsets();
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);
         ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets);

@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.junit.Test;
 
+import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
@@ -74,7 +75,8 @@ public class TTreeTest {
         // uncompressed basket size - 8 bytes/entry * 100 entries
         assertEquals(800, buf.limit());
 
-        ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback();
+        Cache branchCache = new Cache();
+        ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback(branchCache);
         long [] basketEntryOffsets = branch.getBasketEntryOffsets(); //{ 0, 100 };
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT8);
         ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets);
@@ -111,7 +113,8 @@ public class TTreeTest {
         // uncompressed basket size - 4 bytes/entry * 1000 entries
         assertEquals(4000, buf.limit());
 
-        ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback();
+        Cache branchCache = new Cache();
+        ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback(branchCache);
         long [] basketEntryOffsets = branch.getBasketEntryOffsets(); //{ 0, 100 };
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);
         ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets);
