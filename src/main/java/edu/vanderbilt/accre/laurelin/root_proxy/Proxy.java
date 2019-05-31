@@ -60,7 +60,7 @@ public class Proxy {
         for (int i = 0; i < depth; i += 1) { indent += "  "; }
         String ret = indent;
         for (String key: data.keySet()) {
-            ret += indent + key + " - " + data.get(key);
+            ret += indent + key + " - " + data.get(key).dumpStr(depth + 1) + "\n";
         }
         return ret;
     }

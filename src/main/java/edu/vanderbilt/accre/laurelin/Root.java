@@ -190,22 +190,22 @@ public class Root implements DataSourceV2, ReadSupport {
                     ret = DataTypes.BooleanType;
                 } else if (simpleType == SimpleType.Int8) {
                     ret = DataTypes.ByteType;
-                } else if (simpleType == SimpleType.Int16) {
+                } else if ((simpleType == SimpleType.Int16) || (simpleType == SimpleType.UInt8)) {
                     ret = DataTypes.ShortType;
-                } else if (simpleType == SimpleType.Int32) {
+                } else if ((simpleType == SimpleType.Int32) || (simpleType == SimpleType.UInt16)) {
                     ret = DataTypes.IntegerType;
-                } else if (simpleType == SimpleType.Int64) {
+                } else if ((simpleType == SimpleType.Int64) || (simpleType == SimpleType.UInt32)) {
                     ret = DataTypes.LongType;
                 } else if (simpleType == SimpleType.Float32) {
                     ret = DataTypes.FloatType;
-                } else if (simpleType == SimpleType.Float64) {
+                } else if ((simpleType == SimpleType.Float64) || (simpleType == SimpleType.UInt64)) {
                     ret = DataTypes.DoubleType;
                 } else if (simpleType == SimpleType.Pointer) {
                     ret = DataTypes.LongType;
                 }
             } else if (simpleType instanceof SimpleType.ArrayType) {
                 SimpleType nested = ((SimpleType.ArrayType) simpleType).getChildType();
-                ret = DataTypes.createArrayType(rootToSparkType(nested));
+                ret = DataTypes.createArrayType(rootToSparkType(nested), false);
             }
             if (ret == null) {
                 throw new RuntimeException("Unable to convert ROOT type '" + simpleType + "' to Spark");
