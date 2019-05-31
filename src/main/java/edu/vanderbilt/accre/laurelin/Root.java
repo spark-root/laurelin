@@ -12,6 +12,7 @@ import org.apache.spark.sql.sources.v2.ReadSupport;
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
 import org.apache.spark.sql.sources.v2.reader.InputPartition;
 import org.apache.spark.sql.sources.v2.reader.InputPartitionReader;
+import org.apache.spark.sql.sources.v2.reader.SupportsPushDownRequiredColumns;
 import org.apache.spark.sql.sources.v2.reader.SupportsScanColumnarBatch;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
@@ -130,12 +131,15 @@ public class Root implements DataSourceV2, ReadSupport {
     }
 
     public static class TTreeDataSourceV2Reader implements DataSourceReader,
-    SupportsScanColumnarBatch {
+    SupportsScanColumnarBatch,
+    SupportsPushDownRequiredColumns {
         private String[] paths;
         private String treeName;
         private TTree currTree;
         private TFile currFile;
         private CacheFactory basketCacheFactory;
+        private StructType schema;
+
         public TTreeDataSourceV2Reader(DataSourceOptions options, CacheFactory basketCacheFactory) {
             logger.trace("construct ttreedatasourcev2reader");
             try {
@@ -145,6 +149,7 @@ public class Root implements DataSourceV2, ReadSupport {
                 treeName = options.get("tree").orElse("Events");
                 currTree = new TTree(currFile.getProxy(treeName), currFile);
                 this.basketCacheFactory = basketCacheFactory;
+                this.schema = readSchemaPriv();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -152,7 +157,11 @@ public class Root implements DataSourceV2, ReadSupport {
 
         @Override
         public StructType readSchema() {
-            logger.trace("readschema");
+            return schema;
+        }
+
+        private StructType readSchemaPriv() {
+            logger.trace("readschemapriv");
             List<TBranch> branches = currTree.getBranches();
             List<StructField> fields = readSchemaPart(branches, "");
             StructField[] fieldArray = new StructField[fields.size()];
@@ -224,6 +233,13 @@ public class Root implements DataSourceV2, ReadSupport {
             }
             return ret;
         }
+
+        @Override
+        public void pruneColumns(StructType requiredSchema) {
+            logger.trace("prunecolumns");
+            schema = requiredSchema;
+        }
+
     }
 
     @Override
