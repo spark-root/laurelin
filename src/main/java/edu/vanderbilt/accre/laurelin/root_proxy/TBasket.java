@@ -41,7 +41,6 @@ public class TBasket {
 
     private void initializePayload() {
         // FIXME mutex this eventually
-        Cursor c = key.getStartCursor();
         this.payload = key.getStartCursor().getPossiblyCompressedSubcursor(key.KeyLen,
                 key.Nbytes - key.KeyLen,
                 key.ObjLen,
@@ -93,5 +92,14 @@ public class TBasket {
 
     public long getBasketEntry() {
         return fBasketEntry;
+    }
+
+    /**
+     * returns the absolute offset from the beginning of the file to the first
+     * byte of the payload
+     */
+    public long getAbsoluteOffset() {
+        Cursor start = key.getStartCursor();
+        return start.getBase() + start.getOffset() + getKeyLen();
     }
 }

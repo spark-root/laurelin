@@ -1,12 +1,11 @@
 package edu.vanderbilt.accre.laurelin.spark_ttree;
 
-import java.util.List;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.ArrayType;
+import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarArray;
@@ -16,11 +15,8 @@ import org.apache.spark.unsafe.types.UTF8String;
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
-import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
-import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
-import edu.vanderbilt.accre.laurelin.spark_ttree.ArrayColumnVector;
 
 public class TTreeColumnVector extends ColumnVector {
     private Cache basketCache;
@@ -28,8 +24,9 @@ public class TTreeColumnVector extends ColumnVector {
     private long [] basketEntryOffsets;
     private ArrayBuilder.GetBasket getbasket;
     private ArrayBuilder builder;
+    private SlimTBranch slimBranch;
 
-    public TTreeColumnVector(DataType type, TBranch branch, Cache basketCache, long entrystart, long entrystop) {
+    public TTreeColumnVector(DataType type, TBranch branch, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch) {
         super(type);
         this.branch = branch;
 

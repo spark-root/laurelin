@@ -2,7 +2,9 @@ package edu.vanderbilt.accre.laurelin;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,10 +25,13 @@ import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
+import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TLeaf;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
+import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
+import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch.SlimTBasket;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
 public class Root implements DataSourceV2, ReadSupport {
@@ -49,11 +54,12 @@ public class Root implements DataSourceV2, ReadSupport {
         private StructType schema;
         private long entryStart;
         private long entryEnd;
+        private Map<String, SlimTBranch> slimBranches;
 
         private CacheFactory basketCacheFactory;
 
 
-        public TTreeDataSourceV2Partition(String path, String treeName, StructType schema, CacheFactory basketCacheFactory, long entryStart, long entryEnd) {
+        public TTreeDataSourceV2Partition(String path, String treeName, StructType schema, CacheFactory basketCacheFactory, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches) {
             logger.trace("dsv2partition new");
             this.path = path;
             this.treeName = treeName;
@@ -61,6 +67,7 @@ public class Root implements DataSourceV2, ReadSupport {
             this.basketCacheFactory = basketCacheFactory;
             this.entryStart = entryStart;
             this.entryEnd = entryEnd;
+            this.slimBranches = slimBranches;
         }
 
         /*
@@ -70,7 +77,7 @@ public class Root implements DataSourceV2, ReadSupport {
         @Override
         public InputPartitionReader<ColumnarBatch> createPartitionReader() {
             logger.trace("input partition reader");
-            return new TTreeDataSourceV2PartitionReader(path, treeName, basketCacheFactory, schema, entryStart, entryEnd);
+            return new TTreeDataSourceV2PartitionReader(path, treeName, basketCacheFactory, schema, entryStart, entryEnd, slimBranches);
         }
     }
 
@@ -82,13 +89,15 @@ public class Root implements DataSourceV2, ReadSupport {
         private StructType schema;
         private long entryStart;
         private long entryEnd;
-        int currBasket = -1;
-        public TTreeDataSourceV2PartitionReader(String path, String treeName, CacheFactory basketCacheFactory, StructType schema, long entryStart, long entryEnd) {
+        private int currBasket = -1;
+        private Map<String, SlimTBranch> slimBranches;
+        public TTreeDataSourceV2PartitionReader(String path, String treeName, CacheFactory basketCacheFactory, StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches) {
             this.path = path;
             this.basketCache = basketCacheFactory.getCache();
             this.schema = schema;
             this.entryStart = entryStart;
             this.entryEnd = entryEnd;
+            this.slimBranches = slimBranches;
             try {
                 file = TFile.getFromFile(path);
                 tree = new TTree(file.getProxy(treeName), file);
@@ -128,8 +137,8 @@ public class Root implements DataSourceV2, ReadSupport {
                 }
                 ArrayList<TBranch> branchList = tree.getBranches(field.name());
                 assert branchList.size() == 1;
-                vecs[idx] = new TTreeColumnVector(field.dataType(), branchList.get(0), basketCache, entryStart, entryEnd - entryStart);   // FIXME: entrystart, entrystop for a partition
-                idx += 1;
+                SlimTBranch slimBranch = slimBranches.get(field.name());
+                vecs[idx] = new TTreeColumnVector(field.dataType(), branchList.get(0), basketCache, entryStart, entryEnd - entryStart, slimBranch);                idx += 1;
             }
             ColumnarBatch ret = new ColumnarBatch(vecs);
             ret.setNumRows((int) (entryEnd - entryStart));
@@ -234,6 +243,31 @@ public class Root implements DataSourceV2, ReadSupport {
             logger.trace("planbatchinputpartitions");
             List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
             for (String path: paths) {
+                Map<String, SlimTBranch> slimBranches = new HashMap<String, SlimTBranch>();
+                for (StructField field: schema.fields())  {
+                    if (field.dataType() instanceof StructType) {
+                        throw new RuntimeException("Nested fields are not supported: " + field.name());
+                    }
+                    ArrayList<TBranch> branchList = currTree.getBranches(field.name());
+                    assert branchList.size() == 1;
+                    TBranch fatBranch = branchList.get(0);
+                    long[] entryOffset = fatBranch.getBasketEntryOffsets();
+                    SlimTBranch slimBranch = new SlimTBranch(path, entryOffset);
+                    slimBranches.put(field.name(), slimBranch);
+                    for (TBasket basket: fatBranch.getBaskets()) {
+                        SlimTBasket slimBasket = new SlimTBasket(slimBranch,
+                                                                    basket.getAbsoluteOffset(),
+                                                                    basket.getBasketBytes() - basket.getKeyLen(),
+                                                                    basket.getObjLen(),
+                                                                    basket.getKeyLen(),
+                                                                    basket.getLast()
+                                                                    );
+                        slimBranch.addBasket(slimBasket);
+                    }
+
+                }
+
+
                 // TODO We partition based on the basketing of the first branch
                 //      which might not be optimal. We should do something
                 //      smarter later
@@ -245,7 +279,8 @@ public class Root implements DataSourceV2, ReadSupport {
                     if (i == (entryOffset.length - 1)) {
                         entryEnd = currTree.getEntries();
                     }
-                    ret.add(new TTreeDataSourceV2Partition(path, treeName, schema, basketCacheFactory, entryStart, entryEnd));
+
+                    ret.add(new TTreeDataSourceV2Partition(path, treeName, schema, basketCacheFactory, entryStart, entryEnd, slimBranches));
                 }
             }
             return ret;
