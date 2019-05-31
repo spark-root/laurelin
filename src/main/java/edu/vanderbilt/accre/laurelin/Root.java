@@ -59,10 +59,8 @@ public class Root implements DataSourceV2, ReadSupport {
         private CacheFactory basketCacheFactory;
 
 
-        public TTreeDataSourceV2Partition(String path, String treeName, StructType schema, CacheFactory basketCacheFactory, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches) {
+        public TTreeDataSourceV2Partition(StructType schema, CacheFactory basketCacheFactory, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches) {
             logger.trace("dsv2partition new");
-            this.path = path;
-            this.treeName = treeName;
             this.schema = schema;
             this.basketCacheFactory = basketCacheFactory;
             this.entryStart = entryStart;
@@ -77,33 +75,23 @@ public class Root implements DataSourceV2, ReadSupport {
         @Override
         public InputPartitionReader<ColumnarBatch> createPartitionReader() {
             logger.trace("input partition reader");
-            return new TTreeDataSourceV2PartitionReader(path, treeName, basketCacheFactory, schema, entryStart, entryEnd, slimBranches);
+            return new TTreeDataSourceV2PartitionReader(basketCacheFactory, schema, entryStart, entryEnd, slimBranches);
         }
     }
 
     static class TTreeDataSourceV2PartitionReader implements InputPartitionReader<ColumnarBatch> {
-        private String path;
-        private TFile file;
-        private TTree tree;
         private Cache basketCache;
         private StructType schema;
         private long entryStart;
         private long entryEnd;
         private int currBasket = -1;
         private Map<String, SlimTBranch> slimBranches;
-        public TTreeDataSourceV2PartitionReader(String path, String treeName, CacheFactory basketCacheFactory, StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches) {
-            this.path = path;
+        public TTreeDataSourceV2PartitionReader(CacheFactory basketCacheFactory, StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches) {
             this.basketCache = basketCacheFactory.getCache();
             this.schema = schema;
             this.entryStart = entryStart;
             this.entryEnd = entryEnd;
             this.slimBranches = slimBranches;
-            try {
-                file = TFile.getFromFile(path);
-                tree = new TTree(file.getProxy(treeName), file);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
         }
 
         @Override
@@ -135,10 +123,9 @@ public class Root implements DataSourceV2, ReadSupport {
                 if (field.dataType() instanceof StructType) {
                     throw new RuntimeException("Nested fields are not supported: " + field.name());
                 }
-                ArrayList<TBranch> branchList = tree.getBranches(field.name());
-                assert branchList.size() == 1;
                 SlimTBranch slimBranch = slimBranches.get(field.name());
-                vecs[idx] = new TTreeColumnVector(field.dataType(), branchList.get(0), basketCache, entryStart, entryEnd - entryStart, slimBranch);                idx += 1;
+                vecs[idx] = new TTreeColumnVector(field.dataType(), basketCache, entryStart, entryEnd - entryStart, slimBranch);
+                idx += 1;
             }
             ColumnarBatch ret = new ColumnarBatch(vecs);
             ret.setNumRows((int) (entryEnd - entryStart));
@@ -280,7 +267,7 @@ public class Root implements DataSourceV2, ReadSupport {
                         entryEnd = currTree.getEntries();
                     }
 
-                    ret.add(new TTreeDataSourceV2Partition(path, treeName, schema, basketCacheFactory, entryStart, entryEnd, slimBranches));
+                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, slimBranches));
                 }
             }
             return ret;

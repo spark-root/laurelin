@@ -20,23 +20,21 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 
 public class TTreeColumnVector extends ColumnVector {
     private Cache basketCache;
-    private TBranch branch;
     private long [] basketEntryOffsets;
     private ArrayBuilder.GetBasket getbasket;
     private ArrayBuilder builder;
     private SlimTBranch slimBranch;
 
-    public TTreeColumnVector(DataType type, TBranch branch, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch) {
+    public TTreeColumnVector(DataType type, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch) {
         super(type);
-        this.branch = branch;
 
-        this.basketEntryOffsets = branch.getBasketEntryOffsets();
-        this.getbasket = branch.getArrayBranchCallback(basketCache);
+        this.basketEntryOffsets = slimBranch.getBasketEntryOffsets();
+        this.getbasket = slimBranch.getArrayBranchCallback(basketCache);
         this.basketCache = basketCache;
 
         ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
 
-        TBranch.ArrayDescriptor desc = branch.getArrayDescriptor();
+        TBranch.ArrayDescriptor desc = slimBranch.getArrayDesc();
         if (desc == null) {
             AsDtype interpretation = new AsDtype(AsDtype.Dtype.FLOAT4);   // FIXME
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
