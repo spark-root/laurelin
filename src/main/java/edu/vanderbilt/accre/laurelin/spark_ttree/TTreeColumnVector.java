@@ -19,18 +19,15 @@ import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 
 public class TTreeColumnVector extends ColumnVector {
-    private Cache basketCache;
     private long [] basketEntryOffsets;
     private ArrayBuilder.GetBasket getbasket;
     private ArrayBuilder builder;
-    private SlimTBranch slimBranch;
 
     public TTreeColumnVector(DataType type, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch) {
         super(type);
 
         this.basketEntryOffsets = slimBranch.getBasketEntryOffsets();
         this.getbasket = slimBranch.getArrayBranchCallback(basketCache);
-        this.basketCache = basketCache;
 
         ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
 

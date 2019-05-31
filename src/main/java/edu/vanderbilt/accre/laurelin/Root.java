@@ -49,8 +49,6 @@ public class Root implements DataSourceV2, ReadSupport {
      */
     static class TTreeDataSourceV2Partition implements InputPartition<ColumnarBatch> {
         private static final long serialVersionUID = -6598704946339913432L;
-        private String path;
-        private String treeName;
         private StructType schema;
         private long entryStart;
         private long entryEnd;
