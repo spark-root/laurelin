@@ -1,6 +1,7 @@
 package edu.vanderbilt.accre.laurelin.root_proxy;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -20,7 +21,8 @@ public class TBranch {
     protected TBranch parent;
     protected TTree tree;
 
-    public static class ArrayDescriptor {
+    public static class ArrayDescriptor implements Serializable {
+        private static final long serialVersionUID = 1L;
         private boolean isFixed;
         private int fixedLength;
         private String branchName;
