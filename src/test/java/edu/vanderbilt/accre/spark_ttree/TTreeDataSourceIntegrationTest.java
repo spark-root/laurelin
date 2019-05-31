@@ -20,17 +20,17 @@ public class TTreeDataSourceIntegrationTest {
                 .appName("test").getOrCreate();
     }
 
-    // @Test
-    // public void testLoadDataFrame() {
-    //     Dataset<Row> df = spark
-    //             .read()
-    //             .format("edu.vanderbilt.accre.laurelin.Root")
-    //             .option("tree",  "tree")
-    //             .load("testdata/uproot-small-flat-tree.root");
-    //     df = df.select("Float32", "ArrayFloat32");
-    //     df.show();
-    //     // assertEquals(100, df.count());
-    // }
+    @Test
+    public void testLoadDataFrame() {
+        Dataset<Row> df = spark
+                .read()
+                .format("edu.vanderbilt.accre.laurelin.Root")
+                .option("tree",  "tree")
+                .load("testdata/uproot-small-flat-tree.root");
+        df = df.select("Float32", "ArrayFloat32");
+        df.show();
+        // assertEquals(100, df.count());
+    }
 
     @AfterClass
     public static void afterClass() {

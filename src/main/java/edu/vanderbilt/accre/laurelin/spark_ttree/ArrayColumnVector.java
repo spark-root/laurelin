@@ -13,6 +13,7 @@ import org.apache.spark.sql.vectorized.ColumnarMap;
 import org.apache.spark.unsafe.types.UTF8String;
 
 import edu.vanderbilt.accre.laurelin.array.Array;
+import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
 
 public class ArrayColumnVector extends ColumnVector {
     private Array array;
@@ -77,8 +78,7 @@ public class ArrayColumnVector extends ColumnVector {
 
     @Override
     public float getFloat(int rowId) {
-        // TODO Auto-generated method stub
-        return 999;
+        return ((PrimitiveArray.Float4)array).toFloat();
     }
 
     @Override

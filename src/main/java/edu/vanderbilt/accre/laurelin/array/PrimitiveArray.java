@@ -193,5 +193,9 @@ public abstract class PrimitiveArray extends Array {
         public Array subarray() {
             return new Float4(this.interpretation.subarray(), this.buffer);
         }
+
+        public float toFloat() {
+            return this.buffer.asFloatBuffer().get(0);
+        }
     }
 }
