@@ -252,7 +252,7 @@ public class Root implements DataSourceV2, ReadSupport {
                     assert branchList.size() == 1;
                     TBranch fatBranch = branchList.get(0);
                     long[] entryOffset = fatBranch.getBasketEntryOffsets();
-                    SlimTBranch slimBranch = new SlimTBranch(path, entryOffset);
+                    SlimTBranch slimBranch = new SlimTBranch(path, entryOffset, fatBranch.getArrayDescriptor());
                     slimBranches.put(field.name(), slimBranch);
                     for (TBasket basket: fatBranch.getBaskets()) {
                         SlimTBasket slimBasket = new SlimTBasket(slimBranch,

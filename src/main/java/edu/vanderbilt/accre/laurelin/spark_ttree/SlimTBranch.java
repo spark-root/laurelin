@@ -11,6 +11,7 @@ import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.root_proxy.Cursor;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
+import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 
 /**
@@ -23,11 +24,13 @@ public class SlimTBranch implements Serializable {
     private String path;
     private long []basketEntryOffsets;
     private List<SlimTBasket> baskets;
+    private TBranch.ArrayDescriptor arrayDesc;
 
-    public SlimTBranch(String path, long []basketEntryOffsets) {
+    public SlimTBranch(String path, long []basketEntryOffsets, TBranch.ArrayDescriptor desc) {
         this.path = path;
         this.basketEntryOffsets = basketEntryOffsets;
         this.baskets = new LinkedList<SlimTBasket>();
+        this.arrayDesc = desc;
     }
 
     public long [] getBasketEntryOffsets() {
@@ -44,6 +47,10 @@ public class SlimTBranch implements Serializable {
 
     public String getPath() {
         return path;
+    }
+
+    public TBranch.ArrayDescriptor getArrayDesc() {
+        return arrayDesc;
     }
 
     /**
