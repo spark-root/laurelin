@@ -41,6 +41,19 @@ public class TTreeDataSourceUnitTest {
     }
 
     @Test
+    public void testGetSchemaNested() {
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", "testdata/uproot-nesteddirs.root");
+        optmap.put("tree",  "three/tree");
+        DataSourceOptions opts = new DataSourceOptions(optmap);
+        Root source = new Root();
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
+        DataType schema = reader.readSchema();
+        StructType schemaCast = (StructType) schema;
+        assertEquals(1, schemaCast.size());
+    }
+
+    @Test
     public void testGetSchemaNano() {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/nano_tree.root");

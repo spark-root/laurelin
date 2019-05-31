@@ -123,6 +123,26 @@ public class TBranch {
         return leaves;
     }
 
+    /**
+     * returns fType
+     * @return ROOT type integer constant
+     */
+    public Integer getType() {
+        return (Integer) data.getScalar("fType").getVal();
+    }
+
+    /**
+     * returns normalized fType
+     * @return ROOT type integer constant
+     */
+    public Integer getNormedType() {
+        Integer fType = (Integer) data.getScalar("fType").getVal();
+        if ((Constants.kOffsetL < fType) && (fType < Constants.kOffsetP)) {
+            fType = fType - Constants.kOffsetL;
+        }
+        return fType;
+    }
+
     public List<TBasket> getBaskets() {
         return baskets;
     }
