@@ -23,6 +23,7 @@ public class TTree {
     private TFile file;
     private static final Logger logger = LogManager.getLogger();
 
+
     public TTree(Proxy data, TFile file) {
         this.data = data;
         this.file = file;
@@ -65,7 +66,7 @@ public class TTree {
                             nameFound[i] = true;
                             ret.add(branch);
                         } else {
-                            throw new RuntimeException("Duplicate branch found: " + name);
+                            logger.error("Duplicate branch found: " + name);
                         }
                     }
                 }

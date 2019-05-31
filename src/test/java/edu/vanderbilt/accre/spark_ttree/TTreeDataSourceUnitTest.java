@@ -16,6 +16,9 @@ import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.reader.InputPartition;
 import org.apache.spark.sql.sources.v2.reader.InputPartitionReader;
 import org.apache.spark.sql.types.DataType;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.Metadata;
+import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
@@ -51,6 +54,88 @@ public class TTreeDataSourceUnitTest {
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(1, schemaCast.size());
+    }
+
+    @Test
+    public void testGetSchemaForiter() {
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", "testdata/uproot-foriter.root");
+        optmap.put("tree",  "foriter");
+        DataSourceOptions opts = new DataSourceOptions(optmap);
+        Root source = new Root();
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
+        DataType schema = reader.readSchema();
+        StructType schemaCast = (StructType) schema;
+        assertEquals(1, schemaCast.size());
+    }
+
+    @Test
+    public void testMultipleBasketsForiter() throws IOException {
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", "testdata/uproot-foriter.root");
+        optmap.put("tree",  "foriter");
+        DataSourceOptions opts = new DataSourceOptions(optmap);
+        Root source = new Root();
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
+        DataType schema = reader.readSchema();
+        StructType schemaCast = (StructType) schema;
+        assertEquals(1, schemaCast.size());
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        assertNotNull(partitions);
+        assertEquals(8, partitions.size());
+        InputPartition<ColumnarBatch> partition;
+        long []expectedCounts = {6, 6, 6, 6, 6, 6, 6, 4};
+        for (int i = 0; i < 8; i += 1) {
+            partition = partitions.get(i);
+            InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
+            assertTrue(partitionReader.next());
+            ColumnarBatch batch = partitionReader.get();
+            assertFalse(partitionReader.next());
+            assertEquals(expectedCounts[i], batch.numRows());
+        }
+    }
+
+    @Test
+    public void testMultipleBasketsForBigNano() throws IOException {
+        String testPath = "testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root";
+        File f = new File(testPath);
+        assumeTrue(f.isFile());
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", testPath);
+        optmap.put("tree",  "Events");
+        DataSourceOptions opts = new DataSourceOptions(optmap);
+        Root source = new Root();
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
+        // only get a scalar float_t for now since that's all that works
+        StructType prune = new StructType();
+        prune.add(new StructField("CaloMET_pt", DataTypes.FloatType, false, Metadata.empty()));
+        reader.pruneColumns(prune);
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        assertNotNull(partitions);
+        assertEquals(13, partitions.size());
+        InputPartition<ColumnarBatch> partition;
+        long []expectedCounts = {1000,
+                                    13519,
+                                    14519,
+                                    14519,
+                                    14519,
+                                    14519,
+                                    14519,
+                                    14519,
+                                    14519,
+                                    14519,
+                                    14519,
+                                    14519,
+                                    1827
+                                 };
+        for (int i = 0; i < 8; i += 1) {
+            partition = partitions.get(i);
+            InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
+            assertTrue(partitionReader.next());
+            ColumnarBatch batch = partitionReader.get();
+            assertFalse(partitionReader.next());
+            assertEquals(expectedCounts[i], batch.numRows());
+        }
     }
 
     @Test

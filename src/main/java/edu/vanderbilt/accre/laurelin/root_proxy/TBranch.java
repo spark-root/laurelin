@@ -243,7 +243,7 @@ public class TBranch {
         for (int i = 0; i < basketCount; i += 1) {
             ret[i] = baskets.get(i).getBasketEntry();
         }
-        ret[basketCount] = baskets.get(basketCount - 1).getLast();
+        ret[basketCount] = tree.getEntries();
         return ret;
     }
 }

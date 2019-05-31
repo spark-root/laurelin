@@ -47,16 +47,20 @@ public class Root implements DataSourceV2, ReadSupport {
         private String path;
         private String treeName;
         private StructType schema;
+        private long entryStart;
+        private long entryEnd;
 
         private CacheFactory basketCacheFactory;
 
 
-        public TTreeDataSourceV2Partition(String path, String treeName, StructType schema, CacheFactory basketCacheFactory) {
+        public TTreeDataSourceV2Partition(String path, String treeName, StructType schema, CacheFactory basketCacheFactory, long entryStart, long entryEnd) {
             logger.trace("dsv2partition new");
             this.path = path;
             this.treeName = treeName;
             this.schema = schema;
             this.basketCacheFactory = basketCacheFactory;
+            this.entryStart = entryStart;
+            this.entryEnd = entryEnd;
         }
 
         /*
@@ -66,7 +70,7 @@ public class Root implements DataSourceV2, ReadSupport {
         @Override
         public InputPartitionReader<ColumnarBatch> createPartitionReader() {
             logger.trace("input partition reader");
-            return new TTreeDataSourceV2PartitionReader(path, treeName, basketCacheFactory, schema);
+            return new TTreeDataSourceV2PartitionReader(path, treeName, basketCacheFactory, schema, entryStart, entryEnd);
         }
     }
 
@@ -76,18 +80,21 @@ public class Root implements DataSourceV2, ReadSupport {
         private TTree tree;
         private Cache basketCache;
         private StructType schema;
+        private long entryStart;
+        private long entryEnd;
         int currBasket = -1;
-        public TTreeDataSourceV2PartitionReader(String path, String treeName, CacheFactory basketCacheFactory, StructType schema) {
+        public TTreeDataSourceV2PartitionReader(String path, String treeName, CacheFactory basketCacheFactory, StructType schema, long entryStart, long entryEnd) {
             this.path = path;
             this.basketCache = basketCacheFactory.getCache();
             this.schema = schema;
+            this.entryStart = entryStart;
+            this.entryEnd = entryEnd;
             try {
                 file = TFile.getFromFile(path);
                 tree = new TTree(file.getProxy(treeName), file);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
         }
 
         @Override
@@ -121,11 +128,11 @@ public class Root implements DataSourceV2, ReadSupport {
                 }
                 ArrayList<TBranch> branchList = tree.getBranches(field.name());
                 assert branchList.size() == 1;
-                vecs[idx] = new TTreeColumnVector(field.dataType(), branchList.get(0), basketCache, 0, tree.getEntries());   // FIXME: entrystart, entrystop for a partition
+                vecs[idx] = new TTreeColumnVector(field.dataType(), branchList.get(0), basketCache, entryStart, entryEnd - entryStart);   // FIXME: entrystart, entrystop for a partition
                 idx += 1;
             }
             ColumnarBatch ret = new ColumnarBatch(vecs);
-            ret.setNumRows((int) tree.getEntries());
+            ret.setNumRows((int) (entryEnd - entryStart));
             return ret;
         }
     }
@@ -227,9 +234,19 @@ public class Root implements DataSourceV2, ReadSupport {
             logger.trace("planbatchinputpartitions");
             List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
             for (String path: paths) {
-                // TODO Add an option to pass through a tree name
-                // TODO split file based on clusters instead of partition-per-file
-                ret.add(new TTreeDataSourceV2Partition(path, treeName, readSchema(), basketCacheFactory));
+                // TODO We partition based on the basketing of the first branch
+                //      which might not be optimal. We should do something
+                //      smarter later
+                long[] entryOffset = currTree.getBranches().get(0).getBasketEntryOffsets();
+                for (int i = 0; i < (entryOffset.length - 1); i += 1) {
+                    long entryStart = entryOffset[i];
+                    long entryEnd = entryOffset[i+1];
+                    // the last basket is dumb and annoying
+                    if (i == (entryOffset.length - 1)) {
+                        entryEnd = currTree.getEntries();
+                    }
+                    ret.add(new TTreeDataSourceV2Partition(path, treeName, schema, basketCacheFactory, entryStart, entryEnd));
+                }
             }
             return ret;
         }
