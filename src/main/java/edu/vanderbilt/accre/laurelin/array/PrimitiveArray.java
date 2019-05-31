@@ -128,17 +128,26 @@ public abstract class PrimitiveArray extends Array {
             return Arrays.toString((int[])this.toArray());
         }
 
-        public Int4 subtract(boolean bigEndian, int subtractand) {
+        public Int4 add(boolean bigEndian, int value) {
             ByteBuffer out = ByteBuffer.allocate(length * 4);
             out.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             IntBuffer outint = out.asIntBuffer();
             IntBuffer thisint = this.buffer.asIntBuffer();
             for (int i = 0;  i < this.length;  i++) {
-                outint.put(i, thisint.get(i) - subtractand);
+                outint.put(i, thisint.get(i) + value);
             }
             return new Int4(out);
         }
+
+        public int get(int i) {
+            return this.buffer.getInt(i * 4);
+        }
+
+        public void put(int i, int value) {
+            this.buffer.putInt(i * 4, value);
+        }
+
     }
 
     /////////////////////////////////////////////////////////////////////////// Float8

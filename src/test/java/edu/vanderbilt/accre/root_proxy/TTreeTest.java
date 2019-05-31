@@ -15,7 +15,9 @@ import org.junit.Test;
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
+import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
+import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
@@ -91,6 +93,25 @@ public class TTreeTest {
         System.out.println("test3 " + testarray.toString());
         System.out.println("test3 " + testarray.length);
         //        long []basketEntryOffsets = basket.getBasketEntryOffsets();
+    }
+
+    @Test
+    public void testGetBranchBasket_slicefloat32() throws IOException {
+        TTree currTree = getTestTree();
+        List<TBranch> branches = currTree.getBranches();
+        assertEquals(19, branches.size());
+        branches = currTree.getBranches("SliceFloat32");
+        TBranch branch = branches.get(0);
+        List<TBasket> baskets = branch.getBaskets();
+        assertEquals(1, baskets.size());
+        TBasket basket = baskets.get(0);
+        ByteBuffer buf = basket.getPayload();
+
+        Cache branchCache = new Cache();
+        ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback(branchCache);
+        long [] basketEntryOffsets = branch.getBasketEntryOffsets(); //{ 0, 100 };
+        Interpretation interpretation = new AsJagged(new AsDtype(AsDtype.Dtype.FLOAT4));
+        ArrayBuilder builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, null, 0, 100);
     }
 
     @Test

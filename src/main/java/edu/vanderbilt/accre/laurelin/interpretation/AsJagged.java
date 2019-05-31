@@ -1,5 +1,7 @@
 package edu.vanderbilt.accre.laurelin.interpretation;
 
+import java.nio.ByteBuffer;
+
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.array.Array;
@@ -47,7 +49,21 @@ public class AsJagged implements Interpretation {
 
     @Override
     public Array fromroot(RawArray bytedata, PrimitiveArray.Int4 byteoffsets, int local_entrystart, int local_entrystop) {
-        throw new UnsupportedOperationException("MISSING fromroot");
+        RawArray compact = bytedata.compact(byteoffsets, this.skipbytes, local_entrystart, local_entrystop);
+
+        int innersize = ((AsDtype)this.content).itemsize() * ((AsDtype)this.content).multiplicity();
+        ByteBuffer countsbuf = ByteBuffer.allocate((local_entrystop - local_entrystart) * innersize);
+        int total = 0;
+        for (int i = local_entrystart;  i < local_entrystop;  i++) {
+            int count = (byteoffsets.get(i + 1) - byteoffsets.get(i)) / innersize;
+            countsbuf.putInt(count);
+            total += count;
+        }
+        countsbuf.position(0);
+        PrimitiveArray.Int4 counts = new PrimitiveArray.Int4(new RawArray(countsbuf));
+
+        Array content = this.content.fromroot(compact, null, 0, total);
+        return new JaggedArray(this, local_entrystop - local_entrystart, counts, content);
     }
 
     @Override

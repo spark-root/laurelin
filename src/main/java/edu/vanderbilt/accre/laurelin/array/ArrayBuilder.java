@@ -131,19 +131,16 @@ public class ArrayBuilder {
 
             tasks = new ArrayList<FutureTask<Boolean>>(basketstop - basketstart);
             for (int j = 0;  j < basketstop - basketstart;  j++) {
-                FutureTask<Boolean> task = new FutureTask<Boolean>(new CallableFill(interpretation, getbasket, j, basketkeys, array, entrystart, entrystop, basketstart, basketstop, basket_itemoffset, basket_entryoffset));
-                tasks.add(task);
-            }
-
-            for (FutureTask<Boolean> task : tasks) {
+                CallableFill fill = new CallableFill(interpretation, getbasket, j, basketkeys, array, entrystart, entrystop, basketstart, basketstop, basket_itemoffset, basket_entryoffset);
                 if (executor == null) {
-                    task.run();
+                    fill.call();
                 }
                 else {
+                    FutureTask<Boolean> task = new FutureTask<Boolean>(fill);
+                    tasks.add(task);
                     executor.execute(task);
                 }
             }
-
         }
     }
 
@@ -218,12 +215,14 @@ public class ArrayBuilder {
             RawArray basketdata = getbasket.dataWithoutKey(i);
             Array source = null;
             int border = basketkeys[i].fLast - basketkeys[i].fKeylen;
+
             if (basketkeys[i].fObjlen == border) {
                 source = interpretation.fromroot(basketdata, null, local_entrystart, local_entrystop);
             }
             else {
                 RawArray content = basketdata.slice(0, border);
-                PrimitiveArray.Int4 byteoffsets = new PrimitiveArray.Int4(basketdata.slice(border + 4, basketkeys[i].fObjlen - 4)).subtract(true, basketkeys[i].fKeylen);
+                PrimitiveArray.Int4 byteoffsets = new PrimitiveArray.Int4(basketdata.slice(border + 4, basketkeys[i].fObjlen)).add(true, -basketkeys[i].fKeylen);
+                byteoffsets.put(byteoffsets.length() - 1, border);
                 source = interpretation.fromroot(basketdata, byteoffsets, local_entrystart, local_entrystop);
             }
 

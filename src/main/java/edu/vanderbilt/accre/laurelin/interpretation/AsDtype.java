@@ -127,8 +127,7 @@ public class AsDtype implements Interpretation {
     }
 
     @Override
-    public Array fromroot(RawArray bytedata, PrimitiveArray.Int4 byteoffsets, int local_entrystart,
-            int local_entrystop) {
+    public Array fromroot(RawArray bytedata, PrimitiveArray.Int4 byteoffsets, int local_entrystart, int local_entrystop) {
         if (byteoffsets != null) {
             throw new AssertionError("byteoffsets must be null for AsDtype");
         }
