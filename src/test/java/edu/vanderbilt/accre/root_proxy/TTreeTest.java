@@ -112,6 +112,7 @@ public class TTreeTest {
         long [] basketEntryOffsets = branch.getBasketEntryOffsets(); //{ 0, 100 };
         Interpretation interpretation = new AsJagged(new AsDtype(AsDtype.Dtype.FLOAT4));
         ArrayBuilder builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, null, 0, 100);
+        builder.getArray(0, 100);
     }
 
     @Test

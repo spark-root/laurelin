@@ -7,6 +7,7 @@ import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
+import edu.vanderbilt.accre.laurelin.array.JaggedArrayPrep;
 import edu.vanderbilt.accre.laurelin.array.JaggedArray;
 
 public class AsJagged implements Interpretation {
@@ -44,7 +45,7 @@ public class AsJagged implements Interpretation {
 
     @Override
     public int source_numitems(Array source) {
-        return this.content.source_numitems(((JaggedArray)source).content());
+        return this.content.source_numitems(((JaggedArrayPrep)source).content());
     }
 
     @Override
@@ -63,34 +64,50 @@ public class AsJagged implements Interpretation {
         PrimitiveArray.Int4 counts = new PrimitiveArray.Int4(new RawArray(countsbuf));
 
         Array content = this.content.fromroot(compact, null, 0, total);
-        return new JaggedArray(this, local_entrystop - local_entrystart, counts, content);
+        return new JaggedArrayPrep(this, local_entrystop - local_entrystart, counts, content);
     }
 
     @Override
     public Array destination(int numitems, int numentries) {
         PrimitiveArray.Int4 counts = new PrimitiveArray.Int4(new AsDtype(AsDtype.Dtype.INT4), numentries);
         Array content = this.content.destination(numitems, numentries);
-        return new JaggedArray(this, numentries, counts, content);
+        return new JaggedArrayPrep(this, numentries, counts, content);
     }
 
     @Override
     public void fill(Array source, Array destination, int itemstart, int itemstop, int entrystart, int entrystop) {
-        throw new UnsupportedOperationException("MISSING fill");
+        this.content.fill(((JaggedArrayPrep)source).content(), ((JaggedArrayPrep)destination).content(), itemstart, itemstop, entrystart, entrystop);
+        ((JaggedArrayPrep)destination).counts().copyitems(((JaggedArrayPrep)source).counts(), entrystart, entrystop);
     }
 
     @Override
     public Array clip(Array destination, int entrystart, int entrystop) {
-        throw new UnsupportedOperationException("MISSING clip");
+        PrimitiveArray.Int4 counts = (PrimitiveArray.Int4)(((JaggedArrayPrep)destination).counts().clip(entrystart, entrystop));
+        // FIXME: does the content need to be explicitly clipped? Does that involve a cumsum?
+        Array content = ((JaggedArrayPrep)destination).content();
+        return new JaggedArrayPrep(this, counts.length(), counts, content);
     }
 
     @Override
     public Array finalize(Array destination) {
-        throw new UnsupportedOperationException("MISSING finalize");
+        PrimitiveArray.Int4 counts = ((JaggedArrayPrep)destination).counts();
+
+        ByteBuffer offsetsbuf = ByteBuffer.allocate((counts.length() + 1) * 4);
+        int last = 0;
+        offsetsbuf.putInt(last);
+        for (int i = 0;  i < counts.length();  i++) {
+            last += counts.get(i);
+            offsetsbuf.putInt(last);
+        }
+        offsetsbuf.position(0);
+        PrimitiveArray.Int4 offsets = new PrimitiveArray.Int4(new RawArray(offsetsbuf));
+
+        return new JaggedArray(this, counts.length(), offsets, ((JaggedArrayPrep)destination).content());
     }
 
     @Override
     public Interpretation subarray() {
-        throw new UnsupportedOperationException("MISSING subarray");
+        return this.content();
     }
 
 }

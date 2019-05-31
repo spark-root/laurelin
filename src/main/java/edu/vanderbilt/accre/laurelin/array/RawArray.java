@@ -30,10 +30,6 @@ public class RawArray extends PrimitiveArray {
 
     public RawArray slice(int start, int stop) {
         ByteBuffer tmp = buffer.duplicate();
-
-        System.out.println(String.format("%d %d %d ; %d %d", tmp.position(), tmp.limit(), tmp.capacity(), start, stop));
-
-
         tmp.position(start);
         tmp.limit(stop);
         return new RawArray(tmp.slice());
