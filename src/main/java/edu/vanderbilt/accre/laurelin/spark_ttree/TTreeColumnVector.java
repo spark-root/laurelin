@@ -18,6 +18,7 @@ import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
+import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.spark_ttree.ArrayColumnVector;
@@ -41,14 +42,15 @@ public class TTreeColumnVector extends ColumnVector {
 
         TBranch.ArrayDescriptor desc = branch.getArrayDescriptor();
         if (desc == null) {
-            AsDtype interpretation = new AsDtype(AsDtype.Dtype.FLOAT4);   // FIXME
+            Interpretation interpretation = new AsDtype(AsDtype.Dtype.FLOAT4);   // FIXME
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         }
         else if (desc.isFixed()) {
-            AsDtype interpretation = new AsDtype(AsDtype.Dtype.FLOAT4, Arrays.asList(desc.getFixedLength()));   // FIXME
+            Interpretation interpretation = new AsDtype(AsDtype.Dtype.FLOAT4, Arrays.asList(desc.getFixedLength()));   // FIXME
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         } else {
-            // FIXME!!!
+            Interpretation interpretation = new AsJagged(new AsDtype(AsDtype.Dtype.FLOAT4));   // FIXME
+            this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         }
     }
 

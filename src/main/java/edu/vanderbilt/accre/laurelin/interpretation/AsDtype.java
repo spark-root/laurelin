@@ -52,6 +52,7 @@ public class AsDtype implements Interpretation {
         return out;
     }
 
+    @Override
     public int itemsize() {
         switch (this.dtype) {
         case BOOL:

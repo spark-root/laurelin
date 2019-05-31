@@ -5,6 +5,8 @@ import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 
 public interface Interpretation {
+    public int itemsize();
+
     public Array empty();
 
     public int numitems(int numbytes, int numentries);

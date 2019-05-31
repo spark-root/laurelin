@@ -7,6 +7,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
+import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
+import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
+import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
 
 public class ArrayBuilder {
 
@@ -214,12 +217,14 @@ public class ArrayBuilder {
 
             RawArray basketdata = getbasket.dataWithoutKey(i);
             Array source = null;
-            if (basketkeys[i].fObjlen == basketkeys[i].fLast - basketkeys[i].fKeylen) {
+            int border = basketkeys[i].fLast - basketkeys[i].fKeylen;
+            if (basketkeys[i].fObjlen == border) {
                 source = interpretation.fromroot(basketdata, null, local_entrystart, local_entrystop);
             }
             else {
-                // get byteoffsets from basketdata for jagged arrays
-                throw new UnsupportedOperationException("not done yet");
+                RawArray content = basketdata.slice(0, border);
+                PrimitiveArray.Int4 byteoffsets = new PrimitiveArray.Int4(basketdata.slice(border + 4, basketkeys[i].fObjlen - 4)).subtract(true, basketkeys[i].fKeylen);
+                source = interpretation.fromroot(basketdata, byteoffsets, local_entrystart, local_entrystop);
             }
 
             int expecteditems = basket_itemoffset[j + 1] - basket_itemoffset[j];
