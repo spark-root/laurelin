@@ -27,4 +27,6 @@ public abstract class Array {
         return this.toArray(true);
     }
     abstract public Object toArray(boolean bigEndian);
+
+    abstract public Array subarray();
 }

@@ -104,6 +104,11 @@ public abstract class PrimitiveArray extends Array {
         protected Array make(ByteBuffer out) {
             return new Int4(this.interpretation, out);
         }
+
+        @Override
+        public Array subarray() {
+            return new Int4(this.interpretation.subarray(), this.buffer);
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////// Float8
@@ -141,6 +146,11 @@ public abstract class PrimitiveArray extends Array {
         protected Array make(ByteBuffer out) {
             return new Float8(this.interpretation, out);
         }
+
+        @Override
+        public Array subarray() {
+            return new Float8(this.interpretation.subarray(), this.buffer);
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////// Float4
@@ -177,6 +187,11 @@ public abstract class PrimitiveArray extends Array {
         @Override
         protected Array make(ByteBuffer out) {
             return new Float4(this.interpretation, out);
+        }
+
+        @Override
+        public Array subarray() {
+            return new Float4(this.interpretation.subarray(), this.buffer);
         }
     }
 }

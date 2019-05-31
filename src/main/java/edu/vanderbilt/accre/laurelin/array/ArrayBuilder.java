@@ -144,7 +144,7 @@ public class ArrayBuilder {
         }
     }
 
-    public Array get() {
+    public Array getArray(int rowId, int count) {
         for (FutureTask<Boolean> task : tasks) {
             try {
                 task.get();
@@ -162,11 +162,8 @@ public class ArrayBuilder {
         }
         else {
             Array clipped = interpretation.clip(array,
-                                                basket_itemoffset[0],
-                                                basket_itemoffset[basket_itemoffset.length - 1],
-                                                basket_entryoffset[0],
-                                                basket_entryoffset[basket_entryoffset.length - 1]);
-
+                                                basket_entryoffset[0] + rowId,
+                                                basket_entryoffset[0] + rowId + count);
             return interpretation.finalize(clipped);
         }
     }

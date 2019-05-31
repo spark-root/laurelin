@@ -202,18 +202,19 @@ public class AsDtype implements Interpretation {
     }
 
     @Override
-    public Array clip(Array destination, int itemstart, int itemstop, int entrystart, int entrystop) {
-        int mult = this.multiplicity();
-        if ((itemstart % mult != 0) || (itemstop % mult != 0)) {
-            throw new AssertionError(
-                    String.format("itemstart (%d) or itemstop (%d) do not divide evenly into multiplicty %d", itemstart,
-                            itemstop, mult));
-        }
-        return destination.clip(itemstart / mult, itemstop / mult);
+    public Array clip(Array destination, int entrystart, int entrystop) {
+        return destination.clip(entrystart, entrystop);
     }
 
     @Override
     public Array finalize(Array destination) {
         return destination;
+    }
+
+    public Interpretation subarray() {
+        if (this.dims.size() == 0) {
+            throw new IllegalArgumentException("trying to take the subarray of a scalar type");
+        }
+        return new AsDtype(this.dtype, this.dims.subList(1, this.dims.size()));
     }
 }

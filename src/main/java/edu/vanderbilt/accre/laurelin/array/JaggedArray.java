@@ -18,4 +18,10 @@ public class JaggedArray extends Array {
     public Object toArray(boolean bigEndian) {
         throw new UnsupportedOperationException("not implemented yet");
     }
+
+    @Override
+    public Array subarray() {
+        throw new UnsupportedOperationException("not implemented yet");
+    }
+
 }

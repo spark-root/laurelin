@@ -31,8 +31,8 @@ public class ArrayBuilderTest {
 
         ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
 
-        Assert.assertEquals(Arrays.toString((double[])(new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 0, 10)).get().toArray()), Arrays.toString(new double[]{0.0, 1.1, 2.2, 3.3, 4.4, 0.0, 1.1, 2.2, 3.3, 4.4}));
+        Assert.assertEquals(Arrays.toString((double[])(new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 0, 10)).getArray(0, 10).toArray()), Arrays.toString(new double[]{0.0, 1.1, 2.2, 3.3, 4.4, 0.0, 1.1, 2.2, 3.3, 4.4}));
 
-        Assert.assertEquals(Arrays.toString((double[])(new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9)).get().toArray()), Arrays.toString(new double[]{1.1, 2.2, 3.3, 4.4, 0.0, 1.1, 2.2, 3.3}));
+        Assert.assertEquals(Arrays.toString((double[])(new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9)).getArray(0, 8).toArray()), Arrays.toString(new double[]{1.1, 2.2, 3.3, 4.4, 0.0, 1.1, 2.2, 3.3}));
     }
 }

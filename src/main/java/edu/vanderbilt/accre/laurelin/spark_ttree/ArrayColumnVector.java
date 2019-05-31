@@ -6,56 +6,25 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarArray;
 import org.apache.spark.sql.vectorized.ColumnarMap;
 import org.apache.spark.unsafe.types.UTF8String;
 
-import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.Array;
-import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
-import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
-import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
-import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
-import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
-import edu.vanderbilt.accre.laurelin.spark_ttree.ArrayColumnVector;
 
-public class TTreeColumnVector extends ColumnVector {
-    private Cache basketCache;
-    private TBranch branch;
-    private long [] basketEntryOffsets;
-    private ArrayBuilder.GetBasket getbasket;
-    private ArrayBuilder builder;
+public class ArrayColumnVector extends ColumnVector {
+    private Array array;
 
-    public TTreeColumnVector(DataType type, TBranch branch, Cache basketCache, long entrystart, long entrystop) {
+    public ArrayColumnVector(DataType type, Array array) {
         super(type);
-        this.branch = branch;
-
-        this.basketEntryOffsets = branch.getBasketEntryOffsets();
-        this.getbasket = branch.getArrayBranchCallback(basketCache);
-        this.basketCache = basketCache;
-
-        ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
-
-        TBranch.ArrayDescriptor desc = branch.getArrayDescriptor();
-        if (desc == null) {
-            AsDtype interpretation = new AsDtype(AsDtype.Dtype.FLOAT4);   // FIXME
-            this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
-        }
-        else if (desc.isFixed()) {
-            AsDtype interpretation = new AsDtype(AsDtype.Dtype.FLOAT4, Arrays.asList(desc.getFixedLength()));   // FIXME
-            this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
-        } else {
-            // FIXME!!!
-        }
+        this.array = array;
     }
 
     @Override
     public void close() {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -108,7 +77,8 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public float getFloat(int rowId) {
-        return getFloats(rowId, 1)[0];
+        // TODO Auto-generated method stub
+        return 999;
     }
 
     @Override
@@ -119,8 +89,8 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public ColumnarArray getArray(int rowId) {
-        Array array = builder.getArray(rowId, 1).subarray();
-        return new ColumnarArray(new ArrayColumnVector(((ArrayType)dataType()).elementType(), array), 0, array.length());
+        // TODO Auto-generated method stub
+        return null;
     }
 
     @Override
@@ -189,11 +159,12 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public float[] getFloats(int rowId, int count) {
-        return (float[])(builder.getArray(rowId, count).toArray());
+        return (float[])array.toArray();
     }
 
     @Override
     public double[] getDoubles(int rowId, int count) {
-        return (double[])(builder.getArray(rowId, count).toArray());
+        // TODO Auto-generated method stub
+        return super.getDoubles(rowId, count);
     }
 }
