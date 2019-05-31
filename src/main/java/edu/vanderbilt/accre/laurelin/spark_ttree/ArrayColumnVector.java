@@ -78,7 +78,7 @@ public class ArrayColumnVector extends ColumnVector {
     @Override
     public float getFloat(int rowId) {
         // TODO Auto-generated method stub
-        return 0;
+        return 999;
     }
 
     @Override
@@ -159,8 +159,7 @@ public class ArrayColumnVector extends ColumnVector {
 
     @Override
     public float[] getFloats(int rowId, int count) {
-        // TODO Auto-generated method stub
-        return super.getFloats(rowId, count);
+        return (float[])array.toArray();
     }
 
     @Override

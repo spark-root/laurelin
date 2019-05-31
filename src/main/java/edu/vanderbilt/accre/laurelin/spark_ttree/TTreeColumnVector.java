@@ -48,7 +48,7 @@ public class TTreeColumnVector extends ColumnVector {
             AsDtype interpretation = new AsDtype(AsDtype.Dtype.FLOAT4, Arrays.asList(desc.getFixedLength()));   // FIXME
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         } else {
-            //
+            // FIXME!!!
         }
     }
 
