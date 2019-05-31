@@ -1,40 +1,39 @@
 package edu.vanderbilt.accre.laurelin;
 
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.WeakHashMap;
 
 import edu.vanderbilt.accre.laurelin.array.RawArray;
-import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
+import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
 
 public class Cache {
-    WeakHashMap<TFile, WeakHashMap<Integer, WeakReference<RawArray>>> cache;
+    WeakHashMap<ROOTFile, WeakHashMap<Integer, SoftReference<RawArray>>> cache;
 
     public Cache() {
-        cache = new WeakHashMap<TFile, WeakHashMap<Integer, WeakReference<RawArray>>>();
+        cache = new WeakHashMap<ROOTFile, WeakHashMap<Integer, SoftReference<RawArray>>>();
     }
 
-    public RawArray get(TFile backingFile, int last) {
-        RawArray ret = null;
-        WeakHashMap<Integer, WeakReference<RawArray>> fileMap = cache.get(backingFile);
+    public RawArray get(ROOTFile backingFile, int last) {
+        WeakHashMap<Integer, SoftReference<RawArray>> fileMap = cache.get(backingFile);
         if (fileMap == null) {
             return null;
         }
-        WeakReference<RawArray> ref = fileMap.get(last);
+        SoftReference<RawArray> ref = fileMap.get(last);
         if (ref == null) {
             return null;
         }
         return ref.get();
     }
 
-    public RawArray put(TFile backingFile, int last, RawArray data) {
-        WeakHashMap<Integer, WeakReference<RawArray>> fileMap = null;
+    public RawArray put(ROOTFile backingFile, int last, RawArray data) {
+        WeakHashMap<Integer, SoftReference<RawArray>> fileMap = null;
         while (fileMap == null) {
             fileMap = cache.get(backingFile);
             if (fileMap == null) {
-                cache.putIfAbsent(backingFile, new WeakHashMap<Integer, WeakReference<RawArray>>());
+                cache.putIfAbsent(backingFile, new WeakHashMap<Integer, SoftReference<RawArray>>());
             }
         }
-        fileMap.put(last, new WeakReference<RawArray>(data));
+        fileMap.put(last, new SoftReference<RawArray>(data));
         return data;
     }
 
