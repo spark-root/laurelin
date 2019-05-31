@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import edu.vanderbilt.accre.laurelin.Cache;
-import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
-import edu.vanderbilt.accre.laurelin.array.RawArray;
-
 public class TBranch {
     protected Proxy data;
     protected ArrayList<TBranch> branches;
@@ -105,6 +101,10 @@ public class TBranch {
         }
     }
 
+    public TTree getTree() {
+        return tree;
+    }
+
     public String getTitle() {
         return (String) data.getScalar("fTitle").getVal();
     }
@@ -189,48 +189,6 @@ public class TBranch {
                 throw new RuntimeException("Unable to parse array indices");
             }
         }
-    }
-
-    class BranchCallback implements ArrayBuilder.GetBasket {
-        Cache basketCache;
-        TBranch branch;
-
-        public BranchCallback(Cache basketCache, TBranch branch) {
-            this.basketCache = basketCache;
-            this.branch = branch;
-        }
-
-        @Override
-        public ArrayBuilder.BasketKey basketkey(int basketid) {
-            TBasket basket = branch.baskets.get(basketid);
-            return new ArrayBuilder.BasketKey(basket.getKeyLen(), basket.getLast(), basket.getObjLen());
-        }
-
-        @Override
-        public RawArray dataWithoutKey(int basketid) {
-            TBasket basket = branch.baskets.get(basketid);
-            try {
-                // the last byte of each basket is guaranteed to be unique and
-                // stable
-                RawArray data = basketCache.get(branch.tree.getBackingFile(), basket.getLast());
-                if (data == null) {
-                    data = new RawArray(basket.getPayload());
-                    basketCache.put(branch.tree.getBackingFile(), basket.getLast(), data);
-                }
-                return data;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    /**
-     * Glue callback to integrate with edu.vanderbilt.accre.laurelin.array
-     *
-     * @return GetBasket object used by array
-     */
-    public ArrayBuilder.GetBasket getArrayBranchCallback(Cache basketCache) {
-        return new BranchCallback(basketCache, this);
     }
 
     public boolean typeUnhandled() { return false; }

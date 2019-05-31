@@ -13,7 +13,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import org.junit.Test;
 
 import edu.vanderbilt.accre.laurelin.Cache;
-import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
@@ -21,6 +20,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TLeaf;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
+import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 
 public class TTreeTest {
 
@@ -80,17 +80,12 @@ public class TTreeTest {
         ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
 
         Cache branchCache = new Cache();
-        ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback(branchCache);
-        long [] basketEntryOffsets = branch.getBasketEntryOffsets(); //{ 0, 100 };
+        SlimTBranch slimBranch = SlimTBranch.getFromTBranch(branch);
+        ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache);
+        long []basketEntryOffsets = slimBranch.getBasketEntryOffsets();
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT8);
         ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9);
-        System.out.println(builder);
-        System.out.println("test1 " + (double[])builder.getArray(0, 8).toArray());
-        System.out.println("test2 " + builder.getArray(0, 8).toArray().toString());
         double [] testarray = (double[])builder.getArray(0, 8).toArray();
-        System.out.println("test3 " + testarray.toString());
-        System.out.println("test3 " + testarray.length);
-        //        long []basketEntryOffsets = basket.getBasketEntryOffsets();
     }
 
     @Test
@@ -98,12 +93,6 @@ public class TTreeTest {
         TTree currTree = getBigTestTree();
         List<TBranch> branches = currTree.getBranches();
         assertEquals(866, branches.size());
-        for (TBranch branch: branches) {
-            System.out.println(branch.getName() + " - " + branch.getTitle());
-            for (TLeaf leaf: branch.getLeaves()) {
-                System.out.println("  " + leaf.getName() + " - " + leaf.getTitle());
-            }
-        }
         branches = currTree.getBranches("CaloMET_phi");
         TBranch branch = branches.get(0);
         List<TBasket> baskets = branch.getBaskets();
@@ -118,17 +107,11 @@ public class TTreeTest {
         ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
 
         Cache branchCache = new Cache();
-        ArrayBuilder.GetBasket getbasket = branch.getArrayBranchCallback(branchCache);
-        long [] basketEntryOffsets = branch.getBasketEntryOffsets(); //{ 0, 100 };
+        SlimTBranch slimBranch = SlimTBranch.getFromTBranch(branch);
+        ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache);
+        long [] basketEntryOffsets = slimBranch.getBasketEntryOffsets(); //{ 0, 100 };
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);
         ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9);
-        System.out.println(builder);
-        System.out.println("test1 " + (float[])builder.getArray(0, 8).toArray());
-        System.out.println("test2 " + builder.getArray(0, 8).toArray().toString());
-        float []testarray = (float [])builder.getArray(0, 8).toArray();
-        System.out.println("test3 " + testarray.toString());
-        System.out.println("test3 " + testarray.length);
-        //        long []basketEntryOffsets = basket.getBasketEntryOffsets();
     }
 
     @Test

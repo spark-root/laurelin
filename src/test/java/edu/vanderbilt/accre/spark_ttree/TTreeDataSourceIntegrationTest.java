@@ -28,6 +28,7 @@ public class TTreeDataSourceIntegrationTest {
                  .option("tree",  "tree")
                  .load("testdata/uproot-small-flat-tree.root");
          df = df.select("Float32", "ArrayFloat32");
+         df.printSchema();
          df.show();
          assertEquals(100, df.count());
      }

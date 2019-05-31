@@ -11,8 +11,8 @@ import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.root_proxy.Cursor;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
+import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
-import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 
 /**
  * Contains all the info needed to read a TBranch and its constituent TBaskets
@@ -31,6 +31,21 @@ public class SlimTBranch implements Serializable {
         this.basketEntryOffsets = basketEntryOffsets;
         this.baskets = new LinkedList<SlimTBasket>();
         this.arrayDesc = desc;
+    }
+
+    public static SlimTBranch getFromTBranch(TBranch fatBranch) {
+        SlimTBranch slimBranch = new SlimTBranch(fatBranch.getTree().getBackingFile().getFileName(), fatBranch.getBasketEntryOffsets(), fatBranch.getArrayDescriptor());
+        for (TBasket basket: fatBranch.getBaskets()) {
+            SlimTBasket slimBasket = new SlimTBasket(slimBranch,
+                                                        basket.getAbsoluteOffset(),
+                                                        basket.getBasketBytes() - basket.getKeyLen(),
+                                                        basket.getObjLen(),
+                                                        basket.getKeyLen(),
+                                                        basket.getLast()
+                                                        );
+            slimBranch.addBasket(slimBasket);
+        }
+        return slimBranch;
     }
 
     public long [] getBasketEntryOffsets() {
@@ -83,7 +98,7 @@ public class SlimTBranch implements Serializable {
             try {
                 // the last event of each basket is guaranteed to be unique and
                 // stable
-                TFile tmpFile = TFile.getFromFile(path);
+                ROOTFile tmpFile = ROOTFile.getInputFile(path);
                 RawArray data = basketCache.get(tmpFile, basket.getLast());
                 if (data == null) {
                     data = new RawArray(basket.getPayload());

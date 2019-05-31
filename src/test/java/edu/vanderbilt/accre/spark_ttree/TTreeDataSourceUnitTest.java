@@ -107,8 +107,8 @@ public class TTreeDataSourceUnitTest {
         Root source = new Root();
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
         // only get a scalar float_t for now since that's all that works
-        StructType prune = new StructType();
-        prune.add(new StructField("CaloMET_pt", DataTypes.FloatType, false, Metadata.empty()));
+        StructType prune = new StructType()
+                            .add(new StructField("CaloMET_pt", DataTypes.FloatType, false, Metadata.empty()));
         reader.pruneColumns(prune);
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);

@@ -25,13 +25,11 @@ import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
-import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TLeaf;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
-import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch.SlimTBasket;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
 public class Root implements DataSourceV2, ReadSupport {
@@ -133,7 +131,8 @@ public class Root implements DataSourceV2, ReadSupport {
 
     public static class TTreeDataSourceV2Reader implements DataSourceReader,
     SupportsScanColumnarBatch,
-    SupportsPushDownRequiredColumns {
+    SupportsPushDownRequiredColumns
+    {
         private String[] paths;
         private String treeName;
         private TTree currTree;
@@ -228,41 +227,37 @@ public class Root implements DataSourceV2, ReadSupport {
             logger.trace("planbatchinputpartitions");
             List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
             for (String path: paths) {
+                TTree inputTree;
+                try {
+                    TFile inputFile = TFile.getFromFile(path);
+                    inputTree = new TTree(currFile.getProxy(treeName), inputFile);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
                 Map<String, SlimTBranch> slimBranches = new HashMap<String, SlimTBranch>();
                 for (StructField field: schema.fields())  {
                     if (field.dataType() instanceof StructType) {
                         throw new RuntimeException("Nested fields are not supported: " + field.name());
                     }
-                    ArrayList<TBranch> branchList = currTree.getBranches(field.name());
+                    ArrayList<TBranch> branchList = inputTree.getBranches(field.name());
                     assert branchList.size() == 1;
                     TBranch fatBranch = branchList.get(0);
-                    long[] entryOffset = fatBranch.getBasketEntryOffsets();
-                    SlimTBranch slimBranch = new SlimTBranch(path, entryOffset, fatBranch.getArrayDescriptor());
-                    slimBranches.put(field.name(), slimBranch);
-                    for (TBasket basket: fatBranch.getBaskets()) {
-                        SlimTBasket slimBasket = new SlimTBasket(slimBranch,
-                                                                    basket.getAbsoluteOffset(),
-                                                                    basket.getBasketBytes() - basket.getKeyLen(),
-                                                                    basket.getObjLen(),
-                                                                    basket.getKeyLen(),
-                                                                    basket.getLast()
-                                                                    );
-                        slimBranch.addBasket(slimBasket);
-                    }
-
+                    SlimTBranch slimBranch = SlimTBranch.getFromTBranch(fatBranch);
+                    slimBranches.put(fatBranch.getName(), slimBranch);
                 }
 
 
                 // TODO We partition based on the basketing of the first branch
                 //      which might not be optimal. We should do something
                 //      smarter later
-                long[] entryOffset = currTree.getBranches().get(0).getBasketEntryOffsets();
+                long[] entryOffset = inputTree.getBranches().get(0).getBasketEntryOffsets();
                 for (int i = 0; i < (entryOffset.length - 1); i += 1) {
                     long entryStart = entryOffset[i];
                     long entryEnd = entryOffset[i+1];
                     // the last basket is dumb and annoying
                     if (i == (entryOffset.length - 1)) {
-                        entryEnd = currTree.getEntries();
+                        entryEnd = inputTree.getEntries();
                     }
 
                     ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, slimBranches));
@@ -273,7 +268,7 @@ public class Root implements DataSourceV2, ReadSupport {
 
         @Override
         public void pruneColumns(StructType requiredSchema) {
-            logger.trace("prunecolumns");
+            logger.trace("prunecolumns ");
             schema = requiredSchema;
         }
 
