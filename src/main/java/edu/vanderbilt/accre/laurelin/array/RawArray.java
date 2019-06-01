@@ -37,7 +37,33 @@ public class RawArray extends PrimitiveArray {
 
     @Override
     public Array clip(int start, int stop) {
-        throw new UnsupportedOperationException("not implemented yet");
+        ByteBuffer out = this.buffer.duplicate();
+        out.position(start);
+        out.limit(stop);
+        return this.make(out);
+    }
+
+    public RawArray compact(PrimitiveArray.Int4 byteoffsets, int skipbytes, int local_entrystart, int local_entrystop) {
+        if (skipbytes == 0) {
+            ByteBuffer out = this.buffer.duplicate();
+            out.position(byteoffsets.get(local_entrystart));
+            out.limit(byteoffsets.get(local_entrystop));
+            return new RawArray(out);
+        }
+        else {
+            ByteBuffer out = ByteBuffer.allocate(byteoffsets.get(local_entrystop) - byteoffsets.get(local_entrystart) - skipbytes * (local_entrystop - local_entrystart));
+            this.buffer.position(0);
+            for (int i = local_entrystart;  i < local_entrystop;  i++) {
+                int start = byteoffsets.get(i) + skipbytes;
+                int count = byteoffsets.get(i + 1) - start;
+                byte[] copy = new byte[count];
+                this.buffer.get(copy);
+                out.put(copy);
+            }
+            this.buffer.position(0);
+            out.position(0);
+            return new RawArray(out);
+        }
     }
 
     @Override
