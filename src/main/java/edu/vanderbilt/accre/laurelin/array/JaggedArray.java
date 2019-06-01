@@ -25,16 +25,16 @@ public class JaggedArray extends Array {
     }
 
     public Array clip(int start, int stop) {
-        throw new UnsupportedOperationException("not implemented yet");
+        throw new UnsupportedOperationException("not implemented yet: clip");
     }
 
     public Object toArray(boolean bigEndian) {
-        throw new UnsupportedOperationException("not implemented yet");
+        throw new UnsupportedOperationException("not implemented yet: toArray");
     }
 
     @Override
     public Array subarray() {
-        throw new UnsupportedOperationException("not implemented yet");
+        throw new UnsupportedOperationException("not implemented yet: subarray");
     }
 
 }

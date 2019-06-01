@@ -24,7 +24,7 @@ public abstract class PrimitiveArray extends Array {
     }
 
     protected PrimitiveArray(Interpretation interpretation, ByteBuffer buffer) {
-        super(interpretation, buffer.limit() / ((interpretation == null) ? 1 : ((AsDtype)interpretation).itemsize() * ((AsDtype)interpretation).multiplicity()));
+        super(interpretation, (buffer.limit() - buffer.position()) / ((interpretation == null) ? 1 : ((AsDtype)interpretation).itemsize() * ((AsDtype)interpretation).multiplicity()));
         this.buffer = buffer;
     }
 

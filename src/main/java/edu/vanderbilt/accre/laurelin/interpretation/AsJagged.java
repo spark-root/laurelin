@@ -35,7 +35,7 @@ public class AsJagged implements Interpretation {
 
     @Override
     public Array empty() {
-        return new JaggedArray(this, 0, new PrimitiveArray.Int4(new AsDtype(AsDtype.Dtype.INT4), 0), this.content.empty());
+        return new JaggedArrayPrep(this, 0, new PrimitiveArray.Int4(new AsDtype(AsDtype.Dtype.INT4), 0), this.content.empty());
     }
 
     @Override

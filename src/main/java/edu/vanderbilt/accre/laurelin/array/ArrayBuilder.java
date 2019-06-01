@@ -156,16 +156,7 @@ public class ArrayBuilder {
                 throw new RuntimeException(e.toString());
             }
         }
-
-        if (basket_itemoffset == null) {
-            return array;
-        }
-        else {
-            Array clipped = interpretation.clip(array,
-                                                basket_entryoffset[0] + rowId,
-                                                basket_entryoffset[0] + rowId + count);
-            return interpretation.finalize(clipped);
-        }
+        return array.clip(basket_entryoffset[0] + rowId, basket_entryoffset[0] + rowId + count);
     }
 
     static private class CallableFill implements Callable<Boolean> {
