@@ -274,16 +274,4 @@ public class TTreeDataSourceUnitTest {
         assertFloatArrayEquals(new float[] { 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f}, float32col.getArray(31).toFloatArray());
     }
 
-    //	@Test
-    //	public void testPlanPruneColumns() {
-    //		Map<String, String> optmap = new HashMap<String, String>();
-    //		DataSourceOptions opts = new DataSourceOptions(optmap);
-    //		TTreeDataSourceV2 source = new TTreeDataSourceV2();
-    //		TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
-    //		StructType schema = new StructType();
-    //		schema.add("Float32", DataTypes.ByteType);
-    //		reader.pruneColumns(schema);
-    //	}
-
-
 }
