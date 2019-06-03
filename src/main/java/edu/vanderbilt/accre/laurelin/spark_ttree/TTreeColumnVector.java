@@ -1,12 +1,11 @@
 package edu.vanderbilt.accre.laurelin.spark_ttree;
 
-import java.util.List;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.ArrayType;
+import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarArray;
@@ -16,31 +15,25 @@ import org.apache.spark.unsafe.types.UTF8String;
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
-import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
-import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
+import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
-import edu.vanderbilt.accre.laurelin.spark_ttree.ArrayColumnVector;
 
 public class TTreeColumnVector extends ColumnVector {
-    private Cache basketCache;
-    private TBranch branch;
     private long [] basketEntryOffsets;
     private ArrayBuilder.GetBasket getbasket;
     private ArrayBuilder builder;
 
-    public TTreeColumnVector(DataType type, TBranch branch, Cache basketCache, long entrystart, long entrystop) {
+    public TTreeColumnVector(DataType type, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch) {
         super(type);
-        this.branch = branch;
 
-        this.basketEntryOffsets = branch.getBasketEntryOffsets();
-        this.getbasket = branch.getArrayBranchCallback(basketCache);
-        this.basketCache = basketCache;
+        this.basketEntryOffsets = slimBranch.getBasketEntryOffsets();
+        this.getbasket = slimBranch.getArrayBranchCallback(basketCache);
 
         ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
 
-        TBranch.ArrayDescriptor desc = branch.getArrayDescriptor();
+        TBranch.ArrayDescriptor desc = slimBranch.getArrayDesc();
         if (desc == null) {
             Interpretation interpretation = new AsDtype(AsDtype.Dtype.FLOAT4);   // FIXME
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
