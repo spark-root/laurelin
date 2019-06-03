@@ -49,8 +49,8 @@ public class TTree {
     /**
      * Returns either all branches or just the specified branches
      *
-     * @param names
-     * @return
+     * @param names branches to return
+     * @return list of branches specified or all if no branches are specified
      */
     public ArrayList<TBranch> getBranches(String... names) {
         if (names.length == 0) {

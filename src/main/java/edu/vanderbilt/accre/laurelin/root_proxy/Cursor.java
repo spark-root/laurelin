@@ -3,8 +3,6 @@ package edu.vanderbilt.accre.laurelin.root_proxy;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Represents a pseudo "file pointer" into pluggable backings. The ROOTFile
@@ -24,7 +22,7 @@ public class Cursor {
 	 * position
 	 */
 	protected long base;
-	
+
 	/**
 	 * Needed to get Streamers working
 	 */
@@ -36,19 +34,19 @@ public class Cursor {
 	protected long off;
 	private BackingBuf buf;
 	private Cursor parent;
-	
+
 	public Cursor(BackingBuf impl, long base) {
 		this.buf = impl;
 		this.base = base;
 		this.origin = 0;
 	}
-	
+
 	public Cursor getParent() {
 		return parent;
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @return The oldest ancestor of this cursor
 	 */
 	public Cursor getOldestParent() {
@@ -58,7 +56,7 @@ public class Cursor {
 			return parent.getParent();
 		}
 	}
-	
+
 	public Cursor duplicate() {
 		Cursor ret = new Cursor(buf.duplicate(), base);
 		ret.setOffset(off);
@@ -68,17 +66,17 @@ public class Cursor {
 		ret.origin = this.origin;
 		return ret;
 	}
-	
+
 	public Cursor getSubcursor(long off) {
 		Cursor tmp = this.duplicate();
 		tmp.setOffset(off);
 		return tmp;
 	}
-	
+
 	public long getOrigin() {
 		return origin;
 	}
-	
+
 	public long getBase() {
 		if (parent != null) {
 			return base + parent.getBase();
@@ -86,15 +84,15 @@ public class Cursor {
 			return base;
 		}
 	}
-	
+
 	public long getLimit() throws IOException {
 		return buf.getLimit();
 	}
-	
+
 	/*
 	 * Stolen from uproot
 	 */
-	
+
 //	def _startcheck(source, cursor):
 //	    start = cursor.index
 //	    cnt, vers = cursor.fields(source, _startcheck._format_cntvers)
@@ -127,7 +125,7 @@ public class Cursor {
 	/**
 	 * Gets a subcursor that might be compressed. You can tell if it's
 	 * compressed if compressedLen != uncompressedLen. If that's true, read
-	 * ROOT's "compression frame" to get algorithm & parameters
+	 * ROOT's "compression frame" to get algorithm &amp; parameters
 	 *
 	 * @param off Beginning of this possibly compressed byterange
 	 * @param compressedLen Length of this byterange in the parent
@@ -166,108 +164,108 @@ public class Cursor {
 	 * Map 1,2,4,8-byte (un)signed integers to java types
 	 */
 
-	
+
 	public byte readChar(long offset) throws IOException {
 		return buf.read(base + offset, 1).get(0);
 	}
-	
+
 	public byte readChar() throws IOException {
 		byte ret = readChar(off);
 		off += 1;
 		return ret;
 	}
-	
+
 	public short readUChar(long offset) throws IOException {
 		short ret = buf.read(base + offset, 1).get(0);
 		if (ret < 0)
 			ret += 256;
 		return ret;
 	}
-	
+
 	public short readUChar() throws IOException {
 		short ret = readUChar(off);
 		off += 1;
 		return ret;
 	}
-	
+
 	public short readShort(long offset) throws IOException {
 		return buf.read(base + offset, 2).getShort(0);
 	}
-	
+
 	public short readShort() throws IOException {
 		short ret = readShort(off);
 		off += 2;
 		return ret;
 	}
-	
+
 	public int readUShort(long offset) throws IOException {
 		int ret = buf.read(base + offset, 2).getShort(0);
 		if (ret < 0)
 			ret += 65536L;
 		return ret;
 	}
-	
+
 	public int readUShort() throws IOException {
 		int ret = readUShort(off);
 		off += 2;
 		return ret;
 	}
-	
+
 	public int readInt(long offset) throws IOException {
 		return buf.read(base + offset, 4).getInt(0);
 	}
-	
+
 	public int readInt() throws IOException {
 		int ret = readInt(off);
 		off += 4;
 		return ret;
 	}
-	
+
 	public int[] readIntArray(int len) throws IOException {
 		int []ret = new int[len];
 		buf.read(off + base, len * 4).asIntBuffer().get(ret, 0, len);
 		off += len * 4;
 		return ret;
 	}
-	
+
 	public long readUInt(long offset) throws IOException {
 		long ret = buf.read(base + offset, 4).getInt(0);
 		if (ret < 0)
 			ret += 4294967296L;
 		return (ret & 0xFFFFFFFFL);
 	}
-	
+
 	public long readUInt() throws IOException {
 		long ret = readUInt(off);
 		off += 4;
 		return ret;
 	}
-	
+
 	public long readLong(long offset) throws IOException {
 		return buf.read(base + offset, 8).getLong(0);
 	}
-	
+
 	public long readLong() throws IOException {
 		long ret = readLong(off);
 		off += 8;
 		return ret;
 	}
-	
+
 	public long[] readLongArray(int len) throws IOException {
 		long []ret = new long[len];
 		buf.read(base + off, len * 8).asLongBuffer().get(ret, 0, len);
 		off += len * 8;
 		return ret;
 	}
-	
-	public BigInteger readULong(long offset) throws IOException {		
+
+	public BigInteger readULong(long offset) throws IOException {
 		BigInteger ret = new BigInteger(buf.read(base + offset, 8).array());
 		if (ret.compareTo(BigInteger.ZERO) == -1) {
 			ret = ret.add(BigInteger.valueOf(2).pow(64));
 		}
 		return ret;
 	}
-	
+
 	public BigInteger readULong() throws IOException {
 		BigInteger ret = readULong(off);
 		off += 8;
@@ -280,30 +278,30 @@ public class Cursor {
 	public float readFloat(long offset) throws IOException {
 		return buf.read(base + offset, 4).getFloat(0);
 	}
-	
+
 	public float readFloat() throws IOException {
 		float ret = readFloat(off);
 		off += 4;
 		return ret;
 	}
-	
+
 	public double readDouble(long offset) throws IOException {
 		return buf.read(base + offset, 8).getDouble(0);
 	}
-	
+
 	public double readDouble() throws IOException {
 		double ret = readDouble(off);
 		off += 8;
 		return ret;
 	}
-	
+
 	public double[] readDoubleArray(int len) throws IOException {
 		double []ret = new double[len];
 		buf.read(base + off, len * 8).asDoubleBuffer().get(ret, 0, len);
 		off += len * 8;
 		return ret;
 	}
-	
+
 	public String readTString(long offset) throws IOException {
 		int l = readUChar(offset);
 		offset += 1;
@@ -327,7 +325,7 @@ public class Cursor {
 		}
 		return ret;
 	}
-	
+
 	public String readTString() throws IOException {
 		String ret = readTString(off);
 		if (ret.length() < 255) {
@@ -370,13 +368,13 @@ public class Cursor {
 //		return new String(tmpbuf.array(), charset);
 		return ret;
 	}
-	
+
 	public String readCString() throws IOException {
 		String ret = readCString(off);
 		// Skip the null byte
 		off += ret.length() + 1;
 		return ret;
 	}
-		
+
 }
 

@@ -94,7 +94,7 @@ public class TBasket {
         return fBasketEntry;
     }
 
-    /**
+    /*
      * returns the absolute offset from the beginning of the file to the first
      * byte of the payload
      */

@@ -11,13 +11,13 @@ public class Streamer {
 	public Streamer() { }
 	ArrayList<Proxy> streamerList;
 	HashMap<String, Proxy> streamerMap;
-	HashMap<Long, Proxy> classMap; 
+	HashMap<Long, Proxy> classMap;
 	public void getFromCursor(Cursor c, long off) throws IOException {
 		/*
 		 * This is used to parse the toplevel Streamer info from ROOT, e.g.
 		 * TFile->fSeekInfo
-		 * 		
-		 * 
+		 *
+		 *
 		 * https://github.com/scikit-hep/uproot/blob/662d1f859f8ba7a5d908a249b3cae5b743e56a19/uproot/rootio.py#L521
 		 *
 		 */
@@ -25,7 +25,7 @@ public class Streamer {
 		TList listInfo = new TList();
 		RangeCheck check = new RangeCheck(c);
 		listInfo.readFromCursor(c.getSubcursor(off));
-		
+
 		int count = listInfo.size();
 		Cursor dataCursor = listInfo.getDataCursor();
 		ProxyArray arr = new ProxyArray();
@@ -38,21 +38,21 @@ public class Streamer {
 			dataCursor.setOffset(dataCursor.getOffset() + n);
 		}
 		check.verify(dataCursor);
-		
-		streamerMap = new HashMap<String, Proxy>(); 
+
+		streamerMap = new HashMap<String, Proxy>();
 		for (Proxy p : arr) {
 			String name = (String)p.getScalar("fName").getVal();
 			streamerMap.put(name, p);
 			streamerList.add(p);
 		}
 	}
-	
-	/**
+
+	/*
 	 * Deserializes an object described with the given TKey
 	 * @param key
 	 * @param c
 	 * @return
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public Proxy deserializeWithStreamer(TKey key, Cursor c) throws IOException {
 		Proxy ret = new Proxy();
@@ -125,7 +125,7 @@ public class Streamer {
 				if (subObj.getClassName().equals("") && fTypeName != null) {
 					subObj.setClass(fTypeName);
 				} else if (subObj.getClassName().equals("") && fType != null) {
-					subObj.setClass("" + (Integer) ele.getScalar("fType").getVal());
+					subObj.setClass("" + ele.getScalar("fType").getVal());
 				}
 				break;
 			default:
@@ -135,15 +135,15 @@ public class Streamer {
 		if (!fClassName.equals("TSeqCollection") && !fClassName.contentEquals("TObjArray")) {
 			check.verify(c);
 		}
-		
+
 		ret.setClass(fClassName);
 		deserializeDepth -= 1;
 		return ret;
 	}
-	
+
 	private Proxy deserializeTArray(Cursor c,Proxy ret,String fClassName) throws IOException {
 		int length = c.readInt();
-		
+
 		switch (fClassName) {
 		case "TArrayD":
 			ProxyElement<double []> dret = new ProxyElement<double []>();
@@ -159,7 +159,7 @@ public class Streamer {
 			throw new IOException("Unknown TArray type: " + fClassName);
 		}
 	}
-	
+
 	private Proxy deserializeTStreamerObjectPointer(Proxy ele, Cursor c, Proxy ret) throws IOException {
 		// if element._fType == kObjectp or element._fType == kAnyp:
 		int fType = (int) ele.getScalar("fType").getVal();
@@ -176,11 +176,11 @@ public class Streamer {
 		} else {
 			throw new IOException("Unsupported fType in object pointer " + fType);
 		}
-		
+
 		return ret;
-		
+
 	}
-	
+
 	private Proxy deserializeTObjArray(Cursor c, Proxy ret) throws IOException {
 		ProxyArray arrret = new ProxyArray();
 		RangeCheck check = new RangeCheck(c);
@@ -204,35 +204,35 @@ public class Streamer {
 
 			arrret.add(test);
 		}
-		
+
 		check.verify(c);
-		ret = (Proxy)arrret;
-		return (Proxy)arrret;
+		ret = arrret;
+		return arrret;
 	}
 	private Proxy deserializeStreamerBasicPointer(Proxy ele, Cursor c, Proxy ret) throws IOException {
 		// Don't know what to do with these yet
 		/*
-        assert uproot.const.kOffsetP < element._fType < uproot.const.kOffsetP + 20 
-        fType = element._fType - uproot.const.kOffsetP                  
-                                                                        
-        dtypename = "_dtype{0}".format(len(dtypes) + 1)                 
-        dtypes[dtypename] = _ftype2dtype(fType)                         
-                                                                        
+        assert uproot.const.kOffsetP < element._fType < uproot.const.kOffsetP + 20
+        fType = element._fType - uproot.const.kOffsetP
+
+        dtypename = "_dtype{0}".format(len(dtypes) + 1)
+        dtypes[dtypename] = _ftype2dtype(fType)
+
         code.append("        fBasketSeek_dtype = cls.{0}".format(dtypename))
         if streamerinfo._fName == b"TBranch" and element._fName == b"fBasketSeek":
             code.append("        if getattr(context, \"speedbump\", True):")
             code.append("            if cursor.bytes(source, 1)[0] == 2:")
             code.append("                fBasketSeek_dtype = numpy.dtype('>i8')")
-        else:                                                           
+        else:
             code.append("        if getattr(context, \"speedbump\", True):")
-            code.append("            cursor.skip(1)")                   
-                                                                        
+            code.append("            cursor.skip(1)")
+
         code.append("        self._{0} = cursor.array(source, self._{1}, fBasketSeek_dtype)".format(_safename(element._fName), _safename(element._fCountName)))
-        fields.append(_safename(element._fName))                        
+        fields.append(_safename(element._fName))
         recarray.append("raise ValueError('not a recarray')")
         */
 		//ele.dump();
-		
+
 		// https://github.com/cxx-hep/root-cern/blob/87292c7e536c606c81addb1979ea2758f49e5fc4/io/io/src/TStreamerInfoReadBuffer.cxx#L67
 		c.readChar();
 		int fType = (int) ele.getScalar("fType").getVal() - Constants.kOffsetP;
@@ -251,13 +251,13 @@ public class Streamer {
 
 		return ret;
 	}
-	
+
 	private Proxy deserializeStreamerString(Proxy ele, Cursor c, Proxy ret) throws IOException {
 		String fName = (String) ele.getScalar("fName").getVal();
 		ret.putScalar(fName, c.readTString());
 		return ret;
 	}
-	
+
 	private Proxy deserializeStreamerBasicType(Proxy ele, Cursor c, Proxy ret) throws IOException {
 		int fArrayLength = (int) ele.getScalar("fArrayLength").getVal();
 		if (fArrayLength != 0) { throw new IOException("oops"); }
@@ -313,7 +313,7 @@ public class Streamer {
 		}
 		return ret;
 	}
-	
+
 	private Proxy getStreamer(String name, int version) throws IOException {
 		Proxy ret = streamerMap.get(name);
 		if (!streamerMap.containsKey(name)) {
@@ -323,7 +323,7 @@ public class Streamer {
 		if (streamerVers == version) {
 			return ret;
 		}
-		
+
 		// Search the whole list for the correct streamer corresponding to the requested version
 		for (Proxy streamer: streamerList) {
 			String streamerName = (String) streamer.getScalar("fName").getVal();
@@ -333,7 +333,7 @@ public class Streamer {
 			} else if ((streamerEle == null)) {
 				continue;
 			}
-			streamerVers = (int) streamerEle.getVal();
+			streamerVers = streamerEle.getVal();
 
 			if ((streamerName.equals(name)) && (streamerVers == version)) {
 				return streamer;
@@ -341,7 +341,7 @@ public class Streamer {
 		}
 		return ret;
 	}
-	
+
 	// HACK - dedup with ClassDeserializer
 	private void parseTObject(Cursor cursor, Proxy target) throws IOException {
 		// Stolen from uproot
@@ -354,7 +354,7 @@ public class Streamer {
 	    target.putScalar("fUniqueID", cursor.readUInt());
 	    fBits = cursor.readUInt();
 	    fBits = fBits | Constants.kIsOnHeap;
-	    		
+
 	    if ((fBits & Constants.kIsReferenced) != 0)
 	        cursor.skipBytes(2);
 	    target.putScalar("fBits", fBits);
@@ -372,7 +372,7 @@ public class Streamer {
 			long tag;
 			long beg = cursor.getOffset() - cursor.getOrigin();
 			long bcnt = cursor.readUInt();
-	
+
 			if (((bcnt & Constants.kByteCountMask) == 0) || (bcnt == Constants.kNewClassTag)) {
 				vers = 0;
 				start = 0;
@@ -408,37 +408,37 @@ public class Streamer {
 				String cname = cursor.readCString();
 	            //GenericRootClass rootClass = (GenericRootClass) in.getFactory().create(className);
 	            ClassDeserializer rootClass = new ClassDeserializer(cname, this);
-	            
+
 	            // Add this class to the map
 	            long classKey;
 	            if (vers > 0)
 	            	classKey = start + Constants.kMapOffset;
 	            else
 	            	classKey = classMap.size() + 1;
-	            
+
 	            //System.out.println("key1 " + classKey);
 	            classMap.put(new Long(classKey), rootClass);
-	            
+
 	            Proxy realRootClass = rootClass.read(cursor, classMap);
-	            
+
 	            // Add this instance to the map
 	            if (vers > 0)
 	            	classKey = beg + Constants.kMapOffset;
 	            else
 	            	classKey = classMap.size() + 1;
-	            
+
 				assert realRootClass != null;
 
 	            //System.out.println("key2 " + classKey);
 	            classMap.put(new Long(classKey), realRootClass);
-	            
+
 	            // realRootClass.readFromFile()
 	            // obj.read(in);
 	            return realRootClass;
 			} else {
 				// new object from existing class
 				tag &= ~Constants.kClassMask;
-	
+
 				ClassDeserializer cls = (ClassDeserializer) classMap.get(new Long(tag));
 				if ((cls == null) || !(cls instanceof Proxy))
 				{
@@ -446,10 +446,10 @@ public class Streamer {
 	//				while (i.hasNext())
 					throw new IOException("Invalid object tag " + tag);
 				}
-				
+
 	//			GenericRootClass rootClass = (GenericRootClass) cls;
 	//			AbstractRootObject obj = rootClass.newInstance();
-	
+
 				Proxy instance = cls.read(cursor, classMap);
 				assert instance != null;
 
@@ -458,13 +458,13 @@ public class Streamer {
 					Long offset = new Long(beg + Constants.kMapOffset);
 		            //System.out.println("key3 " + offset);
 					classMap.put(offset, instance);
-	
+
 				}
 				else {
 					Long offset = new Long(classMap.size() + 1);
 					classMap.put(offset, instance);
 				}
-				
+
 	            // realRootClass.readFromFile()
 	            // obj.read(in);
 				return instance;

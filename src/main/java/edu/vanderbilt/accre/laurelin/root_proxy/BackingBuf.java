@@ -11,14 +11,14 @@ import java.nio.ByteBuffer;
 public interface BackingBuf {
 	/**
 	 * Reads bytes from the backing store
-	 * 
+	 *
 	 * @param off Offset into the backing store
 	 * @param len Requested length
 	 * @return A ByteBuffer with the requested bytes
-	 * @throws IOException
+	 * @throws IOException Exception if backing store fails
 	 */
 	public ByteBuffer read(long off, long len) throws IOException;
-	
+
 	public boolean hasLimit() throws IOException;
 	public long getLimit() throws IOException;
 	public BackingBuf duplicate();

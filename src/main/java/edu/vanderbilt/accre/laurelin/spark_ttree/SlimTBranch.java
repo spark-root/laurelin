@@ -70,7 +70,7 @@ public class SlimTBranch implements Serializable {
 
     /**
      * Glue callback to integrate with edu.vanderbilt.accre.laurelin.array
-     *
+     * @param basketCache the cache we should be using
      * @return GetBasket object used by array
      */
     public ArrayBuilder.GetBasket getArrayBranchCallback(Cache basketCache) {
