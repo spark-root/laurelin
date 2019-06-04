@@ -24,8 +24,12 @@
     <description>Spark datasource for ROOT (http://root.cern) files</description>
     <url>https://github.com/perilousapricot/spark-ttree</url>
     <developers>
-        <developer><name>Andrew Melo</name></developer>
-        <developer><name>Jim Pivarski</name></developer>
+        <developer>
+            <name>Andrew Melo</name>
+            <email>andrew.m.melo@vanderbilt.edu</email>
+            <organization>Vanderbilt University</organization>
+            <organizationUrl>https://github.com/PerilousApricot/spark-ttree</organizationUrl>
+        </developer>
     </developers>
 
     <properties>
@@ -208,6 +212,13 @@
                                 <goals>
                                     <goal>sign</goal>
                                 </goals>
+                                <configuration>
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                    <passphraseServerId>${gpg.keyname}</passphraseServerId>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
