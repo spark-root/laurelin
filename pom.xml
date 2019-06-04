@@ -30,6 +30,12 @@
             <organization>Vanderbilt University</organization>
             <organizationUrl>https://github.com/PerilousApricot/spark-ttree</organizationUrl>
         </developer>
+        <developer>
+            <name>Jim Pivarski</name>
+            <email>pivarski@princeton.edu</email>
+            <organization>Princeton University</organization>
+            <organizationUrl>https://github.com/PerilousApricot/spark-ttree</organizationUrl>
+        </developer>
     </developers>
 
     <properties>
