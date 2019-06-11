@@ -27,7 +27,7 @@ public class TTreeColumnVector extends ColumnVector {
     private ArrayBuilder.GetBasket getbasket;
     private ArrayBuilder builder;
 
-    public TTreeColumnVector(DataType type, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch) {
+    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch) {
         super(type);
 
         this.basketEntryOffsets = slimBranch.getBasketEntryOffsets();
@@ -37,14 +37,14 @@ public class TTreeColumnVector extends ColumnVector {
 
         TBranch.ArrayDescriptor desc = slimBranch.getArrayDesc();
         if (desc == null) {
-            Interpretation interpretation = new AsDtype(AsDtype.Dtype.FLOAT4);   // FIXME
+            Interpretation interpretation = new AsDtype(dtype);   // FIXME
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         }
         else if (desc.isFixed()) {
-            Interpretation interpretation = new AsDtype(AsDtype.Dtype.FLOAT4, Arrays.asList(desc.getFixedLength()));   // FIXME
+            Interpretation interpretation = new AsDtype(dtype, Arrays.asList(desc.getFixedLength()));   // FIXME
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         } else {
-            Interpretation interpretation = new AsJagged(new AsDtype(AsDtype.Dtype.FLOAT4));   // FIXME
+            Interpretation interpretation = new AsJagged(new AsDtype(dtype));   // FIXME
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         }
     }
