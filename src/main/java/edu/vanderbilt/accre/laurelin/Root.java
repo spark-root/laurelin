@@ -19,15 +19,16 @@ import org.apache.spark.sql.sources.v2.reader.SupportsScanColumnarBatch;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Metadata;
+import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 
+import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
-import edu.vanderbilt.accre.laurelin.root_proxy.TLeaf;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
@@ -120,7 +121,11 @@ public class Root implements DataSourceV2, ReadSupport {
                     throw new RuntimeException("Nested fields are not supported: " + field.name());
                 }
                 SlimTBranch slimBranch = slimBranches.get(field.name());
-                vecs[idx] = new TTreeColumnVector(field.dataType(), basketCache, entryStart, entryEnd - entryStart, slimBranch);
+                SimpleType rootType;
+                rootType = SimpleType.fromString(field.metadata().getString("rootType"));
+
+                Dtype dtype = SimpleType.dtypeFromString(field.metadata().getString("rootType"));
+                vecs[idx] = new TTreeColumnVector(field.dataType(), rootType, dtype, basketCache, entryStart, entryEnd - entryStart, slimBranch);
                 idx += 1;
             }
             ColumnarBatch ret = new ColumnarBatch(vecs);
@@ -172,21 +177,26 @@ public class Root implements DataSourceV2, ReadSupport {
 
         private List<StructField> readSchemaPart(List<TBranch> branches, String prefix) {
             List<StructField> fields = new ArrayList<StructField>();
-            for (TBranch branch: branches ) {
-                if (branch.getBranches().size() != 0) {
+            for (TBranch branch: branches) {
+                int branchCount = branch.getBranches().size();
+                int leafCount = branch.getLeaves().size();
+                MetadataBuilder metadata = new MetadataBuilder();
+                if (branchCount != 0) {
+                    /*
+                     * We have sub-branches, so we need to recurse.
+                     */
                     List<StructField> subFields = readSchemaPart(branch.getBranches(), prefix);
                     StructField[] subFieldArray = new StructField[subFields.size()];
                     subFieldArray = subFields.toArray(subFieldArray);
                     StructType subStruct = new StructType(subFieldArray);
+                    metadata.putString("rootType", "nested");
                     fields.add(new StructField(branch.getName(), subStruct, false, Metadata.empty()));
+                } else if ((branchCount == 0) && (leafCount == 1)) {
+                    DataType sparkType = rootToSparkType(branch.getSimpleType());
+                    metadata.putString("rootType", branch.getSimpleType().getBaseType().toString());
+                    fields.add(new StructField(branch.getName(), sparkType, false, metadata.build()));
                 } else {
-                    if (branch.getLeaves().size() > 1) {
-                        throw new RuntimeException("Un-split branches are not supported. Current branch: " + branch.getName());
-                    } else {
-                        TLeaf leaf = branch.getLeaves().get(0);
-                        DataType sparkType = rootToSparkType(leaf.getSimpleType());
-                        fields.add(new StructField(leaf.getName(), sparkType, false, Metadata.empty()));
-                    }
+                    throw new RuntimeException("Unsupported schema for branch " + branch.getName() + " branchCount: " + branchCount + " leafCount: " + leafCount);
                 }
             }
             return fields;

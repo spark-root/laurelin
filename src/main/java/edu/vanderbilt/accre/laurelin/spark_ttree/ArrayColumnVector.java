@@ -1,10 +1,5 @@
 package edu.vanderbilt.accre.laurelin.spark_ttree;
 
-import java.util.List;
-import java.util.Arrays;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.sql.vectorized.ColumnVector;
@@ -48,32 +43,27 @@ public class ArrayColumnVector extends ColumnVector {
 
     @Override
     public boolean getBoolean(int rowId) {
-        // TODO Auto-generated method stub
-        return false;
+        return ((PrimitiveArray.Bool)array).toBoolean();
     }
 
     @Override
     public byte getByte(int rowId) {
-        // TODO Auto-generated method stub
-        return 0;
+        return ((PrimitiveArray.Int1)array).toByte();
     }
 
     @Override
     public short getShort(int rowId) {
-        // TODO Auto-generated method stub
-        return 0;
+        return ((PrimitiveArray.Int2)array).toShort();
     }
 
     @Override
     public int getInt(int rowId) {
-        // TODO Auto-generated method stub
-        return 0;
+        return ((PrimitiveArray.Int4)array).toInt();
     }
 
     @Override
     public long getLong(int rowId) {
-        // TODO Auto-generated method stub
-        return 0;
+        return ((PrimitiveArray.Int8)array).toLong();
     }
 
     @Override
@@ -83,8 +73,7 @@ public class ArrayColumnVector extends ColumnVector {
 
     @Override
     public double getDouble(int rowId) {
-        // TODO Auto-generated method stub
-        return 0;
+        return ((PrimitiveArray.Float8)array).toDouble();
     }
 
     @Override
@@ -129,32 +118,27 @@ public class ArrayColumnVector extends ColumnVector {
 
     @Override
     public boolean[] getBooleans(int rowId, int count) {
-        // TODO Auto-generated method stub
-        return super.getBooleans(rowId, count);
+        return (boolean[])array.toArray();
     }
 
     @Override
     public byte[] getBytes(int rowId, int count) {
-        // TODO Auto-generated method stub
-        return super.getBytes(rowId, count);
+        return (byte[])array.toArray();
     }
 
     @Override
     public short[] getShorts(int rowId, int count) {
-        // TODO Auto-generated method stub
-        return super.getShorts(rowId, count);
+        return (short[])array.toArray();
     }
 
     @Override
     public int[] getInts(int rowId, int count) {
-        // TODO Auto-generated method stub
-        return super.getInts(rowId, count);
+        return (int[])array.toArray();
     }
 
     @Override
     public long[] getLongs(int rowId, int count) {
-        // TODO Auto-generated method stub
-        return super.getLongs(rowId, count);
+        return (long[])array.toArray();
     }
 
     @Override

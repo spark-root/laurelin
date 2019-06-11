@@ -177,7 +177,7 @@ public class TBranch {
             // no square brackets means no possibility of being an array
             return null;
         } else if (title.indexOf("[") != title.lastIndexOf(("["))) {
-           throw new RuntimeException("Multidimensional arrays are not supported");
+            throw new RuntimeException("Multidimensional arrays are not supported");
         } else {
             Matcher numMatcher = arrayNumPattern.matcher(title);
             Matcher varMatcher = arrayVarPattern.matcher(title);
@@ -193,7 +193,58 @@ public class TBranch {
 
     public boolean typeUnhandled() { return false; }
 
-    public SimpleType getSimpleType() { return null; }
+    public SimpleType getSimpleType() {
+        SimpleType ret = null;
+        if (leaves.size() == 1){
+            TLeaf leaf = leaves.get(0);
+            if (getTitle().length() >= 2) {
+                ret = getTypeFromTitle(getTitle());
+            }
+
+            if (ret == null) {
+                ret = leaf.getLeafType();
+            }
+        }
+        if (ret == null) {
+            throw new RuntimeException("Unknown simple type for branch named: " + this.getName());
+        }
+
+        return ret;
+    }
+
+    protected SimpleType getTypeFromTitle(String title) {
+        SimpleType ret = null;
+        String lastTwo = title.substring(title.length() - 2, title.length());
+        if (lastTwo.charAt(0) == '/') {
+            switch (lastTwo) {
+            case ("/I"):
+                ret = SimpleType.Int32;
+            break;
+            case ("/i"):
+                ret = SimpleType.UInt32;
+            break;
+            case ("/L"):
+                ret = SimpleType.Int64;
+            break;
+            case ("/l"):
+                ret = SimpleType.UInt64;
+            break;
+            case ("/F"):
+                ret = SimpleType.Float32;
+            break;
+            case ("/D"):
+                ret = SimpleType.Float64;
+            break;
+            default:
+                throw new RuntimeException("Unknown branch type: " + lastTwo + " name is: " + title);
+            }
+            // Do I later want to separate fixed and not-fixed arrays?
+            if (title.contains("[")) {
+                ret = new SimpleType.ArrayType(ret);
+            }
+        }
+        return ret;
+    }
 
     public long[] getBasketEntryOffsets() {
         int basketCount = baskets.size();
@@ -206,4 +257,5 @@ public class TBranch {
         ret[basketCount] = tree.getEntries();
         return ret;
     }
+
 }

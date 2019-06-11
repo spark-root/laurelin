@@ -88,13 +88,13 @@ public class AsDtype implements Interpretation {
         case BOOL:
             throw new UnsupportedOperationException("not implemented yet");
         case INT1:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int1(this, 0);
         case INT2:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int2(this, 0);
         case INT4:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int4(this, 0);
         case INT8:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int8(this, 0);
         case UINT1:
             throw new UnsupportedOperationException("not implemented yet");
         case UINT2:
@@ -137,13 +137,13 @@ public class AsDtype implements Interpretation {
         case BOOL:
             throw new UnsupportedOperationException("not implemented yet");
         case INT1:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int1(this, sliced);
         case INT2:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int2(this, sliced);
         case INT4:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int4(this, sliced);
         case INT8:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int8(this, sliced);
         case UINT1:
             throw new UnsupportedOperationException("not implemented yet");
         case UINT2:
@@ -172,21 +172,21 @@ public class AsDtype implements Interpretation {
         case BOOL:
             throw new UnsupportedOperationException("not implemented yet");
         case INT1:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int1(this, length);
         case INT2:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int2(this, length);
         case INT4:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int4(this, length);
         case INT8:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int8(this, length);
         case UINT1:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int2(this, length);
         case UINT2:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int4(this, length);
         case UINT4:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Int8(this, length);
         case UINT8:
-            throw new UnsupportedOperationException("not implemented yet");
+            return new PrimitiveArray.Float8(this, length);
         case FLOAT4:
             return new PrimitiveArray.Float4(this, length);
         case FLOAT8:
@@ -211,6 +211,7 @@ public class AsDtype implements Interpretation {
         return destination;
     }
 
+    @Override
     public Interpretation subarray() {
         if (this.dims.size() == 0) {
             throw new IllegalArgumentException("trying to take the subarray of a scalar type");

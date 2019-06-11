@@ -1,15 +1,12 @@
 package edu.vanderbilt.accre.laurelin.array;
 
 import java.util.ArrayList;
-import java.util.concurrent.Executor;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.FutureTask;
 
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
-import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
-import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
-import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
 
 public class ArrayBuilder {
 
@@ -153,7 +150,7 @@ public class ArrayBuilder {
                 throw new RuntimeException(e.toString());
             }
             catch (ExecutionException e) {
-                throw new RuntimeException(e.toString());
+                throw new RuntimeException(e);
             }
         }
         return array.clip(basket_entryoffset[0] + rowId, basket_entryoffset[0] + rowId + count);
@@ -186,6 +183,7 @@ public class ArrayBuilder {
             this.basket_entryoffset = basket_entryoffset;
         }
 
+        @Override
         public Boolean call() {
             int i = j + basketstart;
 

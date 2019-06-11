@@ -17,7 +17,7 @@ import org.apache.spark.sql.sources.v2.reader.InputPartition;
 import org.apache.spark.sql.sources.v2.reader.InputPartitionReader;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.Metadata;
+import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnVector;
@@ -28,46 +28,6 @@ import edu.vanderbilt.accre.laurelin.Root;
 import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
 
 public class TTreeDataSourceUnitTest {
-
-    @Test
-    public void testGetSchemaFlat() {
-        Map<String, String> optmap = new HashMap<String, String>();
-        optmap.put("path", "testdata/uproot-small-flat-tree.root");
-        optmap.put("tree",  "tree");
-        DataSourceOptions opts = new DataSourceOptions(optmap);
-        Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
-        DataType schema = reader.readSchema();
-        StructType schemaCast = (StructType) schema;
-        // Note - there's 20 branches, but we ignore one because I'm not trying to deserialize strings
-        assertEquals(19, schemaCast.size());
-    }
-
-    @Test
-    public void testGetSchemaNested() {
-        Map<String, String> optmap = new HashMap<String, String>();
-        optmap.put("path", "testdata/uproot-nesteddirs.root");
-        optmap.put("tree",  "three/tree");
-        DataSourceOptions opts = new DataSourceOptions(optmap);
-        Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
-        DataType schema = reader.readSchema();
-        StructType schemaCast = (StructType) schema;
-        assertEquals(1, schemaCast.size());
-    }
-
-    @Test
-    public void testGetSchemaForiter() {
-        Map<String, String> optmap = new HashMap<String, String>();
-        optmap.put("path", "testdata/uproot-foriter.root");
-        optmap.put("tree",  "foriter");
-        DataSourceOptions opts = new DataSourceOptions(optmap);
-        Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
-        DataType schema = reader.readSchema();
-        StructType schemaCast = (StructType) schema;
-        assertEquals(1, schemaCast.size());
-    }
 
     @Test
     public void testMultipleBasketsForiter() throws IOException {
@@ -107,8 +67,10 @@ public class TTreeDataSourceUnitTest {
         Root source = new Root();
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
         // only get a scalar float_t for now since that's all that works
+        MetadataBuilder metadata = new MetadataBuilder();
+        metadata.putString("rootType", "float");
         StructType prune = new StructType()
-                            .add(new StructField("CaloMET_pt", DataTypes.FloatType, false, Metadata.empty()));
+                            .add(new StructField("CaloMET_pt", DataTypes.FloatType, false, metadata.build()));
         reader.pruneColumns(prune);
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
@@ -138,35 +100,7 @@ public class TTreeDataSourceUnitTest {
         }
     }
 
-    @Test
-    public void testGetSchemaNano() {
-        Map<String, String> optmap = new HashMap<String, String>();
-        optmap.put("path", "testdata/nano_tree.root");
-        DataSourceOptions opts = new DataSourceOptions(optmap);
-        Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
-        DataType schema = reader.readSchema();
-        StructType schemaCast = (StructType) schema;
-        assertEquals(1011, schemaCast.size());
-    }
 
-    /**
-     * Only test if we have the big 2016 nanoaod file downloaded
-     */
-    @Test
-    public void testGetSchemaBigNano() {
-        String testPath = "testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root";
-        File f = new File(testPath);
-        assumeTrue(f.isFile());
-        Map<String, String> optmap = new HashMap<String, String>();
-        optmap.put("path", testPath);
-        DataSourceOptions opts = new DataSourceOptions(optmap);
-        Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
-        DataType schema = reader.readSchema();
-        StructType schemaCast = (StructType) schema;
-        assertEquals(866, schemaCast.size());
-    }
 
     //@Test(expected = IllegalStateException.class)
     @Test
@@ -244,6 +178,13 @@ public class TTreeDataSourceUnitTest {
         }
     }
 
+    private void assertDoubleArrayEquals(double exp[], double act[]) {
+        assertEquals("Arrays same length", exp.length, act.length);
+        for (int i = 0; i < exp.length; i += 1) {
+            assertEquals("Array index " + i + " mismatched", exp[i], act[i], 0.001);
+        }
+    }
+
     @Test
     public void testLoadFixedArrayFloat32() throws IOException {
         Map<String, String> optmap = new HashMap<String, String>();
@@ -274,4 +215,33 @@ public class TTreeDataSourceUnitTest {
         assertFloatArrayEquals(new float[] { 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f}, float32col.getArray(31).toFloatArray());
     }
 
+    @Test
+    public void testLoadJaggedArrayFloat64() throws IOException {
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", "testdata/uproot-small-flat-tree.root");
+        optmap.put("tree",  "tree");
+        DataSourceOptions opts = new DataSourceOptions(optmap);
+        Root source = new Root();
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        assertNotNull(partitions);
+        assertEquals(1, partitions.size());
+        StructType schema = reader.readSchema();
+
+        InputPartition<ColumnarBatch> partition = partitions.get(0);
+        InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
+        assertTrue(partitionReader.next());
+        ColumnarBatch batch = partitionReader.get();
+        assertFalse(partitionReader.next());
+        // 19 branches in this file
+        assertEquals(19, batch.numCols());
+        // 100 events in this file
+        assertEquals(100, batch.numRows());
+
+        ColumnVector float32col = batch.column((int)schema.getFieldIndex("SliceFloat64").get());
+
+        assertDoubleArrayEquals(new double[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}, float32col.getArray(0).toDoubleArray());
+        assertDoubleArrayEquals(new double[] { 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f}, float32col.getArray(10).toDoubleArray());
+        assertDoubleArrayEquals(new double[] { 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f}, float32col.getArray(31).toDoubleArray());
+    }
 }

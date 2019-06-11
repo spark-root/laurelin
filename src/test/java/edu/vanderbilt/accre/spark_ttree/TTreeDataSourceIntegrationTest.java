@@ -1,7 +1,5 @@
 package edu.vanderbilt.accre.spark_ttree;
 
-import static org.junit.Assert.assertEquals;
-
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -27,8 +25,16 @@ public class TTreeDataSourceIntegrationTest {
                 .format("edu.vanderbilt.accre.laurelin.Root")
                 .option("tree",  "tree")
                 .load("testdata/uproot-small-flat-tree.root");
-        df = df.select("Float32", "ArrayFloat32", "SliceFloat32");
-        df.show();
+        df.printSchema();
+        //df.select("Int32", "Int64", "Float32", "Float64").show(2);
+        //df.select("ArrayInt32", "ArrayInt64", "ArrayFloat32", "ArrayFloat64").show(2);
+        //df.select("SliceInt32", "SliceFloat32", "SliceFloat64").show(2);
+        df.select("ArrayFloat32").show(2);
+        df.select("SliceFloat32", "SliceInt32").show(2);
+        df.select("SliceFloat64", "SliceInt64").show(2);
+
+        //df.select("SliceInt32", "SliceInt64", "SliceFloat32", "SliceFloat64").show(2);
+
         // assertEquals(100, df.count());
     }
 
