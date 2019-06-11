@@ -16,8 +16,10 @@ import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
+import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
+import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 
 public class TTreeColumnVector extends ColumnVector {
@@ -73,32 +75,27 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public boolean getBoolean(int rowId) {
-        // TODO Auto-generated method stub
-        return false;
+        return getBooleans(rowId, 1)[0];
     }
 
     @Override
     public byte getByte(int rowId) {
-        // TODO Auto-generated method stub
-        return 0;
+        return getBytes(rowId, 1)[0];
     }
 
     @Override
     public short getShort(int rowId) {
-        // TODO Auto-generated method stub
-        return 0;
+        return getShorts(rowId, 1)[0];
     }
 
     @Override
     public int getInt(int rowId) {
-        // TODO Auto-generated method stub
-        return 0;
+        return getInts(rowId, 1)[0];
     }
 
     @Override
     public long getLong(int rowId) {
-        // TODO Auto-generated method stub
-        return 0;
+        return getLongs(rowId, 1)[0];
     }
 
     @Override
@@ -109,7 +106,7 @@ public class TTreeColumnVector extends ColumnVector {
     @Override
     public double getDouble(int rowId) {
         // TODO Auto-generated method stub
-        return 0;
+        return getDoubles(rowId, 1)[0];
     }
 
     @Override
@@ -154,32 +151,27 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public boolean[] getBooleans(int rowId, int count) {
-        // TODO Auto-generated method stub
-        return super.getBooleans(rowId, count);
+        return (boolean[])(builder.getArray(rowId, count).toArray());
     }
 
     @Override
     public byte[] getBytes(int rowId, int count) {
-        // TODO Auto-generated method stub
-        return super.getBytes(rowId, count);
+        return (byte[])(builder.getArray(rowId, count).toArray());
     }
 
     @Override
     public short[] getShorts(int rowId, int count) {
-        // TODO Auto-generated method stub
-        return super.getShorts(rowId, count);
+        return (short[])(builder.getArray(rowId, count).toArray());
     }
 
     @Override
     public int[] getInts(int rowId, int count) {
-        // TODO Auto-generated method stub
-        return super.getInts(rowId, count);
+        return (int[])(builder.getArray(rowId, count).toArray());
     }
 
     @Override
     public long[] getLongs(int rowId, int count) {
-        // TODO Auto-generated method stub
-        return super.getLongs(rowId, count);
+        return (long[])(builder.getArray(rowId, count).toArray());
     }
 
     @Override
