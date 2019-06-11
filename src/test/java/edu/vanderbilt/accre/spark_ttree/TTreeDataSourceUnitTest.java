@@ -17,7 +17,7 @@ import org.apache.spark.sql.sources.v2.reader.InputPartition;
 import org.apache.spark.sql.sources.v2.reader.InputPartitionReader;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.Metadata;
+import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnVector;
@@ -107,8 +107,10 @@ public class TTreeDataSourceUnitTest {
         Root source = new Root();
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
         // only get a scalar float_t for now since that's all that works
+        MetadataBuilder metadata = new MetadataBuilder();
+        metadata.putString("rootType", "float");
         StructType prune = new StructType()
-                            .add(new StructField("CaloMET_pt", DataTypes.FloatType, false, Metadata.empty()));
+                            .add(new StructField("CaloMET_pt", DataTypes.FloatType, false, metadata.build()));
         reader.pruneColumns(prune);
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
