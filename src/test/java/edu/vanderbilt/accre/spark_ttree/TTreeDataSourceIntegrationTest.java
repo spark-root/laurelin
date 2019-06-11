@@ -29,7 +29,7 @@ public class TTreeDataSourceIntegrationTest {
         //df.select("Int32", "Int64", "Float32", "Float64").show(2);
         //df.select("ArrayInt32", "ArrayInt64", "ArrayFloat32", "ArrayFloat64").show(2);
         //df.select("SliceInt32", "SliceFloat32", "SliceFloat64").show(2);
-        df.select("ArrayFloat32").show(2);
+        df.select("ArrayFloat64", "ArrayInt64").show(2);
         df.select("SliceFloat32", "SliceInt32").show(2);
         df.select("SliceFloat64", "SliceInt64").show(2);
 
