@@ -17,37 +17,47 @@ public class TLeaf extends TBranch {
         return false;
     }
 
-    @Override
-    public SimpleType getSimpleType() {
+    private SimpleType getTypeFromSimpleLeafType(String type) {
+        SimpleType ret = null;
+        // fLen needs to be zero
+        switch (data.className) {
+        case ("TLeafO"):
+            ret = SimpleType.Bool;
+        break;
+        case ("TLeafB"):
+            ret = SimpleType.Int8;
+        break;
+        case ("TLeafS"):
+            ret = SimpleType.Int16;
+        break;
+        case ("TLeafI"):
+            ret = SimpleType.Int32;
+        break;
+        case ("TLeafL"):
+            ret = SimpleType.Int64;
+        break;
+        case ("TLeafF"):
+            ret = SimpleType.Float32;
+        break;
+        case ("TLeafD"):
+            ret = SimpleType.Float64;
+        break;
+        }
+        return ret;
+    }
+
+    public SimpleType getLeafType() {
         /*
          * An attempt to decode all the different ROOT type systems to
          * an easy descriptor
          */
         SimpleType ret = null;
+        if (getTitle().length() >= 2) {
+            ret = getTypeFromTitle(getTitle());
+        }
 
-        // fLen needs to be zero
-        switch (data.className) {
-            case ("TLeafO"):
-                ret = SimpleType.Bool;
-            break;
-            case ("TLeafB"):
-                ret = SimpleType.Int8;
-            break;
-            case ("TLeafS"):
-                ret = SimpleType.Int16;
-            break;
-            case ("TLeafI"):
-                ret = SimpleType.Int32;
-            break;
-            case ("TLeafL"):
-                ret = SimpleType.Int64;
-            break;
-            case ("TLeafF"):
-                ret = SimpleType.Float32;
-            break;
-            case ("TLeafD"):
-                ret = SimpleType.Float64;
-            break;
+        if (ret == null) {
+            ret = getTypeFromSimpleLeafType(data.className);
         }
 
         if (data.className.equals("TLeafElement")) {
@@ -108,7 +118,6 @@ public class TLeaf extends TBranch {
                 (data.getProxy("fLeafCount").getDataSize() != 0)){
             ret = new SimpleType.ArrayType(ret);
         }
-
         return ret;
     }
 }
