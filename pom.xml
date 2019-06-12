@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>edu.vanderbilt.accre</groupId>
 	<artifactId>laurelin</artifactId>
-	<version>0.0.6-SNAPSHOT</version>
+	<version>13</version>
 
 	<name>laurelin</name>
 
@@ -21,7 +19,7 @@
 	<scm>
 		<developerConnection>scm:git:git@github.com:perilousapricot/spark-ttree.git</developerConnection>
 		<url>https://github.com/perilousapricot/spark-ttree</url>
-		<tag>laurelin-0.0.1</tag>
+		<tag>0.0.13</tag>
 	</scm>
 	<description>Spark datasource for ROOT (http://root.cern) files</description>
 	<url>https://github.com/perilousapricot/spark-ttree</url>
