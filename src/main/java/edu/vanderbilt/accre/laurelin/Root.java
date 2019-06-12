@@ -42,7 +42,7 @@ public class Root implements DataSourceV2, ReadSupport {
      * Represents a Partition of a TTree, which currently is one per-file.
      * Future improvements will split this up per-basket. Big files = big mem
      * usage!
-     *<p/>
+     *<p>
      * This is instantiated on the driver, then serialized and transmitted to
      * the executor
      */
