@@ -6,7 +6,7 @@ import java.io.Serializable;
  * This isn't a cache, this is an object that makes a cache. This object is made
  * on the Spark driver and transmitted to the executors, who in turn make the
  * actual caches on the executors.
- *<p/>
+ *<p>
  * This gets around the need to be able to serialize and transmit Partition
  * objects
  */
