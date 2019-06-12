@@ -38,14 +38,11 @@ public class TDirectory {
         fNbytesKeys = buffer.readInt();
         fNbytesName = buffer.readInt();
 
-        if (version > 1000)
-        {
+        if (version > 1000) {
             fSeekDir = buffer.readLong();
             fSeekParent = buffer.readLong();
             fSeekKeys = buffer.readLong();
-        }
-        else
-        {
+        } else {
             fSeekDir = buffer.readInt();
             fSeekParent = buffer.readInt();
             fSeekKeys = buffer.readInt();
@@ -59,7 +56,7 @@ public class TDirectory {
         int nKeys = buffer.readInt();
 
         long position = fSeekKeys + key.KeyLen + 4;
-        for (int i = 0; i < nKeys ; i += 1) {
+        for (int i = 0; i < nKeys; i += 1) {
             TKey testkey = new TKey();
             testkey.getFromFile(fh, position);
             if (testkey.fClassName.equals("TDirectory")) {

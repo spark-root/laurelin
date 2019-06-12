@@ -42,7 +42,7 @@ public class Root implements DataSourceV2, ReadSupport {
      * Represents a Partition of a TTree, which currently is one per-file.
      * Future improvements will split this up per-basket. Big files = big mem
      * usage!
-     *
+     *<p/>
      * This is instantiated on the driver, then serialized and transmitted to
      * the executor
      */
@@ -83,6 +83,7 @@ public class Root implements DataSourceV2, ReadSupport {
         private long entryEnd;
         private int currBasket = -1;
         private Map<String, SlimTBranch> slimBranches;
+
         public TTreeDataSourceV2PartitionReader(CacheFactory basketCacheFactory, StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches) {
             this.basketCache = basketCacheFactory.getCache();
             this.schema = schema;
@@ -135,9 +136,8 @@ public class Root implements DataSourceV2, ReadSupport {
     }
 
     public static class TTreeDataSourceV2Reader implements DataSourceReader,
-    SupportsScanColumnarBatch,
-    SupportsPushDownRequiredColumns
-    {
+            SupportsScanColumnarBatch,
+            SupportsPushDownRequiredColumns {
         private String[] paths;
         private String treeName;
         private TTree currTree;
@@ -264,7 +264,7 @@ public class Root implements DataSourceV2, ReadSupport {
                 long[] entryOffset = inputTree.getBranches().get(0).getBasketEntryOffsets();
                 for (int i = 0; i < (entryOffset.length - 1); i += 1) {
                     long entryStart = entryOffset[i];
-                    long entryEnd = entryOffset[i+1];
+                    long entryEnd = entryOffset[i + 1];
                     // the last basket is dumb and annoying
                     if (i == (entryOffset.length - 1)) {
                         entryEnd = inputTree.getEntries();

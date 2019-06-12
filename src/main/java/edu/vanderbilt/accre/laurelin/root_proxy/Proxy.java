@@ -1,6 +1,7 @@
 package edu.vanderbilt.accre.laurelin.root_proxy;
 
 import java.util.HashMap;
+
 public class Proxy {
     /*
      * Stores raw information for one ROOT object
@@ -9,11 +10,13 @@ public class Proxy {
     protected String className;
     protected String proxyType = "proxy";
     public String createPlace = "";
-
     HashMap<String, Proxy> data;
+    private ClassDeserializer cd;
+
     public <T> void putScalar(String key, T val) {
         data.put(key, new ProxyElement<T>(val));
     }
+
     public <T> void putProxy(String key, T val) {
         data.put(key, (Proxy) val);
     }
@@ -30,6 +33,7 @@ public class Proxy {
     public Proxy getProxy(String key) {
         return data.get(key);
     }
+
     public int getDataSize() {
         return data.size();
     }
@@ -39,13 +43,18 @@ public class Proxy {
         className = "UNKNOWN";
     }
 
-
     public void setClass(String className) {
         this.className = className;
     }
-    private ClassDeserializer cd;
-    public ClassDeserializer getDeserializer() { return cd; }
-    public void setDeserializer(ClassDeserializer newcd) { cd = newcd; }
+
+
+    public ClassDeserializer getDeserializer() {
+        return cd;
+    }
+
+    public void setDeserializer(ClassDeserializer newcd) {
+        cd = newcd;
+    }
 
     public void dump() {
         System.out.println(dumpStr());
@@ -57,7 +66,9 @@ public class Proxy {
 
     public String dumpStr(int depth) {
         String indent = "";
-        for (int i = 0; i < depth; i += 1) { indent += "  "; }
+        for (int i = 0; i < depth; i += 1) {
+            indent += "  ";
+        }
         String ret = indent;
         for (String key: data.keySet()) {
             ret += indent + key + " - " + data.get(key).dumpStr(depth + 1) + "\n";

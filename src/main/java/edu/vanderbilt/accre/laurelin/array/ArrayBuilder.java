@@ -1,26 +1,24 @@
 package edu.vanderbilt.accre.laurelin.array;
 
 import java.util.ArrayList;
-import java.util.concurrent.Executor;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.FutureTask;
 
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
-import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
-import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
-import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
 
 public class ArrayBuilder {
 
     /**
-     * Subset of only the values in TKey which describes the basket on-disk
+     * Subset of only the values in TKey which describes the basket on-disk.
      *
      */
-    static public class BasketKey {
+    public static class BasketKey {
         int fKeylen;
         int fLast;
         int fObjlen;
+
         public BasketKey(int fKeylen, int fLast, int fObjlen) {
             this.fKeylen = fKeylen;
             this.fLast = fLast;
@@ -32,9 +30,9 @@ public class ArrayBuilder {
      * Callback interface used by the array interface to request additional info
      * about baskets from the root_proxy layer
      */
-    static public interface GetBasket {
+    public static interface GetBasket {
         /**
-         * Get the BasketKey describing a certain basketid
+         * Get the BasketKey describing a certain basketid.
          * @param basketid the zero-indexed basket index for the given branch
          * @return BasketKey filled with info about the chosen basket
          */
@@ -42,7 +40,7 @@ public class ArrayBuilder {
 
         /**
          * Retrieves the decompressed bytes within the basket, excluding the
-         * TKey header
+         * TKey header.
          * @param basketid the zero-indexed basket index for the given branch
          * @return a RawArray with the decompressed bytes
          */
@@ -50,7 +48,7 @@ public class ArrayBuilder {
     }
 
     /**
-     * Callbacks to get info about a basket from root_proxy
+     * Callbacks to get info about a basket from root_proxy.
      */
     Interpretation interpretation;
     int[] basket_itemoffset;
@@ -79,8 +77,7 @@ public class ArrayBuilder {
                     basketstart = i;
                     basketstop = i;
                 }
-            }
-            else {
+            } else {
                 if (basketEntryOffsets[i] < entrystop) {
                     basketstop = i;
                 }
@@ -95,8 +92,7 @@ public class ArrayBuilder {
             basket_itemoffset = null;
             basket_entryoffset = null;
             array = interpretation.empty();
-        }
-        else {
+        } else {
             BasketKey[] basketkeys = new BasketKey[basketstop - basketstart];
             for (int j = 0;  j < basketstop - basketstart;  j++) {
                 basketkeys[j] = getbasket.basketkey(basketstart + j);
@@ -148,18 +144,16 @@ public class ArrayBuilder {
         for (FutureTask<Boolean> task : tasks) {
             try {
                 task.get();
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 throw new RuntimeException(e.toString());
-            }
-            catch (ExecutionException e) {
+            } catch (ExecutionException e) {
                 throw new RuntimeException(e.toString());
             }
         }
         return array.clip(basket_entryoffset[0] + rowId, basket_entryoffset[0] + rowId + count);
     }
 
-    static private class CallableFill implements Callable<Boolean> {
+    private static class CallableFill implements Callable<Boolean> {
         Interpretation interpretation;
         GetBasket getbasket;
         int j;
@@ -186,6 +180,7 @@ public class ArrayBuilder {
             this.basket_entryoffset = basket_entryoffset;
         }
 
+        @Override
         public Boolean call() {
             int i = j + basketstart;
 
@@ -209,8 +204,7 @@ public class ArrayBuilder {
 
             if (basketkeys[i].fObjlen == border) {
                 source = interpretation.fromroot(basketdata, null, local_entrystart, local_entrystop);
-            }
-            else {
+            } else {
                 RawArray content = basketdata.slice(0, border);
                 PrimitiveArray.Int4 byteoffsets = new PrimitiveArray.Int4(basketdata.slice(border + 4, basketkeys[i].fObjlen)).add(true, -basketkeys[i].fKeylen);
                 byteoffsets.put(byteoffsets.length() - 1, border);
@@ -230,8 +224,7 @@ public class ArrayBuilder {
                 if (expectedentries > source_numentries) {
                     basket_entryoffset[j + 1] -= expectedentries - source_numentries;
                 }
-            }
-            else if (j == 0) {
+            } else if (j == 0) {
                 if (expecteditems > source_numitems) {
                     basket_itemoffset[j] += expecteditems - source_numitems;
                 }

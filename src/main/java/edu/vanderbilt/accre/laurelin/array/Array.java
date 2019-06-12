@@ -1,7 +1,5 @@
 package edu.vanderbilt.accre.laurelin.array;
 
-import java.nio.ByteBuffer;
-
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 
 public abstract class Array {
@@ -21,12 +19,13 @@ public abstract class Array {
         return this.length;
     }
 
-    abstract public Array clip(int start, int stop);
+    public abstract Array clip(int start, int stop);
 
     public Object toArray() {
         return this.toArray(true);
     }
-    abstract public Object toArray(boolean bigEndian);
 
-    abstract public Array subarray();
+    public abstract Object toArray(boolean bigEndian);
+
+    public abstract Array subarray();
 }

@@ -7,7 +7,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import org.junit.Assert;
 import org.junit.Test;
 
-import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
@@ -19,9 +18,12 @@ public class ArrayBuilderTest {
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT8);
 
         ArrayBuilder.GetBasket getbasket = new ArrayBuilder.GetBasket() {
+                @Override
                 public ArrayBuilder.BasketKey basketkey(int basketid) {
-                    return new ArrayBuilder.BasketKey(0, 8*5, 8*5);
+                    return new ArrayBuilder.BasketKey(0, 8 * 5, 8 * 5);
                 }
+
+                @Override
                 public RawArray dataWithoutKey(int basketid) {
                     return new PrimitiveArray.Float8(new double[]{0.0, 1.1, 2.2, 3.3, 4.4}, true).rawarray();
                 }

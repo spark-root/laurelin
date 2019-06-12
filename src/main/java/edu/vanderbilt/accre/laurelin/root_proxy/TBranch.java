@@ -217,26 +217,26 @@ public class TBranch {
         String lastTwo = title.substring(title.length() - 2, title.length());
         if (lastTwo.charAt(0) == '/') {
             switch (lastTwo) {
-            case ("/I"):
-                ret = SimpleType.Int32;
-            break;
-            case ("/i"):
-                ret = SimpleType.UInt32;
-            break;
-            case ("/L"):
-                ret = SimpleType.Int64;
-            break;
-            case ("/l"):
-                ret = SimpleType.UInt64;
-            break;
-            case ("/F"):
-                ret = SimpleType.Float32;
-            break;
-            case ("/D"):
-                ret = SimpleType.Float64;
-            break;
-            default:
-                throw new RuntimeException("Unknown branch type: " + lastTwo + " name is: " + title);
+                case ("/I"):
+                    ret = SimpleType.Int32;
+                    break;
+                case ("/i"):
+                    ret = SimpleType.UInt32;
+                    break;
+                case ("/L"):
+                    ret = SimpleType.Int64;
+                    break;
+                case ("/l"):
+                    ret = SimpleType.UInt64;
+                    break;
+                case ("/F"):
+                    ret = SimpleType.Float32;
+                    break;
+                case ("/D"):
+                    ret = SimpleType.Float64;
+                    break;
+                default:
+                    throw new RuntimeException("Unknown branch type: " + lastTwo + " name is: " + title);
             }
             // Do I later want to separate fixed and not-fixed arrays?
             if (title.contains("[")) {

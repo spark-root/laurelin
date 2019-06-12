@@ -1,7 +1,5 @@
 package edu.vanderbilt.accre.spark_ttree;
 
-import static org.junit.Assert.assertEquals;
-
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;

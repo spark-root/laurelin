@@ -55,60 +55,60 @@ public class AsDtype implements Interpretation {
     @Override
     public int itemsize() {
         switch (this.dtype) {
-        case BOOL:
-            return 1;
-        case INT1:
-            return 1;
-        case INT2:
-            return 2;
-        case INT4:
-            return 4;
-        case INT8:
-            return 8;
-        case UINT1:
-            return 1;
-        case UINT2:
-            return 2;
-        case UINT4:
-            return 4;
-        case UINT8:
-            return 8;
-        case FLOAT4:
-            return 4;
-        case FLOAT8:
-            return 8;
-        default:
-            throw new AssertionError("unrecognized dtype");
+            case BOOL:
+                return 1;
+            case INT1:
+                return 1;
+            case INT2:
+                return 2;
+            case INT4:
+                return 4;
+            case INT8:
+                return 8;
+            case UINT1:
+                return 1;
+            case UINT2:
+                return 2;
+            case UINT4:
+                return 4;
+            case UINT8:
+                return 8;
+            case FLOAT4:
+                return 4;
+            case FLOAT8:
+                return 8;
+            default:
+                throw new AssertionError("unrecognized dtype");
         }
     }
 
     @Override
     public Array empty() {
         switch (this.dtype) {
-        case BOOL:
-            throw new UnsupportedOperationException("not implemented yet");
-        case INT1:
-            return new PrimitiveArray.Int1(this, 0);
-        case INT2:
-            return new PrimitiveArray.Int2(this, 0);
-        case INT4:
-            return new PrimitiveArray.Int4(this, 0);
-        case INT8:
-            return new PrimitiveArray.Int8(this, 0);
-        case UINT1:
-            throw new UnsupportedOperationException("not implemented yet");
-        case UINT2:
-            throw new UnsupportedOperationException("not implemented yet");
-        case UINT4:
-            throw new UnsupportedOperationException("not implemented yet");
-        case UINT8:
-            throw new UnsupportedOperationException("not implemented yet");
-        case FLOAT4:
-            return new PrimitiveArray.Float4(this, 0);
-        case FLOAT8:
-            return new PrimitiveArray.Float8(this, 0);
-        default:
-            throw new AssertionError("unrecognized dtype");
+            case BOOL:
+                throw new UnsupportedOperationException("not implemented yet");
+            case INT1:
+                return new PrimitiveArray.Int1(this, 0);
+            case INT2:
+                return new PrimitiveArray.Int2(this, 0);
+            case INT4:
+                return new PrimitiveArray.Int4(this, 0);
+            case INT8:
+                return new PrimitiveArray.Int8(this, 0);
+            case UINT1:
+                throw new UnsupportedOperationException("not implemented yet");
+            case UINT2:
+                throw new UnsupportedOperationException("not implemented yet");
+            case UINT4:
+                throw new UnsupportedOperationException("not implemented yet");
+            case UINT8:
+                throw new UnsupportedOperationException("not implemented yet");
+            case FLOAT4:
+                return new PrimitiveArray.Float4(this, 0);
+            case FLOAT8:
+                return new PrimitiveArray.Float8(this, 0);
+            default:
+                throw new AssertionError("unrecognized dtype");
         }
     }
 
@@ -134,30 +134,30 @@ public class AsDtype implements Interpretation {
         int entrysize = this.multiplicity() * this.itemsize();
         RawArray sliced = bytedata.slice(local_entrystart * entrysize, local_entrystop * entrysize);
         switch (this.dtype) {
-        case BOOL:
-            throw new UnsupportedOperationException("not implemented yet");
-        case INT1:
-            return new PrimitiveArray.Int1(this, sliced);
-        case INT2:
-            return new PrimitiveArray.Int2(this, sliced);
-        case INT4:
-            return new PrimitiveArray.Int4(this, sliced);
-        case INT8:
-            return new PrimitiveArray.Int8(this, sliced);
-        case UINT1:
-            throw new UnsupportedOperationException("not implemented yet");
-        case UINT2:
-            throw new UnsupportedOperationException("not implemented yet");
-        case UINT4:
-            throw new UnsupportedOperationException("not implemented yet");
-        case UINT8:
-            throw new UnsupportedOperationException("not implemented yet");
-        case FLOAT4:
-            return new PrimitiveArray.Float4(this, sliced);
-        case FLOAT8:
-            return new PrimitiveArray.Float8(this, sliced);
-        default:
-            throw new AssertionError("unrecognized dtype");
+            case BOOL:
+                throw new UnsupportedOperationException("not implemented yet");
+            case INT1:
+                return new PrimitiveArray.Int1(this, sliced);
+            case INT2:
+                return new PrimitiveArray.Int2(this, sliced);
+            case INT4:
+                return new PrimitiveArray.Int4(this, sliced);
+            case INT8:
+                return new PrimitiveArray.Int8(this, sliced);
+            case UINT1:
+                throw new UnsupportedOperationException("not implemented yet");
+            case UINT2:
+                throw new UnsupportedOperationException("not implemented yet");
+            case UINT4:
+                throw new UnsupportedOperationException("not implemented yet");
+            case UINT8:
+                throw new UnsupportedOperationException("not implemented yet");
+            case FLOAT4:
+                return new PrimitiveArray.Float4(this, sliced);
+            case FLOAT8:
+                return new PrimitiveArray.Float8(this, sliced);
+            default:
+                throw new AssertionError("unrecognized dtype");
         }
     }
 
@@ -169,30 +169,30 @@ public class AsDtype implements Interpretation {
         }
         int length = numitems / this.multiplicity();
         switch (this.dtype) {
-        case BOOL:
-            throw new UnsupportedOperationException("not implemented yet");
-        case INT1:
-            return new PrimitiveArray.Int1(this, length);
-        case INT2:
-            return new PrimitiveArray.Int2(this, length);
-        case INT4:
-            return new PrimitiveArray.Int4(this, length);
-        case INT8:
-            return new PrimitiveArray.Int8(this, length);
-        case UINT1:
-            return new PrimitiveArray.Int2(this, length);
-        case UINT2:
-            return new PrimitiveArray.Int4(this, length);
-        case UINT4:
-            return new PrimitiveArray.Int8(this, length);
-        case UINT8:
-            return new PrimitiveArray.Float8(this, length);
-        case FLOAT4:
-            return new PrimitiveArray.Float4(this, length);
-        case FLOAT8:
-            return new PrimitiveArray.Float8(this, length);
-        default:
-            throw new AssertionError("unrecognized dtype");
+            case BOOL:
+                throw new UnsupportedOperationException("not implemented yet");
+            case INT1:
+                return new PrimitiveArray.Int1(this, length);
+            case INT2:
+                return new PrimitiveArray.Int2(this, length);
+            case INT4:
+                return new PrimitiveArray.Int4(this, length);
+            case INT8:
+                return new PrimitiveArray.Int8(this, length);
+            case UINT1:
+                return new PrimitiveArray.Int2(this, length);
+            case UINT2:
+                return new PrimitiveArray.Int4(this, length);
+            case UINT4:
+                return new PrimitiveArray.Int8(this, length);
+            case UINT8:
+                return new PrimitiveArray.Float8(this, length);
+            case FLOAT4:
+                return new PrimitiveArray.Float4(this, length);
+            case FLOAT8:
+                return new PrimitiveArray.Float8(this, length);
+            default:
+                throw new AssertionError("unrecognized dtype");
         }
     }
 

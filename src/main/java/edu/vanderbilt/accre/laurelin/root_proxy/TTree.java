@@ -10,6 +10,7 @@ public class TTree {
     private class Iterator {
         private TTree target;
         private String[] branchNames;
+
         public Iterator(TTree target, String[] branchNames) {
             this.target = target;
             this.branchNames = branchNames;
@@ -107,11 +108,6 @@ public class TTree {
                 }
             }
         }
-        ProxyArray leaves = (ProxyArray) data.getProxy("fLeaves");
-        for (Proxy val: leaves) {
-
-        }
-
         return new Iterator(this, branchNames);
     }
 }

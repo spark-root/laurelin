@@ -2,13 +2,11 @@ package edu.vanderbilt.accre.laurelin.interpretation;
 
 import java.nio.ByteBuffer;
 
-import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
-import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.array.Array;
-import edu.vanderbilt.accre.laurelin.array.RawArray;
-import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
-import edu.vanderbilt.accre.laurelin.array.JaggedArrayPrep;
 import edu.vanderbilt.accre.laurelin.array.JaggedArray;
+import edu.vanderbilt.accre.laurelin.array.JaggedArrayPrep;
+import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
+import edu.vanderbilt.accre.laurelin.array.RawArray;
 
 public class AsJagged implements Interpretation {
     Interpretation content;

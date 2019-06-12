@@ -69,9 +69,9 @@ public class SimpleType {
         return stringToDtypeMap.get(str);
     }
 
-    static private Map<Class<? extends SimpleType>, String> typeToStringMap;
-    static private Map<String, SimpleType> stringToTypeMap;
-    static private Map<String, Dtype> stringToDtypeMap;
+    private static Map<Class<? extends SimpleType>, String> typeToStringMap;
+    private static Map<String, SimpleType> stringToTypeMap;
+    private static Map<String, Dtype> stringToDtypeMap;
 
     static {
         typeToStringMap = new HashMap<Class<? extends SimpleType>, String>();

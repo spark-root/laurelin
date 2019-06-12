@@ -70,7 +70,7 @@ public abstract class PrimitiveArray extends Array {
         return this.buffer;
     }
 
-    abstract protected Array make(ByteBuffer out);
+    protected abstract Array make(ByteBuffer out);
 
     @Override
     public Object toArray(boolean bigEndian) {

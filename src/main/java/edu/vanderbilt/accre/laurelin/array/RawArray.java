@@ -49,8 +49,7 @@ public class RawArray extends PrimitiveArray {
             out.position(byteoffsets.get(local_entrystart));
             out.limit(byteoffsets.get(local_entrystop));
             return new RawArray(out);
-        }
-        else {
+        } else {
             ByteBuffer out = ByteBuffer.allocate(byteoffsets.get(local_entrystop) - byteoffsets.get(local_entrystart) - skipbytes * (local_entrystop - local_entrystart));
             this.buffer.position(0);
             for (int i = local_entrystart;  i < local_entrystop;  i++) {
