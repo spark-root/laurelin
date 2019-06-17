@@ -159,7 +159,12 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public boolean[] getBooleans(int rowId, int count) {
-        return (boolean[])(builder.getArray(rowId, count).toArray());
+        byte[] tmp = (byte[])builder.getArray(rowId, count).toArray();
+        boolean[] ret = new boolean[count];
+        for (int i = 0; i < count; i += 1) {
+            ret[i] = (tmp[i] == 1);
+        }
+        return ret;
     }
 
     @Override
