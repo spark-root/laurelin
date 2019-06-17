@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,8 +46,8 @@ public class Root implements DataSourceV2, ReadSupport {
      * Represents a Partition of a TTree, which currently is one per-file.
      * Future improvements will split this up per-basket. Big files = big mem
      * usage!
-     *<p>
-     * This is instantiated on the driver, then serialized and transmitted to
+     *
+     * <p>This is instantiated on the driver, then serialized and transmitted to
      * the executor
      */
     static class TTreeDataSourceV2Partition implements InputPartition<ColumnarBatch> {
@@ -54,17 +56,17 @@ public class Root implements DataSourceV2, ReadSupport {
         private long entryStart;
         private long entryEnd;
         private Map<String, SlimTBranch> slimBranches;
-
         private CacheFactory basketCacheFactory;
+        private int threadCount;
 
-
-        public TTreeDataSourceV2Partition(StructType schema, CacheFactory basketCacheFactory, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches) {
+        public TTreeDataSourceV2Partition(StructType schema, CacheFactory basketCacheFactory, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount) {
             logger.trace("dsv2partition new");
             this.schema = schema;
             this.basketCacheFactory = basketCacheFactory;
             this.entryStart = entryStart;
             this.entryEnd = entryEnd;
             this.slimBranches = slimBranches;
+            this.threadCount = threadCount;
         }
 
         /*
@@ -74,7 +76,7 @@ public class Root implements DataSourceV2, ReadSupport {
         @Override
         public InputPartitionReader<ColumnarBatch> createPartitionReader() {
             logger.trace("input partition reader");
-            return new TTreeDataSourceV2PartitionReader(basketCacheFactory, schema, entryStart, entryEnd, slimBranches);
+            return new TTreeDataSourceV2PartitionReader(basketCacheFactory, schema, entryStart, entryEnd, slimBranches, threadCount);
         }
     }
 
@@ -85,13 +87,21 @@ public class Root implements DataSourceV2, ReadSupport {
         private long entryEnd;
         private int currBasket = -1;
         private Map<String, SlimTBranch> slimBranches;
+        private static ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
 
-        public TTreeDataSourceV2PartitionReader(CacheFactory basketCacheFactory, StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches) {
+        public TTreeDataSourceV2PartitionReader(CacheFactory basketCacheFactory, StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount) {
             this.basketCache = basketCacheFactory.getCache();
             this.schema = schema;
             this.entryStart = entryStart;
             this.entryEnd = entryEnd;
             this.slimBranches = slimBranches;
+
+            if (threadCount >= 1) {
+                executor.setCorePoolSize(threadCount);
+                executor.setMaximumPoolSize(threadCount);
+            } else {
+                executor = null;
+            }
         }
 
         @Override
@@ -145,7 +155,7 @@ public class Root implements DataSourceV2, ReadSupport {
                 rootType = SimpleType.fromString(field.metadata().getString("rootType"));
 
                 Dtype dtype = SimpleType.dtypeFromString(field.metadata().getString("rootType"));
-                vecs.add(new TTreeColumnVector(field.dataType(), rootType, dtype, basketCache, entryStart, entryEnd - entryStart, slimBranch));
+                vecs.add(new TTreeColumnVector(field.dataType(), rootType, dtype, basketCache, entryStart, entryEnd - entryStart, slimBranch, executor));
             }
             return vecs;
         }
@@ -160,6 +170,7 @@ public class Root implements DataSourceV2, ReadSupport {
         private TFile currFile;
         private CacheFactory basketCacheFactory;
         private StructType schema;
+        private int threadCount;
 
         public TTreeDataSourceV2Reader(DataSourceOptions options, CacheFactory basketCacheFactory) {
             logger.trace("construct ttreedatasourcev2reader");
@@ -174,6 +185,7 @@ public class Root implements DataSourceV2, ReadSupport {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+            threadCount = options.getInt("threadCount", 16);
         }
 
         @Override
@@ -277,12 +289,12 @@ public class Root implements DataSourceV2, ReadSupport {
                         entryEnd = inputTree.getEntries();
                     }
 
-                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, slimBranches));
+                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, slimBranches, threadCount));
                 }
                 if (ret.size() == 0) {
                     // Only one basket?
                     logger.debug("Planned for zero baskets, adding a dummy one");
-                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, 0, inputTree.getEntries(), slimBranches));
+                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, 0, inputTree.getEntries(), slimBranches, threadCount));
                 }
             }
             return ret;

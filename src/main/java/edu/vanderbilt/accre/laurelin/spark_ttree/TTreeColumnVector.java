@@ -28,15 +28,14 @@ public class TTreeColumnVector extends ColumnVector {
     private ArrayBuilder.GetBasket getbasket;
     private ArrayBuilder builder;
 
-    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch) {
+    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch, ThreadPoolExecutor executor) {
         super(type);
         logger.trace("new column vec of type: " + type);
 
         this.basketEntryOffsets = slimBranch.getBasketEntryOffsets();
         this.getbasket = slimBranch.getArrayBranchCallback(basketCache);
 
-        //ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
-        ThreadPoolExecutor executor = null;
+
 
         TBranch.ArrayDescriptor desc = slimBranch.getArrayDesc();
         if (desc == null) {
