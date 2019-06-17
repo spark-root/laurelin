@@ -135,7 +135,7 @@ public class AsDtype implements Interpretation {
         RawArray sliced = bytedata.slice(local_entrystart * entrysize, local_entrystop * entrysize);
         switch (this.dtype) {
             case BOOL:
-                throw new UnsupportedOperationException("not implemented yet");
+                return new PrimitiveArray.Bool(this, sliced);
             case INT1:
                 return new PrimitiveArray.Int1(this, sliced);
             case INT2:
@@ -170,7 +170,7 @@ public class AsDtype implements Interpretation {
         int length = numitems / this.multiplicity();
         switch (this.dtype) {
             case BOOL:
-                throw new UnsupportedOperationException("not implemented yet");
+                return new PrimitiveArray.Bool(this, length);
             case INT1:
                 return new PrimitiveArray.Int1(this, length);
             case INT2:

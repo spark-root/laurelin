@@ -261,6 +261,9 @@ public class TBranch {
                 case ("/l"):
                     ret = SimpleType.UInt64;
                     break;
+                case ("/O"):
+                    ret = SimpleType.Bool;
+                    break;
                 case ("/F"):
                     ret = SimpleType.Float32;
                     break;

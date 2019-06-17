@@ -30,7 +30,8 @@ n_fill_array = {}
 un_fill_array = {}
 nSlice =  array('b', [0])
 t.Branch('nSlice', nSlice, 'nSlice/B')
-for (bit, uType, sType, ruType, rType) in ((8, 'B', 'b', 'b', 'B'),
+for (bit, uType, sType, ruType, rType) in ((1, 'B', 'b', 'O', 'O'),
+                            (8, 'B', 'b', 'b', 'B'),
                             (16, 'H', 'h', 's', 'S'), 
                             (32, 'I', 'i', 'i', 'I'),
                             (64, 'L', 'l', 'l', 'L')):
@@ -48,18 +49,27 @@ for (bit, uType, sType, ruType, rType) in ((8, 'B', 'b', 'b', 'B'),
     t.Branch('SliceI%s' % bit, n_slice[bit], 'SliceI%s[nSlice]/%s' % (bit, rType))
     t.Branch('SliceUI%s' % bit, un_slice[bit], 'SliceUI%s[nSlice]/%s' % (bit, ruType))
 
-    n_fill[bit] = (0, 1, 2,
-              minInBits(bit), minInBits(bit) + 1, minInBits(bit) + 2,
-              maxInBits(bit), maxInBits(bit) - 1, maxInBits(bit) - 2)
+    if bit != 1:
+        n_fill[bit] = (0, 1, 2,
+                minInBits(bit), minInBits(bit) + 1, minInBits(bit) + 2,
+                maxInBits(bit), maxInBits(bit) - 1, maxInBits(bit) - 2)
 
-    un_fill[bit] = (0, 1, 2,
-              0, 1, 2,
-              umaxInBits(bit), umaxInBits(bit) - 1, umaxInBits(bit) - 2)
+        un_fill[bit] = (0, 1, 2,
+                0, 1, 2,
+                umaxInBits(bit), umaxInBits(bit) - 1, umaxInBits(bit) - 2)
+    else:
+        n_fill[bit] = (0, 1, 0,
+                1, 0, 1,
+                0, 1, 0)
+
+        un_fill[bit] = (1, 0, 1,
+                0, 1, 0,
+                1, 0, 1)
 
 for i in range(len(n_fill[8])):
     thisSlice = i % 3
     nSlice[0] = thisSlice
-    for bit in (8, 16, 32, 64):
+    for bit in (1, 8, 16, 32, 64):
         n[bit][0] = n_fill[bit][i]
         un[bit][0] = un_fill[bit][i]
         for j in range(arrayLen):
