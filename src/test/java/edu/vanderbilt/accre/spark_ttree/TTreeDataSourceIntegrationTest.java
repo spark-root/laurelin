@@ -55,7 +55,8 @@ public class TTreeDataSourceIntegrationTest {
         df.select("ScalarI8", "ScalarI16", "ScalarI32", "ScalarI64").show();
         df.select("ArrayI8", "ArrayI16", "ArrayI32", "ArrayI64").show();
         df.select("SliceI32").show();
-        df.select("ScalarI1", "ScalarUI1").show();
+        // array form is incorrect, slice form bombs
+        df.select("ScalarI1", "ScalarUI1", "ArrayI1", "ArrayUI1").show();
         // following code bombs
         // df.select("SliceI8", "SliceI16", "SliceI64").show();
     }
