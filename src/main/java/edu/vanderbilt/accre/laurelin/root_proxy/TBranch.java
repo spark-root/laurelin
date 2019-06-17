@@ -57,6 +57,9 @@ public class TBranch {
                 TBranch branch = new TBranch(val, tree, this);
                 // Drop branches with neither subbranches nor leaves
                 if (branch.getBranches().size() != 0 || branch.getLeaves().size() != 0) {
+                    if (branch.getName().startsWith("P3")) {
+                        continue;
+                    }
                     branches.add(branch);
                 }
             }
@@ -113,11 +116,28 @@ public class TBranch {
         return (String) data.getScalar("fName").getVal();
     }
 
+    public String getFullName() {
+        if (parent == null) {
+            return (String) data.getScalar("fName").getVal();
+        } else {
+            TBranch tmpParent = parent;
+            String ret = "." + getName();
+            while (tmpParent != null) {
+                ret = tmpParent.getName() + ret;
+                tmpParent = tmpParent.parent;
+                if (tmpParent != null) {
+                    ret = "." + ret;
+                }
+            }
+            return ret;
+        }
+    }
+
     public String getClassName() {
         return data.getClassName();
     }
 
-    public List<TBranch> getBranches() {
+    public ArrayList<TBranch> getBranches() {
         return branches;
     }
 
@@ -217,6 +237,18 @@ public class TBranch {
         String lastTwo = title.substring(title.length() - 2, title.length());
         if (lastTwo.charAt(0) == '/') {
             switch (lastTwo) {
+                case ("/B"):
+                    ret = SimpleType.Int8;
+                    break;
+                case ("/b"):
+                    ret = SimpleType.UInt8;
+                    break;
+                case ("/S"):
+                    ret = SimpleType.Int16;
+                    break;
+                case ("/s"):
+                    ret = SimpleType.UInt16;
+                    break;
                 case ("/I"):
                     ret = SimpleType.Int32;
                     break;

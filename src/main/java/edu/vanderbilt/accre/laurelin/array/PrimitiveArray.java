@@ -45,10 +45,16 @@ public abstract class PrimitiveArray extends Array {
     public void copyitems(PrimitiveArray source, int itemstart, int itemstop) {
         int bytestart = itemstart * this.itemsize();
         int bytestop = itemstop * this.itemsize();
+        /*
+         * This code takes advantage of the fact that tmp and this.buffer share
+         * the same backing array after duplicate()
+         */
         ByteBuffer tmp = this.buffer.duplicate();
         tmp.position(bytestart);
         tmp.limit(bytestop);
-        tmp.put(source.raw());
+        ByteBuffer srctmp = source.buffer.duplicate();
+        srctmp.position(0);
+        tmp.put(srctmp);
     }
 
     @Override
@@ -179,11 +185,11 @@ public abstract class PrimitiveArray extends Array {
             super(new AsDtype(AsDtype.Dtype.INT1), buffer);
         }
 
-        public Int1(char[] data, boolean bigEndian) {
+        public Int1(byte[] data, boolean bigEndian) {
             super(new AsDtype(AsDtype.Dtype.INT1), data.length);
             this.buffer = ByteBuffer.allocate(data.length * this.itemsize());
-            this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
-            this.buffer.asCharBuffer().put(data, 0, data.length);
+            //this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
+            this.buffer.put(data, 0, data.length);
         }
 
         @Override
@@ -211,7 +217,7 @@ public abstract class PrimitiveArray extends Array {
 
         @Override
         public String toString() {
-            return Arrays.toString((char[])this.toArray());
+            return Arrays.toString((byte[])this.toArray());
         }
     }
 

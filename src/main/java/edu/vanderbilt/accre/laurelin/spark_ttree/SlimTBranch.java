@@ -6,6 +6,9 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
@@ -112,6 +115,8 @@ public class SlimTBranch implements Serializable {
     }
 
     public static class SlimTBasket implements Serializable {
+        private static final Logger logger = LogManager.getLogger();
+
         private static final long serialVersionUID = 1L;
         private SlimTBranch branch;
         private long offset;
@@ -141,7 +146,16 @@ public class SlimTBranch implements Serializable {
         public int getLast() {
             return last;
         }
-
+        private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
+        public static String bytesToHex(byte[] bytes) {
+            char[] hexChars = new char[bytes.length * 2];
+            for ( int j = 0; j < bytes.length; j++ ) {
+                int v = bytes[j] & 0xFF;
+                hexChars[j * 2] = hexArray[v >>> 4];
+                hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+            }
+            return new String(hexChars);
+        }
         private void initializePayload() throws IOException {
             ROOTFile tmpFile = ROOTFile.getInputFile(branch.getPath());
             Cursor fileCursor = tmpFile.getCursor(offset);
@@ -149,6 +163,11 @@ public class SlimTBranch implements Serializable {
                     compressedLen,
                     uncompressedLen,
                     keyLen);
+            logger.trace("getbasket len: " + uncompressedLen);
+            if (uncompressedLen == 27) {
+                logger.trace("ArrayI8: " + bytesToHex(this.getPayload().array()));
+                logger.trace("limit: " + payload.getLimit());
+            }
         }
 
         public ByteBuffer getPayload(long offset, int len) throws IOException {

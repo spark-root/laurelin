@@ -3,6 +3,7 @@ package edu.vanderbilt.accre.laurelin;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +32,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
+import edu.vanderbilt.accre.laurelin.spark_ttree.StructColumnVector;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
 public class Root implements DataSourceV2, ReadSupport {
@@ -115,23 +117,37 @@ public class Root implements DataSourceV2, ReadSupport {
         @Override
         public ColumnarBatch get() {
             logger.trace("columnarbatch");
-            ColumnVector[] vecs = new ColumnVector[schema.fields().length];
+            LinkedList<ColumnVector> vecs = new LinkedList<ColumnVector>();
+            vecs = getBatchRecursive(schema.fields());
+            // This is miserable
+            ColumnVector[] tmp = new ColumnVector[vecs.size()];
             int idx = 0;
-            for (StructField field: schema.fields())  {
+            for (ColumnVector vec: vecs) {
+                tmp[idx] = vec;
+                idx += 1;
+            }
+            // End misery
+            ColumnarBatch ret = new ColumnarBatch(tmp);
+            ret.setNumRows((int) (entryEnd - entryStart));
+            return ret;
+        }
+
+        private LinkedList<ColumnVector> getBatchRecursive(StructField[] structFields) {
+            LinkedList<ColumnVector> vecs = new LinkedList<ColumnVector>();
+            for (StructField field: structFields)  {
                 if (field.dataType() instanceof StructType) {
-                    throw new RuntimeException("Nested fields are not supported: " + field.name());
+                    LinkedList<ColumnVector> nestedVecs = getBatchRecursive(((StructType)field.dataType()).fields());
+                    vecs.add(new StructColumnVector(field.dataType(), nestedVecs));
+                    continue;
                 }
                 SlimTBranch slimBranch = slimBranches.get(field.name());
                 SimpleType rootType;
                 rootType = SimpleType.fromString(field.metadata().getString("rootType"));
 
                 Dtype dtype = SimpleType.dtypeFromString(field.metadata().getString("rootType"));
-                vecs[idx] = new TTreeColumnVector(field.dataType(), rootType, dtype, basketCache, entryStart, entryEnd - entryStart, slimBranch);
-                idx += 1;
+                vecs.add(new TTreeColumnVector(field.dataType(), rootType, dtype, basketCache, entryStart, entryEnd - entryStart, slimBranch));
             }
-            ColumnarBatch ret = new ColumnarBatch(vecs);
-            ret.setNumRows((int) (entryEnd - entryStart));
-            return ret;
+            return vecs;
         }
     }
 
@@ -246,16 +262,7 @@ public class Root implements DataSourceV2, ReadSupport {
                 }
 
                 Map<String, SlimTBranch> slimBranches = new HashMap<String, SlimTBranch>();
-                for (StructField field: schema.fields())  {
-                    if (field.dataType() instanceof StructType) {
-                        throw new RuntimeException("Nested fields are not supported: " + field.name());
-                    }
-                    ArrayList<TBranch> branchList = inputTree.getBranches(field.name());
-                    assert branchList.size() == 1;
-                    TBranch fatBranch = branchList.get(0);
-                    SlimTBranch slimBranch = SlimTBranch.getFromTBranch(fatBranch);
-                    slimBranches.put(fatBranch.getName(), slimBranch);
-                }
+                parseStructFields(inputTree, slimBranches, schema, "");
 
 
                 // TODO We partition based on the basketing of the first branch
@@ -272,8 +279,26 @@ public class Root implements DataSourceV2, ReadSupport {
 
                     ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, slimBranches));
                 }
+                if (ret.size() == 0) {
+                    // Only one basket?
+                    logger.debug("Planned for zero baskets, adding a dummy one");
+                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, 0, inputTree.getEntries(), slimBranches));
+                }
             }
             return ret;
+        }
+
+        private void parseStructFields(TTree inputTree, Map<String, SlimTBranch> slimBranches, StructType struct, String namespace) {
+            for (StructField field: struct.fields())  {
+                if (field.dataType() instanceof StructType) {
+                    parseStructFields(inputTree, slimBranches, (StructType) field.dataType(), namespace + field.name() + ".");
+                }
+                ArrayList<TBranch> branchList = inputTree.getBranches(namespace + field.name());
+                assert branchList.size() == 1;
+                TBranch fatBranch = branchList.get(0);
+                SlimTBranch slimBranch = SlimTBranch.getFromTBranch(fatBranch);
+                slimBranches.put(fatBranch.getName(), slimBranch);
+            }
         }
 
         @Override

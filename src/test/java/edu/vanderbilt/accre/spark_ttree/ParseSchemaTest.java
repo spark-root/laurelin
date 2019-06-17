@@ -71,7 +71,6 @@ public class ParseSchemaTest {
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         // Note - there's 20 branches, but we ignore one because I'm not trying to deserialize strings
-        System.out.println(schemaCast.prettyJson());
         assertEquals(19, schemaCast.size());
     }
 
@@ -85,7 +84,7 @@ public class ParseSchemaTest {
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
-        System.out.println(schema.simpleString());
+        System.out.println(schema.prettyJson());
         assertEquals(1, schemaCast.size());
     }
 

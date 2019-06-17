@@ -59,10 +59,11 @@ public class TTree {
         } else {
             ArrayList<TBranch> ret = new ArrayList<TBranch>();
             boolean [] nameFound = new boolean[names.length];
-            for (TBranch branch: branches) {
+            ArrayList<TBranch> branchList = getNestedBranches();
+            for (TBranch branch: branchList) {
                 for (int i = 0; i < names.length; i += 1) {
                     String name = names[i];
-                    if (branch.getName().equals(name)) {
+                    if (branch.getFullName().equals(name)) {
                         if (nameFound[i] == false) {
                             nameFound[i] = true;
                             ret.add(branch);
@@ -76,6 +77,21 @@ public class TTree {
                 throw new RuntimeException("Could not find all requested branches");
             }
             return ret;
+        }
+    }
+
+    private ArrayList<TBranch> getNestedBranches() {
+        ArrayList<TBranch> ret = new ArrayList<TBranch>();
+        getNestedBranchesRecursive(ret, branches);
+        return ret;
+    }
+
+    private void getNestedBranchesRecursive(ArrayList<TBranch> ret, ArrayList<TBranch> branchList) {
+        for (TBranch branch: branchList) {
+            ret.add(branch);
+            if (branch.getBranches().size() != 0) {
+                getNestedBranchesRecursive(ret, branch.getBranches());
+            }
         }
     }
 

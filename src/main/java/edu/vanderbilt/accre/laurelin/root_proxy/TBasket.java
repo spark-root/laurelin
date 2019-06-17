@@ -3,7 +3,12 @@ package edu.vanderbilt.accre.laurelin.root_proxy;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class TBasket {
+    private static final Logger logger = LogManager.getLogger();
+
     private TKey key;
     // https://root.cern.ch/doc/master/TBasket_8h_source.html
     private short vers;
@@ -45,6 +50,7 @@ public class TBasket {
                 key.Nbytes - key.KeyLen,
                 key.ObjLen,
                 key.KeyLen);
+        logger.trace("get basket: " + key.fName);
     }
 
     public ByteBuffer getPayload(long offset, int len) throws IOException {

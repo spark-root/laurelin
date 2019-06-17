@@ -1,9 +1,9 @@
 package edu.vanderbilt.accre.laurelin.spark_ttree;
 
 import java.util.Arrays;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import org.apache.logging.log4j.LogManager;
 import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
@@ -23,27 +23,33 @@ import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 
 public class TTreeColumnVector extends ColumnVector {
+    private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
     private long [] basketEntryOffsets;
     private ArrayBuilder.GetBasket getbasket;
     private ArrayBuilder builder;
 
     public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch) {
         super(type);
+        logger.trace("new column vec of type: " + type);
 
         this.basketEntryOffsets = slimBranch.getBasketEntryOffsets();
         this.getbasket = slimBranch.getArrayBranchCallback(basketCache);
 
-        ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
+        //ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
+        ThreadPoolExecutor executor = null;
 
         TBranch.ArrayDescriptor desc = slimBranch.getArrayDesc();
         if (desc == null) {
+            logger.trace("  scalar vec");
             Interpretation interpretation = new AsDtype(dtype);   // FIXME
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         }
         else if (desc.isFixed()) {
+            logger.trace("  fixed vec");
             Interpretation interpretation = new AsDtype(dtype, Arrays.asList(desc.getFixedLength()));   // FIXME
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         } else {
+            logger.trace("  slice vec");
             Interpretation interpretation = new AsJagged(new AsDtype(dtype));   // FIXME
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         }
@@ -112,7 +118,9 @@ public class TTreeColumnVector extends ColumnVector {
     @Override
     public ColumnarArray getArray(int rowId) {
         Array array = builder.getArray(rowId, 1).subarray();
-        return new ColumnarArray(new ArrayColumnVector(((ArrayType)dataType()).elementType(), array), 0, array.length());
+        ArrayColumnVector tmpvec = new ArrayColumnVector(((ArrayType)dataType()).elementType(), array);
+        ColumnarArray tmp = new ColumnarArray(tmpvec, 0, array.length());
+        return tmp;
     }
 
     @Override
