@@ -61,6 +61,17 @@ public class TTreeDataSourceIntegrationTest {
         // df.select("SliceI8", "SliceI16", "SliceI64").show();
     }
 
+    @Test
+    public void testShortName() {
+        Dataset<Row> df = spark
+                .read()
+                .format("root")
+                .option("tree",  "Events")
+                .load("testdata/all-types.root");
+        df.printSchema();
+        df.select("ScalarI8").show();
+    }
+
     @AfterClass
     public static void afterClass() {
         if (spark != null) {

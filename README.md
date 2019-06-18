@@ -1,4 +1,4 @@
-# spark-ttree [![Build Status](https://travis-ci.org/PerilousApricot/spark-ttree.svg?branch=master)](https://travis-ci.org/PerilousApricot/spark-ttree)
+# spark-ttree [![Build Status](https://travis-ci.org/PerilousApricot/spark-ttree.svg?branch=master)](https://travis-ci.org/PerilousApricot/spark-ttree)[![Maven Central](https://img.shields.io/maven-central/v/edu.vanderbilt.accre/laurelin.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22edu.vanderbilt.accre%22%20AND%20a:%22laurelin%22)
 
 Implementation of ROOT I/O designed to get TTrees into Spark DataFrames.
 Consists of the following three components:
@@ -10,3 +10,22 @@ Consists of the following three components:
 The scope of this project is only to perform vectorized (i.e. column-based)
 reads of TTrees consisting of relatively simple branches -- fundamental numeric
 types and both fixed-length/jagged arrays of those types.
+
+## Usage example
+
+Note that the most recent version number can be found [here](https://search.maven.org/search?q=a:laurelin%20g:edu.vanderbilt.accre). To use a different version, replace 0.0.15 with your
+desired version
+
+```python
+import pyspark.sql
+
+spark = pyspark.sql.SparkSession.builder \
+    .master("local[1]") \
+    .config('spark.jars.packages', 'edu.vanderbilt.accre:laurelin:0.0.15') \
+    .getOrCreate()
+sc = spark.sparkContext
+df = spark.read.format('root') \
+                .option("tree", "tree") \
+                .load('small-flat-tree.root')
+df.printSchema()
+```

@@ -11,6 +11,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.spark.sql.sources.DataSourceRegister;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.DataSourceV2;
 import org.apache.spark.sql.sources.v2.ReadSupport;
@@ -37,7 +38,7 @@ import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 import edu.vanderbilt.accre.laurelin.spark_ttree.StructColumnVector;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
-public class Root implements DataSourceV2, ReadSupport {
+public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
     // InputPartition is serialized and sent to the executor who then makes the
     // InputPartitionReader, I don't think we need to have that division
     private static final Logger logger = LogManager.getLogger();
@@ -326,6 +327,11 @@ public class Root implements DataSourceV2, ReadSupport {
         logger.trace("make new reader");
         CacheFactory basketCacheFactory = new CacheFactory();
         return new TTreeDataSourceV2Reader(options, basketCacheFactory);
+    }
+
+    @Override
+    public String shortName() {
+        return "root";
     }
 
 }
