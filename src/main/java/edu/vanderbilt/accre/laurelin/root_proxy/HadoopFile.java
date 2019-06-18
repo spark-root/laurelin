@@ -1,16 +1,28 @@
 /**
  * Constructed by IOFactory for URL pathnames (e.g root://, https://)
  */
+
 package edu.vanderbilt.accre.laurelin.root_proxy;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Future;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+
 public class HadoopFile implements FileInterface {
+    FSDataInputStream fd;
+    long limit;
 
-    public HadoopFile(String path) {
-
+    public HadoopFile(String pathStr) throws IOException {
+        Configuration conf = new Configuration();
+        FileSystem fileSystem = FileSystem.get(conf);
+        Path path = new Path(pathStr);
+        fd = fileSystem.open(path, 'r');
+        limit = fileSystem.getFileStatus(path).getLen();
     }
 
     /*
@@ -18,7 +30,12 @@ public class HadoopFile implements FileInterface {
      */
     @Override
     public ByteBuffer read(long offset, long len) throws IOException {
-        throw new UnsupportedOperationException();
+        if (len > (Math.pow(2, 32) - 1)) {
+            throw new RuntimeException("Cannot perform a single read > 2GB");
+        }
+        ByteBuffer ret = ByteBuffer.allocate((int)len);
+        fd.read(offset, ret.array(), 0, (int)len);
+        return ret;
     }
 
     @Override
@@ -38,12 +55,12 @@ public class HadoopFile implements FileInterface {
 
     @Override
     public void close() throws IOException {
-
+        fd.close();
     }
 
     @Override
     public long getLimit() throws IOException {
-        return -1;
+        return limit;
     }
 
 }
