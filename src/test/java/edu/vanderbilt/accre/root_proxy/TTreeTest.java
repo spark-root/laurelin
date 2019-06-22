@@ -6,6 +6,7 @@ import static org.junit.Assume.assumeTrue;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -36,6 +37,7 @@ public class TTreeTest {
         long []basketEntryOffsets = slimBranch.getBasketEntryOffsets();
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.INT4);
         ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, null, 0, 9);
+        System.out.println(Arrays.toString((int[])builder.getArray(0, 9).toArray()));
     }
 
     private TTree getTestTree() throws IOException {
