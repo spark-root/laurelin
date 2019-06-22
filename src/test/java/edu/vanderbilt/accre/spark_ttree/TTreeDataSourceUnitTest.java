@@ -22,12 +22,49 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
+import org.apache.spark.sql.types.IntegerType;
 import org.junit.Test;
 
 import edu.vanderbilt.accre.laurelin.Root;
 import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
+import edu.vanderbilt.accre.laurelin.spark_ttree.ArrayColumnVector;
 
 public class TTreeDataSourceUnitTest {
+    @Test
+    public void testIntegers() throws IOException {
+        TFile f = TFile.getFromFile("testdata/all-types.root");
+        TTree t = new TTree(f.getProxy("Events"), f);
+        TBranch b = t.getBranches("ScalarI32").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slimBranch = SlimTBranch.getFromTBranch(b);
+        ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(cache);
+        long []basketEntryOffsets = slimBranch.getBasketEntryOffsets();
+        AsDtype interpretation = new AsDtype(AsDtype.Dtype.INT4);
+        ArrayBuilder builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, null, 0, 9);
+        ArrayColumnVector result = new ArrayColumnVector(new IntegerType(), builder.getArray(0, 9));
+        assert Arrays.toString(result.getInts(0, 9)).equals("[0, 1, 2, -2147483648, -2147483647, -2147483646, 2147483647, 2147483646, 2147483645]");
+        // assert result.getInt(0) == 0;
+        // assert result.getInt(1) == 1;
+        // assert result.getInt(2) == 2;
+        // assert result.getInt(3) == -2147483648;
+        // assert result.getInt(4) == -2147483647;
+        // assert result.getInt(5) == -2147483646;
+        // assert result.getInt(6) == 2147483647;
+        // assert result.getInt(7) == 2147483646;
+        // assert result.getInt(8) == 2147483645;
+        
+    }
+
+    @Test
+    public void testLoadNestedDataFrame() {
+        Dataset<Row> df = spark
+                .read()
+                .format("edu.vanderbilt.accre.laurelin.Root")
+                .option("tree",  "Events")
+                .load("testdata/all-types.root");
+        df.printSchema();
+        df.select("ScalarI32").show();
+    }
 
     @Test
     public void testMultipleBasketsForiter() throws IOException {

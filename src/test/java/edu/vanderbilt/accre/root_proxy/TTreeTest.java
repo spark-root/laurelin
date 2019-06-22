@@ -26,20 +26,6 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 
 public class TTreeTest {
-    @Test
-    public void testIntegers() throws IOException {
-        TFile f = TFile.getFromFile("testdata/all-types.root");
-        TTree t = new TTree(f.getProxy("Events"), f);
-        TBranch b = t.getBranches("ScalarI32").get(0);
-        Cache cache = new Cache();
-        SlimTBranch slimBranch = SlimTBranch.getFromTBranch(b);
-        ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(cache);
-        long []basketEntryOffsets = slimBranch.getBasketEntryOffsets();
-        AsDtype asdtype = new AsDtype(AsDtype.Dtype.INT4);
-        ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, null, 0, 9);
-        System.out.println(Arrays.toString((int[])builder.getArray(0, 9).toArray()));
-    }
-
     private TTree getTestTree() throws IOException {
         String testPath = "testdata/uproot-small-flat-tree.root";
         String testTree = "tree";
