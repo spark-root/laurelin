@@ -1,5 +1,7 @@
 package edu.vanderbilt.accre.spark_ttree;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -59,6 +61,27 @@ public class TTreeDataSourceIntegrationTest {
         df.select("ScalarI1", "ScalarUI1", "ArrayI1", "ArrayUI1").show();
         // following code bombs
         // df.select("SliceI8", "SliceI16", "SliceI64").show();
+    }
+
+    @Test
+    public void testShortName() {
+        Dataset<Row> df = spark
+                .read()
+                .format("root")
+                .option("tree",  "Events")
+                .load("testdata/all-types.root");
+        df.printSchema();
+        df.select("ScalarI8").show();
+    }
+
+    @Test
+    public void testTwoFiles() {
+        Dataset<Row> df = spark
+                .read()
+                .format("root")
+                .option("tree",  "Events")
+                .load("testdata/all-types.root", "testdata/all-types.root");
+        assertEquals(18, df.count());
     }
 
     @AfterClass

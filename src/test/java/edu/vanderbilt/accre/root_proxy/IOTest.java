@@ -29,7 +29,9 @@ public class IOTest {
      */
     @Test
     public void getFileImpl() throws Exception {
-        assertTrue(IOFactory.openForRead("root://testfile.root") instanceof HadoopFile);
+        Path currentRelativePath = Paths.get("");
+        String s = currentRelativePath.toAbsolutePath().toString();
+        assertTrue(IOFactory.openForRead("file:///" + s + "/" + testfile) instanceof HadoopFile);
         assertTrue(IOFactory.openForRead(testfile) instanceof NIOFile);
         assertTrue(IOFactory.openForRead("./" + testfile) instanceof NIOFile);
     }
@@ -49,9 +51,22 @@ public class IOTest {
     }
 
     @Test
+    public void readHadoopFile() throws Exception {
+        int[] offs = {0, 16, 2000, 16000};
+        int[] lens = {10000, 16, 20, 32};
+        Path currentRelativePath = Paths.get("");
+        String s = currentRelativePath.toAbsolutePath().toString();
+        FileInterface file = IOFactory.openForRead("file:///" + s + "/" + testfile);
+
+        for (int x = 0; x < offs.length; x += 1) {
+            assertArrayEquals(file.read(offs[x], lens[x]).array(), getTestBytes(offs[x], lens[x]).array());
+        }
+    }
+
+    @Test
     public void readFromRootFile() throws Exception {
         int[] offs = {0, 16, 2000, 16000};
-        int lens[] = {10000, 16, 20, 32};
+        int[] lens = {10000, 16, 20, 32};
         ROOTFile rf = ROOTFile.getInputFile(testfile);
 
         for (int x = 0; x < offs.length; x += 1) {
