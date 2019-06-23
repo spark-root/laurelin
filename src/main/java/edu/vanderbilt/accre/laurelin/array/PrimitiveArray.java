@@ -78,20 +78,6 @@ public abstract class PrimitiveArray extends Array {
 
     protected abstract Array make(ByteBuffer out);
 
-    @Override
-    public Object toArray(boolean bigEndian) {
-        this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
-        FloatBuffer buf = this.buffer.asFloatBuffer();
-        float[] out = new float[buf.limit() - buf.position()];
-        buf.get(out);
-        return out;
-    }
-
-    @Override
-    public String toString() {
-        return Arrays.toString((float[])this.toArray());
-    }
-
     /////////////////////////////////////////////////////////////////////////// Bool
 
     /*
