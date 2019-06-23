@@ -140,12 +140,8 @@
                     <version>2.5.2</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>2.8.2</version>
-                    <configuration>
-                        <skip>true</skip>
-                    </configuration>
                 </plugin>
                 <!-- site lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
                 <plugin>
@@ -161,33 +157,20 @@
                     <artifactId>maven-release-plugin</artifactId>
                     <version>2.5</version>
                     <configuration>
-                        <autoVersionSubmodules>true</autoVersionSubmodules>
-                        <releaseProfiles>releases</releaseProfiles>
+                        <useReleaseProfile>false</useReleaseProfile>
+                        <releaseProfiles>release</releaseProfiles>
+                        <goals>deploy</goals>
                     </configuration>
                 </plugin>
                 <plugin>
-                    <!-- simplify deploying to maven central
-                         https://www.baeldung.com/maven-deploy-nexus
-                         https://www.baeldung.com/maven-release-nexus
-                    -->
                     <groupId>org.sonatype.plugins</groupId>
                     <artifactId>nexus-staging-maven-plugin</artifactId>
                     <version>1.6.3</version>
                     <extensions>true</extensions>
-                    <executions>
-                        <execution>
-                            <id>default-deploy</id>
-                            <phase>deploy</phase>
-                            <goals>
-                                <goal>deploy</goal>
-                            </goals>
-                        </execution>
-                    </executions>
                     <configuration>
                         <serverId>ossrh</serverId>
                         <nexusUrl>https://oss.sonatype.org/</nexusUrl>
                         <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        <skipStaging>true</skipStaging>
                     </configuration>
                 </plugin>
                 <plugin>
