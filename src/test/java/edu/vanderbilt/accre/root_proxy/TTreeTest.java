@@ -25,7 +25,6 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 
 public class TTreeTest {
-
     private TTree getTestTree() throws IOException {
         String testPath = "testdata/uproot-small-flat-tree.root";
         String testTree = "tree";

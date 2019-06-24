@@ -114,6 +114,7 @@ public class ArrayBuilder {
 
                 int numbytes = basketkeys[j - 1].fLast - basketkeys[j - 1].fKeylen;
                 long numitems = interpretation.numitems(numbytes, (int)numentries);
+
                 totalitems += numitems;
                 if (totalitems != (int)totalitems) {
                     throw new IllegalArgumentException("number of items requested of ArrayBuilder.build must fit into a 32-bit integer");
