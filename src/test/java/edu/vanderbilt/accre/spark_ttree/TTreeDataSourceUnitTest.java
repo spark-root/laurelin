@@ -28,6 +28,8 @@ import org.apache.spark.sql.types.ByteType;
 import org.apache.spark.sql.types.ShortType;
 import org.apache.spark.sql.types.IntegerType;
 import org.apache.spark.sql.types.LongType;
+import org.apache.spark.sql.types.FloatType;
+import org.apache.spark.sql.types.DoubleType;
 import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -682,6 +684,106 @@ public class TTreeDataSourceUnitTest {
         assertEquals(event8.numElements(), 2);
         assertEquals(event8.getLong(0), 9223372036854775805L);
         assertEquals(event8.getLong(1), 9223372036854775805L);
+    }
+
+    @Test
+    public void testFloat32() throws IOException {
+        TFile file = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
+        TTree tree = new TTree(file.getProxy("tree"), file);
+        TBranch branch = tree.getBranches("Float32").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new FloatType(), SimpleType.fromString("float"), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
+        for (int i = 0;  i < 100;  i++) {
+            assertEquals(result.getFloat(i), (float)i, 0.0001);
+        }
+    }
+
+    @Test
+    public void testArrayFloat32() throws IOException {
+        TFile file = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
+        TTree tree = new TTree(file.getProxy("tree"), file);
+        TBranch branch = tree.getBranches("ArrayFloat32").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new FloatType(), false), new SimpleType.ArrayType(SimpleType.fromString("float")), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
+        for (int i = 0;  i < 100;  i++) {
+            ColumnarArray event = result.getArray(i);
+            assertEquals(event.numElements(), 10);
+            for (int j = 0;  j < 10;  j++) {
+                assertEquals(result.getFloat(i), (float)i, 0.0001);
+            }
+        }
+    }
+
+    @Test
+    public void testSliceFloat32() throws IOException {
+        TFile file = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
+        TTree tree = new TTree(file.getProxy("tree"), file);
+        TBranch branch = tree.getBranches("SliceFloat32").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new FloatType(), false), new SimpleType.ArrayType(SimpleType.fromString("float")), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
+        for (int i = 0;  i < 100;  i++) {
+            ColumnarArray event = result.getArray(i);
+            assertEquals(event.numElements(), i % 10);
+            for (int j = 0;  j < i % 10;  j++) {
+                assertEquals(result.getFloat(i), (float)i, 0.0001);
+            }
+        }
+    }
+
+    @Test
+    public void testFloat64() throws IOException {
+        TFile file = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
+        TTree tree = new TTree(file.getProxy("tree"), file);
+        TBranch branch = tree.getBranches("Float64").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new DoubleType(), SimpleType.fromString("double"), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
+        for (int i = 0;  i < 100;  i++) {
+            assertEquals(result.getDouble(i), (double)i, 0.0001);
+        }
+    }
+
+    @Test
+    public void testArrayFloat64() throws IOException {
+        TFile file = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
+        TTree tree = new TTree(file.getProxy("tree"), file);
+        TBranch branch = tree.getBranches("ArrayFloat64").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("double")), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
+        for (int i = 0;  i < 100;  i++) {
+            ColumnarArray event = result.getArray(i);
+            assertEquals(event.numElements(), 10);
+            for (int j = 0;  j < 10;  j++) {
+                assertEquals(result.getDouble(i), (double)i, 0.0001);
+            }
+        }
+    }
+
+    @Test
+    public void testSliceFloat64() throws IOException {
+        TFile file = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
+        TTree tree = new TTree(file.getProxy("tree"), file);
+        TBranch branch = tree.getBranches("SliceFloat64").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("double")), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
+        for (int i = 0;  i < 100;  i++) {
+            ColumnarArray event = result.getArray(i);
+            assertEquals(event.numElements(), i % 10);
+            for (int j = 0;  j < i % 10;  j++) {
+                assertEquals(result.getDouble(i), (double)i, 0.0001);
+            }
+        }
     }
 
 }
