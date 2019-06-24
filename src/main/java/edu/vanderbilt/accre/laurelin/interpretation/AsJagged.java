@@ -27,8 +27,13 @@ public class AsJagged implements Interpretation {
     }
 
     @Override
-    public int itemsize() {
-        return this.content.itemsize();
+    public int disk_itemsize() {
+        return this.content.disk_itemsize();
+    }
+
+    @Override
+    public int memory_itemsize() {
+        return this.content.memory_itemsize();
     }
 
     @Override
@@ -50,7 +55,7 @@ public class AsJagged implements Interpretation {
     public Array fromroot(RawArray bytedata, PrimitiveArray.Int4 byteoffsets, int local_entrystart, int local_entrystop) {
         RawArray compact = bytedata.compact(byteoffsets, this.skipbytes, local_entrystart, local_entrystop);
 
-        int innersize = ((AsDtype)this.content).itemsize() * ((AsDtype)this.content).multiplicity();
+        int innersize = ((AsDtype)this.content).disk_itemsize() * ((AsDtype)this.content).multiplicity();
         ByteBuffer countsbuf = ByteBuffer.allocate((local_entrystop - local_entrystart) * 4);
         int total = 0;
         for (int i = local_entrystart;  i < local_entrystop;  i++) {

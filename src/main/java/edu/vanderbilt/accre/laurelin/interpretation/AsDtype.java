@@ -53,7 +53,7 @@ public class AsDtype implements Interpretation {
     }
 
     @Override
-    public int itemsize() {
+    public int disk_itemsize() {
         switch (this.dtype) {
             case BOOL:
                 return 1;
@@ -71,6 +71,36 @@ public class AsDtype implements Interpretation {
                 return 2;
             case UINT4:
                 return 4;
+            case UINT8:
+                return 8;
+            case FLOAT4:
+                return 4;
+            case FLOAT8:
+                return 8;
+            default:
+                throw new AssertionError("unrecognized dtype");
+        }
+    }
+
+    @Override
+    public int memory_itemsize() {
+        switch (this.dtype) {
+            case BOOL:
+                return 1;
+            case INT1:
+                return 1;
+            case INT2:
+                return 2;
+            case INT4:
+                return 4;
+            case INT8:
+                return 8;
+            case UINT1:
+                return 2;
+            case UINT2:
+                return 4;
+            case UINT4:
+                return 8;
             case UINT8:
                 return 8;
             case FLOAT4:
@@ -114,11 +144,11 @@ public class AsDtype implements Interpretation {
 
     @Override
     public int numitems(int numbytes, int numentries) {
-        if (numbytes % this.itemsize() != 0) {
+        if (numbytes % this.disk_itemsize() != 0) {
             throw new AssertionError(
                     String.format("%d byte buffer does not divide evenly into %s", numbytes, this.dtype.toString()));
         }
-        return numbytes / this.itemsize();
+        return numbytes / this.disk_itemsize();
     }
 
     @Override
@@ -131,7 +161,7 @@ public class AsDtype implements Interpretation {
         if (byteoffsets != null) {
             throw new AssertionError("byteoffsets must be null for AsDtype");
         }
-        int entrysize = this.multiplicity() * this.itemsize();
+        int entrysize = this.multiplicity() * this.disk_itemsize();
         RawArray sliced = bytedata.slice(local_entrystart * entrysize, local_entrystop * entrysize);
         switch (this.dtype) {
             case BOOL:

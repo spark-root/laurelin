@@ -5,7 +5,9 @@ import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 
 public interface Interpretation {
-    public int itemsize();
+    public int disk_itemsize();
+
+    public int memory_itemsize();
 
     public Array empty();
 
