@@ -23,10 +23,12 @@ import org.apache.spark.sql.sources.v2.reader.InputPartitionReader;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.IntegerType;
 import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.vectorized.ColumnarArray;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.apache.spark.sql.vectorized.ColumnVector;
 
@@ -34,37 +36,37 @@ import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.Root;
+import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
 import edu.vanderbilt.accre.laurelin.spark_ttree.ArrayColumnVector;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
+import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
 public class TTreeDataSourceUnitTest {
     @Test
     public void testIntegers() throws IOException {
-        TFile f = TFile.getFromFile("testdata/all-types.root");
-        TTree t = new TTree(f.getProxy("Events"), f);
-        TBranch b = t.getBranches("ScalarI32").get(0);
+        TFile file = TFile.getFromFile("testdata/all-types.root");
+        TTree tree = new TTree(file.getProxy("Events"), file);
+        TBranch branch = tree.getBranches("SliceI32").get(0);
         Cache cache = new Cache();
-        SlimTBranch slimBranch = SlimTBranch.getFromTBranch(b);
-        ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(cache);
-        long []basketEntryOffsets = slimBranch.getBasketEntryOffsets();
-        AsDtype interpretation = new AsDtype(AsDtype.Dtype.INT4);
-        ArrayBuilder builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, null, 0, 9);
-        // ArrayColumnVector result = new ArrayColumnVector(new IntegerType(), builder.getArray(0, 9));
-        // assert Arrays.toString(result.getInts(0, 9)).equals("[0, 1, 2, -2147483648, -2147483647, -2147483646, 2147483647, 2147483646, 2147483645]");
-        // assert result.getInt(0) == 0;
-        // assert result.getInt(1) == 1;
-        // assert result.getInt(2) == 2;
-        // assert result.getInt(3) == -2147483648;
-        // assert result.getInt(4) == -2147483647;
-        // assert result.getInt(5) == -2147483646;
-        // assert result.getInt(6) == 2147483647;
-        // assert result.getInt(7) == 2147483646;
-        // assert result.getInt(8) == 2147483645;
-        
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("int")), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
+        ColumnarArray event0 = result.getArray(0);
+        System.out.println(String.format("[]"));
+        ColumnarArray event1 = result.getArray(1);
+        System.out.println(String.format("[%d]", event1.getInt(0)));
+        ColumnarArray event2 = result.getArray(2);
+        System.out.println(String.format("[%d, %d]", event2.getInt(0), event2.getInt(1)));
+        ColumnarArray event3 = result.getArray(3);
+        ColumnarArray event4 = result.getArray(4);
+        ColumnarArray event5 = result.getArray(5);
+        ColumnarArray event6 = result.getArray(6);
+        ColumnarArray event7 = result.getArray(7);
+        ColumnarArray event8 = result.getArray(8);
     }
 
     @Test
@@ -79,7 +81,7 @@ public class TTreeDataSourceUnitTest {
                 .option("tree", "Events")
                 .option("threadCount", "1")
                 .load("testdata/all-types.root");
-        df.select("SliceI64").show();
+        df.select("SliceI32").show();
     }
 
     @Test

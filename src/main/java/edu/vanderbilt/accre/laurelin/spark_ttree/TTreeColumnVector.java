@@ -35,8 +35,6 @@ public class TTreeColumnVector extends ColumnVector {
         this.basketEntryOffsets = slimBranch.getBasketEntryOffsets();
         this.getbasket = slimBranch.getArrayBranchCallback(basketCache);
 
-
-
         TBranch.ArrayDescriptor desc = slimBranch.getArrayDesc();
         if (desc == null) {
             logger.trace("  scalar vec");
