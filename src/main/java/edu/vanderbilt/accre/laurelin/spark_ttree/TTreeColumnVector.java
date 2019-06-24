@@ -108,7 +108,6 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public double getDouble(int rowId) {
-        // TODO Auto-generated method stub
         return getDoubles(rowId, 1)[0];
     }
 
@@ -116,8 +115,7 @@ public class TTreeColumnVector extends ColumnVector {
     public ColumnarArray getArray(int rowId) {
         Array array = builder.getArray(rowId, 1).subarray();
         ArrayColumnVector tmpvec = new ArrayColumnVector(((ArrayType)dataType()).elementType(), array);
-        ColumnarArray tmp = new ColumnarArray(tmpvec, 0, array.length());
-        return tmp;
+        return new ColumnarArray(tmpvec, 0, array.length());
     }
 
     @Override
