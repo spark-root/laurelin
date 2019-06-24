@@ -6,12 +6,17 @@ package edu.vanderbilt.accre.laurelin.root_proxy;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Future;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
 
 public class HadoopFile implements FileInterface {
     FSDataInputStream fd;
@@ -63,4 +68,25 @@ public class HadoopFile implements FileInterface {
         return limit;
     }
 
+    public static List<String> expandPathToList(String path) throws IOException {
+        Configuration conf = new Configuration();
+        FileSystem fileSystem;
+        fileSystem = FileSystem.get(conf);
+        Path tmpPath = new Path(path);
+        if (!fileSystem.isDirectory(tmpPath)) {
+            ArrayList<String> ret = new ArrayList<String>();
+            ret.add(path);
+            return ret;
+        } else {
+            LinkedList<String> ret = new LinkedList<String>();
+            RemoteIterator<LocatedFileStatus> fileList = fileSystem.listFiles(tmpPath,  true);
+            while (fileList.hasNext()) {
+                LocatedFileStatus file = fileList.next();
+                if (file.isFile() && (file.getPath().getName().endsWith(".root"))) {
+                    ret.add(file.getPath().getName());
+                }
+            }
+            return ret;
+        }
+    }
 }

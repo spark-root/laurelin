@@ -30,6 +30,7 @@ import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
+import edu.vanderbilt.accre.laurelin.root_proxy.IOFactory;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
@@ -165,7 +166,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
     public static class TTreeDataSourceV2Reader implements DataSourceReader,
             SupportsScanColumnarBatch,
             SupportsPushDownRequiredColumns {
-        private String[] paths;
+        private LinkedList<String> paths;
         private String treeName;
         private TTree currTree;
         private TFile currFile;
@@ -176,9 +177,12 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         public TTreeDataSourceV2Reader(DataSourceOptions options, CacheFactory basketCacheFactory) {
             logger.trace("construct ttreedatasourcev2reader");
             try {
-                this.paths = options.paths();
+                this.paths = new LinkedList<String>();
+                for (String path: options.paths()) {
+                    this.paths.addAll(IOFactory.expandPathToList(path));
+                }
                 // FIXME - More than one file, please
-                currFile = TFile.getFromFile(this.paths[0]);
+                currFile = TFile.getFromFile(this.paths.get(0));
                 treeName = options.get("tree").orElse("Events");
                 currTree = new TTree(currFile.getProxy(treeName), currFile);
                 this.basketCacheFactory = basketCacheFactory;

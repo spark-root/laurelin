@@ -6,11 +6,13 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -163,4 +165,22 @@ public class IOTest {
         }
         return buf;
     }
+
+    /*
+     * Testing file listing
+     */
+    @Test
+    public void searchDirectory_nio() throws IOException {
+        List<String> files = IOFactory.expandPathToList("testdata/recursive");
+        assertEquals(3, files.size());
+    }
+
+    @Test
+    public void searchDirectory_hadoop() throws IOException {
+        Path currentRelativePath = Paths.get("");
+        String s = currentRelativePath.toAbsolutePath().toString();
+        List<String> files = IOFactory.expandPathToList("file:///" + s + "/" + "testdata/recursive");
+        assertEquals(3, files.size());
+    }
+
 }
