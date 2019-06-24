@@ -79,8 +79,7 @@ public class TTreeDataSourceUnitTest {
                 .option("tree", "Events")
                 .option("threadCount", "1")
                 .load("testdata/all-types.root");
-        df.printSchema();
-        df.select("SliceI32").show();
+        df.select("SliceI64").show();
     }
 
     @Test
