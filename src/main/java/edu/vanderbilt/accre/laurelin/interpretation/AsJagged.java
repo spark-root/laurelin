@@ -51,7 +51,7 @@ public class AsJagged implements Interpretation {
         RawArray compact = bytedata.compact(byteoffsets, this.skipbytes, local_entrystart, local_entrystop);
 
         int innersize = ((AsDtype)this.content).itemsize() * ((AsDtype)this.content).multiplicity();
-        ByteBuffer countsbuf = ByteBuffer.allocate((local_entrystop - local_entrystart) * innersize);
+        ByteBuffer countsbuf = ByteBuffer.allocate((local_entrystop - local_entrystart) * 4);
         int total = 0;
         for (int i = local_entrystart;  i < local_entrystop;  i++) {
             int count = (byteoffsets.get(i + 1) - byteoffsets.get(i)) / innersize;

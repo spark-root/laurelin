@@ -87,11 +87,6 @@ public abstract class PrimitiveArray extends Array {
         return out;
     }
 
-    @Override
-    public String toString() {
-        return Arrays.toString((float[])this.toArray());
-    }
-
     /////////////////////////////////////////////////////////////////////////// Bool
 
     /*
@@ -427,7 +422,7 @@ public abstract class PrimitiveArray extends Array {
 
         @Override
         public String toString() {
-            return Arrays.toString((float[])this.toArray());
+            return Arrays.toString((long[])this.toArray());
         }
     }
 
@@ -553,7 +548,7 @@ public abstract class PrimitiveArray extends Array {
 
         @Override
         public String toString() {
-            return Arrays.toString((float[])this.toArray());
+            return Arrays.toString((double[])this.toArray());
         }
     }
 }

@@ -48,7 +48,30 @@ import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
 public class TTreeDataSourceUnitTest {
     @Test
-    public void testIntegers() throws IOException {
+    public void testInt32() throws IOException {
+        TFile file = TFile.getFromFile("testdata/all-types.root");
+        TTree tree = new TTree(file.getProxy("Events"), file);
+        TBranch branch = tree.getBranches("SliceI32").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("int")), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
+        ColumnarArray event0 = result.getArray(0);
+        System.out.println(String.format("[]"));
+        ColumnarArray event1 = result.getArray(1);
+        System.out.println(String.format("[%d]", event1.getInt(0)));
+        ColumnarArray event2 = result.getArray(2);
+        System.out.println(String.format("[%d, %d]", event2.getInt(0), event2.getInt(1)));
+        ColumnarArray event3 = result.getArray(3);
+        ColumnarArray event4 = result.getArray(4);
+        ColumnarArray event5 = result.getArray(5);
+        ColumnarArray event6 = result.getArray(6);
+        ColumnarArray event7 = result.getArray(7);
+        ColumnarArray event8 = result.getArray(8);
+    }
+
+    @Test
+    public void testInt64() throws IOException {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceI64").get(0);
