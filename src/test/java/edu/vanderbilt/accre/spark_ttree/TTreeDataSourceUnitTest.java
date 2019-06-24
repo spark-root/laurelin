@@ -25,6 +25,7 @@ import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.IntegerType;
+import org.apache.spark.sql.types.LongType;
 import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -50,17 +51,17 @@ public class TTreeDataSourceUnitTest {
     public void testIntegers() throws IOException {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
-        TBranch branch = tree.getBranches("SliceI32").get(0);
+        TBranch branch = tree.getBranches("SliceI64").get(0);
         Cache cache = new Cache();
         SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("int")), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
+        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         System.out.println(String.format("[]"));
         ColumnarArray event1 = result.getArray(1);
-        System.out.println(String.format("[%d]", event1.getInt(0)));
+        System.out.println(String.format("[%d]", event1.getLong(0)));
         ColumnarArray event2 = result.getArray(2);
-        System.out.println(String.format("[%d, %d]", event2.getInt(0), event2.getInt(1)));
+        System.out.println(String.format("[%d, %d]", event2.getLong(0), event2.getLong(1)));
         ColumnarArray event3 = result.getArray(3);
         ColumnarArray event4 = result.getArray(4);
         ColumnarArray event5 = result.getArray(5);
