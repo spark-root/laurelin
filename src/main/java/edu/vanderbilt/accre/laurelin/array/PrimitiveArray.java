@@ -198,7 +198,7 @@ public abstract class PrimitiveArray extends Array {
         }
 
         public byte toByte(int index) {
-            return this.buffer.get(index);
+            return this.buffer.get(this.buffer.position() + index);
         }
 
         @Override
