@@ -29,3 +29,12 @@ df = spark.read.format('root') \
                 .load('small-flat-tree.root')
 df.printSchema()
 ```
+
+## Known issues/not yet implemented functionality
+
+* The I/O is currently completely unoptimized -- there is no caching or
+  prefetching. Remote reads will be slow as a consequence.
+* Unsigned integers are currently not supported
+* Float16/Doubles32 are currently not supported
+* String types are currently not supported
+* C++ STD types are currently not supported (importantly, std::vector)
