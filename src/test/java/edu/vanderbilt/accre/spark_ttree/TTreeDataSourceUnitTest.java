@@ -50,21 +50,6 @@ import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
 public class TTreeDataSourceUnitTest {
     @Test
-    public void testLoadNestedDataFrame() {
-        System.setProperty("hadoop.home.dir", "/");
-        SparkSession spark = SparkSession.builder()
-                .master("local[*]")
-                .appName("test").getOrCreate();
-        Dataset<Row> df = spark
-                .read()
-                .format("edu.vanderbilt.accre.laurelin.Root")
-                .option("tree", "Events")
-                .option("threadCount", "1")
-                .load("testdata/all-types.root");
-        df.select("SliceI32").show();
-    }
-
-    @Test
     public void testMultipleBasketsForiter() throws IOException {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-foriter.root");
@@ -251,7 +236,7 @@ public class TTreeDataSourceUnitTest {
         Cache cache = new Cache();
         SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ByteType(), SimpleType.fromString("byte"), SimpleType.dtypeFromString("byte"), cache, 0, 9, slim, null);
+        TTreeColumnVector result = new TTreeColumnVector(new ByteType(), SimpleType.fromString("char"), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
         assertEquals(result.getByte(0), 0);
         assertEquals(result.getByte(1), 1);
         assertEquals(result.getByte(2), 2);
@@ -271,7 +256,7 @@ public class TTreeDataSourceUnitTest {
         Cache cache = new Cache();
         SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ByteType(), false), new SimpleType.ArrayType(SimpleType.fromString("byte")), SimpleType.dtypeFromString("byte"), cache, 0, 9, slim, null);
+        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ByteType(), false), new SimpleType.ArrayType(SimpleType.fromString("char")), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 3);
         assertEquals(event0.getByte(0), 0);
@@ -327,7 +312,7 @@ public class TTreeDataSourceUnitTest {
         Cache cache = new Cache();
         SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ByteType(), false), new SimpleType.ArrayType(SimpleType.fromString("byte")), SimpleType.dtypeFromString("byte"), cache, 0, 9, slim, null);
+        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ByteType(), false), new SimpleType.ArrayType(SimpleType.fromString("char")), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 0);
         ColumnarArray event1 = result.getArray(1);
