@@ -11,23 +11,35 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 
+import org.junit.Test;
+
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.reader.InputPartition;
 import org.apache.spark.sql.sources.v2.reader.InputPartitionReader;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.IntegerType;
 import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
-import org.apache.spark.sql.types.IntegerType;
-import org.junit.Test;
+import org.apache.spark.sql.vectorized.ColumnVector;
 
+import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
+import edu.vanderbilt.accre.laurelin.Cache;
+import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.Root;
+import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
+import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
+import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
 import edu.vanderbilt.accre.laurelin.spark_ttree.ArrayColumnVector;
+import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 
 public class TTreeDataSourceUnitTest {
     @Test
@@ -57,10 +69,15 @@ public class TTreeDataSourceUnitTest {
 
     @Test
     public void testLoadNestedDataFrame() {
+        System.setProperty("hadoop.home.dir", "/");
+        SparkSession spark = SparkSession.builder()
+                .master("local[*]")
+                .appName("test").getOrCreate();
         Dataset<Row> df = spark
                 .read()
                 .format("edu.vanderbilt.accre.laurelin.Root")
-                .option("tree",  "Events")
+                .option("tree", "Events")
+                .option("threadCount", "1")
                 .load("testdata/all-types.root");
         df.printSchema();
         df.select("ScalarI32").show();

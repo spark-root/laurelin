@@ -58,8 +58,6 @@ public class ArrayColumnVector extends ColumnVector {
 
     @Override
     public int getInt(int rowId) {
-        System.out.println(String.format("getInt %d", rowId));
-
         return ((PrimitiveArray.Int4)array).toInt();
     }
 
@@ -135,8 +133,6 @@ public class ArrayColumnVector extends ColumnVector {
 
     @Override
     public int[] getInts(int rowId, int count) {
-        System.out.println(String.format("getInts %d %d", rowId, count));
-
         return (int[])array.toArray();
     }
 
