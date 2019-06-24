@@ -148,8 +148,8 @@ public abstract class PrimitiveArray extends Array {
             return new Bool(this.interpretation.subarray(), this.buffer);
         }
 
-        public boolean toBoolean() {
-            return (this.buffer.get(0) != 0);
+        public boolean toBoolean(int index) {
+            return (this.buffer.get(index) != 0);
         }
 
         @Override
@@ -211,8 +211,8 @@ public abstract class PrimitiveArray extends Array {
             return new Int1(this.interpretation.subarray(), this.buffer);
         }
 
-        public byte toByte() {
-            return this.buffer.get(0);
+        public byte toByte(int index) {
+            return this.buffer.get(index);
         }
 
         @Override
@@ -274,8 +274,8 @@ public abstract class PrimitiveArray extends Array {
             return new Int2(this.interpretation.subarray(), this.buffer);
         }
 
-        public short toShort() {
-            return this.buffer.asShortBuffer().get(0);
+        public short toShort(int index) {
+            return this.buffer.asShortBuffer().get(index);
         }
 
         @Override
@@ -337,8 +337,8 @@ public abstract class PrimitiveArray extends Array {
             return new Int4(this.interpretation.subarray(), this.buffer);
         }
 
-        public int toInt() {
-            return this.buffer.asIntBuffer().get(0);
+        public int toInt(int index) {
+            return this.buffer.asIntBuffer().get(index);
         }
 
         @Override
@@ -421,8 +421,8 @@ public abstract class PrimitiveArray extends Array {
             return new Int8(this.interpretation.subarray(), this.buffer);
         }
 
-        public long toLong() {
-            return this.buffer.asLongBuffer().get(0);
+        public long toLong(int index) {
+            return this.buffer.asLongBuffer().get(index);
         }
 
         @Override
@@ -484,8 +484,8 @@ public abstract class PrimitiveArray extends Array {
             return new Float4(this.interpretation.subarray(), this.buffer);
         }
 
-        public float toFloat() {
-            return this.buffer.asFloatBuffer().get(0);
+        public float toFloat(int index) {
+            return this.buffer.asFloatBuffer().get(index);
         }
 
         @Override
@@ -547,8 +547,8 @@ public abstract class PrimitiveArray extends Array {
             return new Float8(this.interpretation.subarray(), this.buffer);
         }
 
-        public double toDouble() {
-            return this.buffer.asDoubleBuffer().get(0);
+        public double toDouble(int index) {
+            return this.buffer.asDoubleBuffer().get(index);
         }
 
         @Override

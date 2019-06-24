@@ -43,37 +43,37 @@ public class ArrayColumnVector extends ColumnVector {
 
     @Override
     public boolean getBoolean(int rowId) {
-        return ((PrimitiveArray.Bool)array).toBoolean();
+        return ((PrimitiveArray.Bool)array).toBoolean(rowId);
     }
 
     @Override
     public byte getByte(int rowId) {
-        return ((PrimitiveArray.Int1)array).toByte();
+        return ((PrimitiveArray.Int1)array).toByte(rowId);
     }
 
     @Override
     public short getShort(int rowId) {
-        return ((PrimitiveArray.Int2)array).toShort();
+        return ((PrimitiveArray.Int2)array).toShort(rowId);
     }
 
     @Override
     public int getInt(int rowId) {
-        return ((PrimitiveArray.Int4)array).toInt();
+        return ((PrimitiveArray.Int4)array).toInt(rowId);
     }
 
     @Override
     public long getLong(int rowId) {
-        return ((PrimitiveArray.Int8)array).toLong();
+        return ((PrimitiveArray.Int8)array).toLong(rowId);
     }
 
     @Override
     public float getFloat(int rowId) {
-        return ((PrimitiveArray.Float4)array).toFloat();
+        return ((PrimitiveArray.Float4)array).toFloat(rowId);
     }
 
     @Override
     public double getDouble(int rowId) {
-        return ((PrimitiveArray.Float8)array).toDouble();
+        return ((PrimitiveArray.Float8)array).toDouble(rowId);
     }
 
     @Override
