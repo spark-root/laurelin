@@ -355,4 +355,118 @@ public class TTreeDataSourceUnitTest {
         assertEquals(event8.getInt(1), 2147483645);
     }
 
+    @Test
+    public void testScalarI64() throws IOException {
+        TFile file = TFile.getFromFile("testdata/all-types.root");
+        TTree tree = new TTree(file.getProxy("Events"), file);
+        TBranch branch = tree.getBranches("ScalarI64").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new LongType(), SimpleType.fromString("long"), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
+        assertEquals(result.getLong(0), 0);
+        assertEquals(result.getLong(1), 1);
+        assertEquals(result.getLong(2), 2);
+        assertEquals(result.getLong(3), -9223372036854775808L);
+        assertEquals(result.getLong(4), -9223372036854775807L);
+        assertEquals(result.getLong(5), -9223372036854775806L);
+        assertEquals(result.getLong(6), 9223372036854775807L);
+        assertEquals(result.getLong(7), 9223372036854775806L);
+        assertEquals(result.getLong(8), 9223372036854775805L);
+    }
+
+    @Test
+    public void testArrayI64() throws IOException {
+        TFile file = TFile.getFromFile("testdata/all-types.root");
+        TTree tree = new TTree(file.getProxy("Events"), file);
+        TBranch branch = tree.getBranches("ArrayI64").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
+        ColumnarArray event0 = result.getArray(0);
+        assertEquals(event0.numElements(), 3);
+        assertEquals(event0.getLong(0), 0);
+        assertEquals(event0.getLong(1), 0);
+        assertEquals(event0.getLong(2), 0);
+        ColumnarArray event1 = result.getArray(1);
+        assertEquals(event1.numElements(), 3);
+        assertEquals(event1.getLong(0), 1);
+        assertEquals(event1.getLong(1), 1);
+        assertEquals(event1.getLong(2), 1);
+        ColumnarArray event2 = result.getArray(2);
+        assertEquals(event2.numElements(), 3);
+        assertEquals(event2.getLong(0), 2);
+        assertEquals(event2.getLong(1), 2);
+        assertEquals(event2.getLong(2), 2);
+        ColumnarArray event3 = result.getArray(3);
+        assertEquals(event3.numElements(), 3);
+        assertEquals(event3.getLong(0), -9223372036854775808L);
+        assertEquals(event3.getLong(1), -9223372036854775808L);
+        assertEquals(event3.getLong(2), -9223372036854775808L);
+        ColumnarArray event4 = result.getArray(4);
+        assertEquals(event4.numElements(), 3);
+        assertEquals(event4.getLong(0), -9223372036854775807L);
+        assertEquals(event4.getLong(1), -9223372036854775807L);
+        assertEquals(event4.getLong(2), -9223372036854775807L);
+        ColumnarArray event5 = result.getArray(5);
+        assertEquals(event5.numElements(), 3);
+        assertEquals(event5.getLong(0), -9223372036854775806L);
+        assertEquals(event5.getLong(1), -9223372036854775806L);
+        assertEquals(event5.getLong(2), -9223372036854775806L);
+        ColumnarArray event6 = result.getArray(6);
+        assertEquals(event6.numElements(), 3);
+        assertEquals(event6.getLong(0), 9223372036854775807L);
+        assertEquals(event6.getLong(1), 9223372036854775807L);
+        assertEquals(event6.getLong(2), 9223372036854775807L);
+        ColumnarArray event7 = result.getArray(7);
+        assertEquals(event7.numElements(), 3);
+        assertEquals(event7.getLong(0), 9223372036854775806L);
+        assertEquals(event7.getLong(1), 9223372036854775806L);
+        assertEquals(event7.getLong(2), 9223372036854775806L);
+        ColumnarArray event8 = result.getArray(8);
+        assertEquals(event8.numElements(), 3);
+        assertEquals(event8.getLong(0), 9223372036854775805L);
+        assertEquals(event8.getLong(1), 9223372036854775805L);
+        assertEquals(event8.getLong(2), 9223372036854775805L);
+    }
+
+    @Test
+    public void testSliceI64() throws IOException {
+        TFile file = TFile.getFromFile("testdata/all-types.root");
+        TTree tree = new TTree(file.getProxy("Events"), file);
+        TBranch branch = tree.getBranches("SliceI64").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
+        ColumnarArray event0 = result.getArray(0);
+        assertEquals(event0.numElements(), 0);
+        ColumnarArray event1 = result.getArray(1);
+        assertEquals(event1.numElements(), 1);
+        assertEquals(event1.getLong(0), 1);
+        ColumnarArray event2 = result.getArray(2);
+        assertEquals(event2.numElements(), 2);
+        assertEquals(event2.getLong(0), 2);
+        assertEquals(event2.getLong(1), 2);
+        ColumnarArray event3 = result.getArray(3);
+        assertEquals(event3.numElements(), 0);
+        ColumnarArray event4 = result.getArray(4);
+        assertEquals(event4.numElements(), 1);
+        assertEquals(event4.getLong(0), -9223372036854775807L);
+        ColumnarArray event5 = result.getArray(5);
+        assertEquals(event5.numElements(), 2);
+        assertEquals(event5.getLong(0), -9223372036854775806L);
+        assertEquals(event5.getLong(1), -9223372036854775806L);
+        ColumnarArray event6 = result.getArray(6);
+        assertEquals(event6.numElements(), 0);
+        ColumnarArray event7 = result.getArray(7);
+        assertEquals(event7.numElements(), 1);
+        assertEquals(event7.getLong(0), 9223372036854775806L);
+        ColumnarArray event8 = result.getArray(8);
+        assertEquals(event8.numElements(), 2);
+        assertEquals(event8.getLong(0), 9223372036854775805L);
+        assertEquals(event8.getLong(1), 9223372036854775805L);
+    }
+
 }
