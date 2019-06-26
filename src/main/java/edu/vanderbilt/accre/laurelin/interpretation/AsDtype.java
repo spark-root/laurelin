@@ -1,14 +1,18 @@
 package edu.vanderbilt.accre.laurelin.interpretation;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
 
 import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 
 public class AsDtype implements Interpretation {
+    private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
     public enum Dtype {
         BOOL,
         INT1,
@@ -126,7 +130,7 @@ public class AsDtype implements Interpretation {
             case INT8:
                 return new PrimitiveArray.Int8(this, 0);
             case UINT1:
-                throw new UnsupportedOperationException("not implemented yet");
+                return new PrimitiveArray.Int2(this, 0);
             case UINT2:
                 throw new UnsupportedOperationException("not implemented yet");
             case UINT4:
@@ -161,7 +165,7 @@ public class AsDtype implements Interpretation {
         if (byteoffsets != null) {
             throw new AssertionError("byteoffsets must be null for AsDtype");
         }
-        int entrysize = this.multiplicity() * this.disk_itemsize();
+        int entrysize = this.multiplicity() * this.memory_itemsize();
         RawArray sliced = bytedata.slice(local_entrystart * entrysize, local_entrystop * entrysize);
         switch (this.dtype) {
             case BOOL:
@@ -175,7 +179,7 @@ public class AsDtype implements Interpretation {
             case INT8:
                 return new PrimitiveArray.Int8(this, sliced);
             case UINT1:
-                throw new UnsupportedOperationException("not implemented yet");
+                return new PrimitiveArray.Int2(this, sliced);
             case UINT2:
                 throw new UnsupportedOperationException("not implemented yet");
             case UINT4:
@@ -224,6 +228,32 @@ public class AsDtype implements Interpretation {
             default:
                 throw new AssertionError("unrecognized dtype");
         }
+    }
+
+    @Override
+    public RawArray convertBufferDiskToMemory(RawArray source) {
+        switch (this.dtype) {
+            case UINT1:
+                /*
+                 * Conveniently both Java and ROOT are big-endian, to convert
+                 * the following unsigned 8-bit int into a signed 16-bit int,
+                 * add zeros like the following
+                 *
+                 * index:  0  1  2  3  4  5  6  7  8  9
+                 * src:   11 22 33 44
+                 * dest:  00 11 00 22 00 33 00 44
+                 *
+                 * ByteBuffers are always initialized to zero
+                 */
+                ByteBuffer converted = ByteBuffer.allocate(source.length() * 2);
+                for (int i = 0; i < source.length(); i += 1) {
+                    converted.put((i * 2) + 1, source.getByte(i));
+                }
+                return new RawArray(converted);
+            default:
+                break;
+        }
+        return source;
     }
 
     @Override

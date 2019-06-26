@@ -200,16 +200,18 @@ public class ArrayBuilder {
             }
 
             RawArray basketdata = getbasket.dataWithoutKey(i);
+
             Array source = null;
             int border = basketkeys[i].fLast - basketkeys[i].fKeylen;
 
             if (basketkeys[i].fObjlen == border) {
+                basketdata = interpretation.convertBufferDiskToMemory(basketdata);
                 source = interpretation.fromroot(basketdata, null, local_entrystart, local_entrystop);
             } else {
                 RawArray content = basketdata.slice(0, border);
                 PrimitiveArray.Int4 byteoffsets = new PrimitiveArray.Int4(basketdata.slice(border + 4, basketkeys[i].fObjlen)).add(true, -basketkeys[i].fKeylen);
                 byteoffsets.put(byteoffsets.length() - 1, border);
-                source = interpretation.fromroot(basketdata, byteoffsets, local_entrystart, local_entrystop);
+                source = interpretation.fromroot(content, byteoffsets, local_entrystart, local_entrystop);
             }
 
             int expecteditems = basket_itemoffset[j + 1] - basket_itemoffset[j];

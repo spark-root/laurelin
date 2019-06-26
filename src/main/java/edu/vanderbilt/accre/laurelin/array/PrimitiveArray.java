@@ -17,21 +17,25 @@ public abstract class PrimitiveArray extends Array {
 
     PrimitiveArray(Interpretation interpretation, int length) {
         super(interpretation, length);
-        this.disk_buffer = ByteBuffer.allocate(length * ((interpretation == null) ? 1 : ((AsDtype)interpretation).disk_itemsize() * ((AsDtype)interpretation).multiplicity()));
+        this.disk_buffer = ByteBuffer.allocate(length * ((interpretation == null) ? 1 : ((AsDtype)interpretation).memory_itemsize() * ((AsDtype)interpretation).multiplicity()));
     }
 
     PrimitiveArray(Interpretation interpretation, RawArray rawarray) {
-        super(interpretation, rawarray.length() / ((interpretation == null) ? 1 : ((AsDtype)interpretation).disk_itemsize() * ((AsDtype)interpretation).multiplicity()));
+        super(interpretation, rawarray.length() / ((interpretation == null) ? 1 : ((AsDtype)interpretation).memory_itemsize() * ((AsDtype)interpretation).multiplicity()));
         this.disk_buffer = rawarray.raw();
     }
 
     protected PrimitiveArray(Interpretation interpretation, ByteBuffer buffer) {
-        super(interpretation, (buffer.limit() - buffer.position()) / ((interpretation == null) ? 1 : ((AsDtype)interpretation).disk_itemsize() * ((AsDtype)interpretation).multiplicity()));
+        super(interpretation, (buffer.limit() - buffer.position()) / ((interpretation == null) ? 1 : ((AsDtype)interpretation).memory_itemsize() * ((AsDtype)interpretation).multiplicity()));
         this.disk_buffer = buffer;
     }
 
     public int disk_itemsize() {
         return ((AsDtype)interpretation).disk_itemsize();
+    }
+
+    public int memory_itemsize() {
+        return ((AsDtype)interpretation).memory_itemsize();
     }
 
     public int multiplicity() {
@@ -43,8 +47,8 @@ public abstract class PrimitiveArray extends Array {
     }
 
     public void copyitems(PrimitiveArray source, int itemstart, int itemstop) {
-        int bytestart = itemstart * this.disk_itemsize();
-        int bytestop = itemstop * this.disk_itemsize();
+        int bytestart = itemstart * this.memory_itemsize();
+        int bytestop = itemstop * this.memory_itemsize();
         /*
          * This code takes advantage of the fact that tmp and this.buffer share
          * the same backing array after duplicate()
@@ -60,8 +64,8 @@ public abstract class PrimitiveArray extends Array {
     @Override
     public Array clip(int start, int stop) {
         int mult = this.multiplicity();
-        int bytestart = start * mult * this.disk_itemsize();
-        int bytestop = stop * mult * this.disk_itemsize();
+        int bytestart = start * mult * this.memory_itemsize();
+        int bytestop = stop * mult * this.memory_itemsize();
         ByteBuffer out = this.disk_buffer.duplicate();
         out.position(bytestart);
         out.limit(bytestop);

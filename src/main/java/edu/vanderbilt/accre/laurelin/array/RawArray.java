@@ -81,4 +81,8 @@ public class RawArray extends PrimitiveArray {
     public Array subarray() {
         throw new UnsupportedOperationException("RawArray is not subarrayable");
     }
+
+    public byte getByte(int i) {
+        return this.disk_buffer.get(i);
+    }
 }

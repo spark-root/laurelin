@@ -11,42 +11,34 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Arrays;
 
-import org.junit.Test;
-
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.reader.InputPartition;
 import org.apache.spark.sql.sources.v2.reader.InputPartitionReader;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.ByteType;
-import org.apache.spark.sql.types.ShortType;
+import org.apache.spark.sql.types.DataType;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.DoubleType;
+import org.apache.spark.sql.types.FloatType;
 import org.apache.spark.sql.types.IntegerType;
 import org.apache.spark.sql.types.LongType;
-import org.apache.spark.sql.types.FloatType;
-import org.apache.spark.sql.types.DoubleType;
 import org.apache.spark.sql.types.MetadataBuilder;
+import org.apache.spark.sql.types.ShortType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarArray;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
-import org.apache.spark.sql.vectorized.ColumnVector;
+import org.junit.Test;
 
-import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.Cache;
-import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.Root;
+import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
-import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
-import edu.vanderbilt.accre.laurelin.spark_ttree.ArrayColumnVector;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
@@ -248,6 +240,26 @@ public class TTreeDataSourceUnitTest {
         assertEquals(result.getByte(6), 127);
         assertEquals(result.getByte(7), 126);
         assertEquals(result.getByte(8), 125);
+    }
+
+    @Test
+    public void testScalarUI8() throws IOException {
+        TFile file = TFile.getFromFile("testdata/all-types.root");
+        TTree tree = new TTree(file.getProxy("Events"), file);
+        TBranch branch = tree.getBranches("ScalarUI8").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new ShortType(), SimpleType.fromString("uchar"), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
+        assertEquals(result.getShort(0), 0);
+        assertEquals(result.getShort(1), 1);
+        assertEquals(result.getShort(2), 2);
+        assertEquals(result.getShort(3), 0);
+        assertEquals(result.getShort(4), 1);
+        assertEquals(result.getShort(5), 2);
+        assertEquals(result.getShort(6), 255);
+        assertEquals(result.getShort(7), 254);
+        assertEquals(result.getShort(8), 253);
     }
 
     @Test
@@ -696,7 +708,7 @@ public class TTreeDataSourceUnitTest {
 
         TTreeColumnVector result = new TTreeColumnVector(new FloatType(), SimpleType.fromString("float"), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
         for (int i = 0;  i < 100;  i++) {
-            assertEquals(result.getFloat(i), (float)i, 0.0001);
+            assertEquals(result.getFloat(i), i, 0.0001);
         }
     }
 
@@ -713,7 +725,7 @@ public class TTreeDataSourceUnitTest {
             ColumnarArray event = result.getArray(i);
             assertEquals(event.numElements(), 10);
             for (int j = 0;  j < 10;  j++) {
-                assertEquals(result.getFloat(i), (float)i, 0.0001);
+                assertEquals(result.getFloat(i), i, 0.0001);
             }
         }
     }
@@ -731,7 +743,7 @@ public class TTreeDataSourceUnitTest {
             ColumnarArray event = result.getArray(i);
             assertEquals(event.numElements(), i % 10);
             for (int j = 0;  j < i % 10;  j++) {
-                assertEquals(result.getFloat(i), (float)i, 0.0001);
+                assertEquals(result.getFloat(i), i, 0.0001);
             }
         }
     }
@@ -746,7 +758,7 @@ public class TTreeDataSourceUnitTest {
 
         TTreeColumnVector result = new TTreeColumnVector(new DoubleType(), SimpleType.fromString("double"), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
         for (int i = 0;  i < 100;  i++) {
-            assertEquals(result.getDouble(i), (double)i, 0.0001);
+            assertEquals(result.getDouble(i), i, 0.0001);
         }
     }
 
@@ -763,7 +775,7 @@ public class TTreeDataSourceUnitTest {
             ColumnarArray event = result.getArray(i);
             assertEquals(event.numElements(), 10);
             for (int j = 0;  j < 10;  j++) {
-                assertEquals(result.getDouble(i), (double)i, 0.0001);
+                assertEquals(result.getDouble(i), i, 0.0001);
             }
         }
     }
@@ -781,7 +793,7 @@ public class TTreeDataSourceUnitTest {
             ColumnarArray event = result.getArray(i);
             assertEquals(event.numElements(), i % 10);
             for (int j = 0;  j < i % 10;  j++) {
-                assertEquals(result.getDouble(i), (double)i, 0.0001);
+                assertEquals(result.getDouble(i), i, 0.0001);
             }
         }
     }

@@ -55,11 +55,12 @@ public class AsJagged implements Interpretation {
     public Array fromroot(RawArray bytedata, PrimitiveArray.Int4 byteoffsets, int local_entrystart, int local_entrystop) {
         RawArray compact = bytedata.compact(byteoffsets, this.skipbytes, local_entrystart, local_entrystop);
 
-        int innersize = ((AsDtype)this.content).disk_itemsize() * ((AsDtype)this.content).multiplicity();
+        int innersize_memory = ((AsDtype)this.content).memory_itemsize() * ((AsDtype)this.content).multiplicity();
+        int innersize_disk = ((AsDtype)this.content).disk_itemsize() * ((AsDtype)this.content).multiplicity();
         ByteBuffer countsbuf = ByteBuffer.allocate((local_entrystop - local_entrystart) * 4);
         int total = 0;
         for (int i = local_entrystart;  i < local_entrystop;  i++) {
-            int count = (byteoffsets.get(i + 1) - byteoffsets.get(i)) / innersize;
+            int count = (byteoffsets.get(i + 1) - byteoffsets.get(i)) / innersize_disk;
             countsbuf.putInt(count);
             total += count;
         }
@@ -111,6 +112,12 @@ public class AsJagged implements Interpretation {
     @Override
     public Interpretation subarray() {
         return this.content();
+    }
+
+    @Override
+    public RawArray convertBufferDiskToMemory(RawArray source) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

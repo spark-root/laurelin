@@ -26,4 +26,6 @@ public interface Interpretation {
     public Array finalize(Array destination);
 
     public Interpretation subarray();
+
+    public RawArray convertBufferDiskToMemory(RawArray source);
 }
