@@ -34,7 +34,7 @@ df.printSchema()
 
 * The I/O is currently completely unoptimized -- there is no caching or
   prefetching. Remote reads will be slow as a consequence.
-* Unsigned integers are currently not supported
+* Arrays (both fixed and jagged) of booleans return the wrong result
 * Float16/Doubles32 are currently not supported
 * String types are currently not supported
 * C++ STD types are currently not supported (importantly, std::vector)
