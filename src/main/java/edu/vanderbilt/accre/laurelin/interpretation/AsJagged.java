@@ -6,6 +6,7 @@ import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.JaggedArray;
 import edu.vanderbilt.accre.laurelin.array.JaggedArrayPrep;
 import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
+import edu.vanderbilt.accre.laurelin.array.PrimitiveArray.Int4;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 
 public class AsJagged implements Interpretation {
@@ -60,7 +61,7 @@ public class AsJagged implements Interpretation {
         ByteBuffer countsbuf = ByteBuffer.allocate((local_entrystop - local_entrystart) * 4);
         int total = 0;
         for (int i = local_entrystart;  i < local_entrystop;  i++) {
-            int count = (byteoffsets.get(i + 1) - byteoffsets.get(i)) / innersize_disk;
+            int count = (byteoffsets.get(i + 1) - byteoffsets.get(i)) / innersize_memory;
             countsbuf.putInt(count);
             total += count;
         }
@@ -116,8 +117,12 @@ public class AsJagged implements Interpretation {
 
     @Override
     public RawArray convertBufferDiskToMemory(RawArray source) {
-        // TODO Auto-generated method stub
-        return null;
+        return subarray().convertBufferDiskToMemory(source);
+    }
+
+    @Override
+    public Int4 convertOffsetDiskToMemory(Int4 source) {
+        throw new RuntimeException("Bad offset");
     }
 
 }

@@ -2,6 +2,7 @@ package edu.vanderbilt.accre.laurelin.interpretation;
 
 import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
+import edu.vanderbilt.accre.laurelin.array.PrimitiveArray.Int4;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 
 public interface Interpretation {
@@ -28,4 +29,6 @@ public interface Interpretation {
     public Interpretation subarray();
 
     public RawArray convertBufferDiskToMemory(RawArray source);
+
+    public Int4 convertOffsetDiskToMemory(Int4 source);
 }

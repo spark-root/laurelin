@@ -319,6 +319,62 @@ public class TTreeDataSourceUnitTest {
     }
 
     @Test
+    public void testArrayUI8() throws IOException {
+        TFile file = TFile.getFromFile("testdata/all-types.root");
+        TTree tree = new TTree(file.getProxy("Events"), file);
+        TBranch branch = tree.getBranches("ArrayUI8").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("uchar")), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
+        ColumnarArray event0 = result.getArray(0);
+        assertEquals(event0.numElements(), 3);
+        assertEquals(event0.getShort(0), 0);
+        assertEquals(event0.getShort(1), 0);
+        assertEquals(event0.getShort(2), 0);
+        ColumnarArray event1 = result.getArray(1);
+        assertEquals(event1.numElements(), 3);
+        assertEquals(event1.getShort(0), 1);
+        assertEquals(event1.getShort(1), 1);
+        assertEquals(event1.getShort(2), 1);
+        ColumnarArray event2 = result.getArray(2);
+        assertEquals(event2.numElements(), 3);
+        assertEquals(event2.getShort(0), 2);
+        assertEquals(event2.getShort(1), 2);
+        assertEquals(event2.getShort(2), 2);
+        ColumnarArray event3 = result.getArray(3);
+        assertEquals(event3.numElements(), 3);
+        assertEquals(event3.getShort(0), 0);
+        assertEquals(event3.getShort(1), 0);
+        assertEquals(event3.getShort(2), 0);
+        ColumnarArray event4 = result.getArray(4);
+        assertEquals(event4.numElements(), 3);
+        assertEquals(event4.getShort(0), 1);
+        assertEquals(event4.getShort(1), 1);
+        assertEquals(event4.getShort(2), 1);
+        ColumnarArray event5 = result.getArray(5);
+        assertEquals(event5.numElements(), 3);
+        assertEquals(event5.getShort(0), 2);
+        assertEquals(event5.getShort(1), 2);
+        assertEquals(event5.getShort(2), 2);
+        ColumnarArray event6 = result.getArray(6);
+        assertEquals(event6.numElements(), 3);
+        assertEquals(event6.getShort(0), 255);
+        assertEquals(event6.getShort(1), 255);
+        assertEquals(event6.getShort(2), 255);
+        ColumnarArray event7 = result.getArray(7);
+        assertEquals(event7.numElements(), 3);
+        assertEquals(event7.getShort(0), 254);
+        assertEquals(event7.getShort(1), 254);
+        assertEquals(event7.getShort(2), 254);
+        ColumnarArray event8 = result.getArray(8);
+        assertEquals(event8.numElements(), 3);
+        assertEquals(event8.getShort(0), 253);
+        assertEquals(event8.getShort(1), 253);
+        assertEquals(event8.getShort(2), 253);
+    }
+
+    @Test
     public void testSliceI8() throws IOException {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
@@ -354,6 +410,44 @@ public class TTreeDataSourceUnitTest {
         assertEquals(event8.numElements(), 2);
         assertEquals(event8.getByte(0), 125);
         assertEquals(event8.getByte(1), 125);
+    }
+
+    @Test
+    public void testSliceUI8() throws IOException {
+        TFile file = TFile.getFromFile("testdata/all-types.root");
+        TTree tree = new TTree(file.getProxy("Events"), file);
+        TBranch branch = tree.getBranches("SliceUI8").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("uchar")), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
+        ColumnarArray event0 = result.getArray(0);
+        assertEquals(event0.numElements(), 0);
+        ColumnarArray event1 = result.getArray(1);
+        assertEquals(event1.numElements(), 1);
+        assertEquals(event1.getShort(0), 1);
+        ColumnarArray event2 = result.getArray(2);
+        assertEquals(event2.numElements(), 2);
+        assertEquals(event2.getShort(0), 2);
+        assertEquals(event2.getShort(1), 2);
+        ColumnarArray event3 = result.getArray(3);
+        assertEquals(event3.numElements(), 0);
+        ColumnarArray event4 = result.getArray(4);
+        assertEquals(event4.numElements(), 1);
+        assertEquals(event4.getShort(0), 1);
+        ColumnarArray event5 = result.getArray(5);
+        assertEquals(event5.numElements(), 2);
+        assertEquals(event5.getShort(0), 2);
+        assertEquals(event5.getShort(1), 2);
+        ColumnarArray event6 = result.getArray(6);
+        assertEquals(event6.numElements(), 0);
+        ColumnarArray event7 = result.getArray(7);
+        assertEquals(event7.numElements(), 1);
+        assertEquals(event7.getShort(0), 254);
+        ColumnarArray event8 = result.getArray(8);
+        assertEquals(event8.numElements(), 2);
+        assertEquals(event8.getShort(0), 253);
+        assertEquals(event8.getShort(1), 253);
     }
 
     @Test

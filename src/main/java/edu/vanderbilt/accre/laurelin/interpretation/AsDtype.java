@@ -232,6 +232,7 @@ public class AsDtype implements Interpretation {
 
     @Override
     public RawArray convertBufferDiskToMemory(RawArray source) {
+        ByteBuffer converted;
         switch (this.dtype) {
             case UINT1:
                 /*
@@ -245,11 +246,38 @@ public class AsDtype implements Interpretation {
                  *
                  * ByteBuffers are always initialized to zero
                  */
-                ByteBuffer converted = ByteBuffer.allocate(source.length() * 2);
+                converted = ByteBuffer.allocate(source.length() * 2);
                 for (int i = 0; i < source.length(); i += 1) {
                     converted.put((i * 2) + 1, source.getByte(i));
                 }
                 return new RawArray(converted);
+            default:
+                break;
+        }
+        return source;
+    }
+
+    @Override
+    public PrimitiveArray.Int4 convertOffsetDiskToMemory(PrimitiveArray.Int4 source) {
+        PrimitiveArray.Int4 converted;
+        switch (this.dtype) {
+            case UINT1:
+                /*
+                 * Conveniently both Java and ROOT are big-endian, to convert
+                 * the following unsigned 8-bit int into a signed 16-bit int,
+                 * add zeros like the following
+                 *
+                 * index:  0  1  2  3  4  5  6  7  8  9
+                 * src:   11 22 33 44
+                 * dest:  00 11 00 22 00 33 00 44
+                 *
+                 * ByteBuffers are always initialized to zero
+                 */
+                converted = new PrimitiveArray.Int4(source.length());
+                for (int i = 0; i < source.length(); i += 1) {
+                    converted.put(i, source.get(i) * 2);
+                }
+                return converted;
             default:
                 break;
         }
