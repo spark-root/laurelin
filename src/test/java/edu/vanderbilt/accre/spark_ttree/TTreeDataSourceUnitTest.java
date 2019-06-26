@@ -244,6 +244,62 @@ public class TTreeDataSourceUnitTest {
     }
 
     @Test
+    public void testArrayI1() throws IOException {
+        TFile file = TFile.getFromFile("testdata/all-types.root");
+        TTree tree = new TTree(file.getProxy("Events"), file);
+        TBranch branch = tree.getBranches("ArrayI1").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new BooleanType(), false), new SimpleType.ArrayType(SimpleType.fromString("bool")), SimpleType.dtypeFromString("bool"), cache, 0, 9, slim, null);
+        ColumnarArray event0 = result.getArray(0);
+        assertEquals(event0.numElements(), 3);
+        assertEquals(event0.getBoolean(0), false);
+        assertEquals(event0.getBoolean(1), false);
+        assertEquals(event0.getBoolean(2), false);
+        ColumnarArray event1 = result.getArray(1);
+        assertEquals(event1.numElements(), 3);
+        assertEquals(event1.getBoolean(0), true);
+        assertEquals(event1.getBoolean(1), true);
+        assertEquals(event1.getBoolean(2), true);
+        ColumnarArray event2 = result.getArray(2);
+        assertEquals(event2.numElements(), 3);
+        assertEquals(event2.getBoolean(0), false);
+        assertEquals(event2.getBoolean(1), false);
+        assertEquals(event2.getBoolean(2), false);
+        ColumnarArray event3 = result.getArray(3);
+        assertEquals(event3.numElements(), 3);
+        assertEquals(event3.getBoolean(0), true);
+        assertEquals(event3.getBoolean(1), true);
+        assertEquals(event3.getBoolean(2), true);
+        ColumnarArray event4 = result.getArray(4);
+        assertEquals(event4.numElements(), 3);
+        assertEquals(event4.getBoolean(0), false);
+        assertEquals(event4.getBoolean(1), false);
+        assertEquals(event4.getBoolean(2), false);
+        ColumnarArray event5 = result.getArray(5);
+        assertEquals(event5.numElements(), 3);
+        assertEquals(event5.getBoolean(0), true);
+        assertEquals(event5.getBoolean(1), true);
+        assertEquals(event5.getBoolean(2), true);
+        ColumnarArray event6 = result.getArray(6);
+        assertEquals(event6.numElements(), 3);
+        assertEquals(event6.getBoolean(0), false);
+        assertEquals(event6.getBoolean(1), false);
+        assertEquals(event6.getBoolean(2), false);
+        ColumnarArray event7 = result.getArray(7);
+        assertEquals(event7.numElements(), 3);
+        assertEquals(event7.getBoolean(0), true);
+        assertEquals(event7.getBoolean(1), true);
+        assertEquals(event7.getBoolean(2), true);
+        ColumnarArray event8 = result.getArray(8);
+        assertEquals(event8.numElements(), 3);
+        assertEquals(event8.getBoolean(0), false);
+        assertEquals(event8.getBoolean(1), false);
+        assertEquals(event8.getBoolean(2), false);
+    }
+
+    @Test
     public void testScalarI8() throws IOException {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
