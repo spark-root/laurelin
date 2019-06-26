@@ -16,6 +16,7 @@ import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.reader.InputPartition;
 import org.apache.spark.sql.sources.v2.reader.InputPartitionReader;
 import org.apache.spark.sql.types.ArrayType;
+import org.apache.spark.sql.types.BooleanType;
 import org.apache.spark.sql.types.ByteType;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
@@ -220,6 +221,26 @@ public class TTreeDataSourceUnitTest {
         assertFloatArrayEquals(new float[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}, float32col.getArray(0).toFloatArray());
         assertFloatArrayEquals(new float[] { 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f}, float32col.getArray(10).toFloatArray());
         assertFloatArrayEquals(new float[] { 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f}, float32col.getArray(31).toFloatArray());
+    }
+
+    @Test
+    public void testScalarI1() throws IOException {
+        TFile file = TFile.getFromFile("testdata/all-types.root");
+        TTree tree = new TTree(file.getProxy("Events"), file);
+        TBranch branch = tree.getBranches("ScalarI1").get(0);
+        Cache cache = new Cache();
+        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+
+        TTreeColumnVector result = new TTreeColumnVector(new BooleanType(), SimpleType.fromString("bool"), SimpleType.dtypeFromString("bool"), cache, 0, 9, slim, null);
+        assertEquals(result.getBoolean(0), false);
+        assertEquals(result.getBoolean(1), true);
+        assertEquals(result.getBoolean(2), false);
+        assertEquals(result.getBoolean(3), true);
+        assertEquals(result.getBoolean(4), false);
+        assertEquals(result.getBoolean(5), true);
+        assertEquals(result.getBoolean(6), false);
+        assertEquals(result.getBoolean(7), true);
+        assertEquals(result.getBoolean(8), false);
     }
 
     @Test
