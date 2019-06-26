@@ -85,4 +85,16 @@ public class RawArray extends PrimitiveArray {
     public byte getByte(int i) {
         return this.disk_buffer.get(i);
     }
+
+    public byte[] getLongBytes(int i) {
+        byte[] ret = new byte[8];
+        int pos = this.disk_buffer.position();
+        this.disk_buffer.get(ret, i, 8);
+        this.disk_buffer.position(pos);
+        return ret;
+    }
+
+    public long getLong(int i) {
+        return this.disk_buffer.getLong(i);
+    }
 }
