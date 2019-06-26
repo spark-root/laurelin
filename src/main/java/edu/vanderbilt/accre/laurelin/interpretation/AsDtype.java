@@ -181,7 +181,7 @@ public class AsDtype implements Interpretation {
             case UINT1:
                 return new PrimitiveArray.Int2(this, sliced);
             case UINT2:
-                throw new UnsupportedOperationException("not implemented yet");
+                return new PrimitiveArray.Int4(this, sliced);
             case UINT4:
                 throw new UnsupportedOperationException("not implemented yet");
             case UINT8:
@@ -251,6 +251,18 @@ public class AsDtype implements Interpretation {
                     converted.put((i * 2) + 1, source.getByte(i));
                 }
                 return new RawArray(converted);
+            case UINT2:
+                /*
+                 * index:  0  1  2  3  4  5  6  7  8  9
+                 * src:   11 22 33 44
+                 * dest:  00 00 11 22 00 00 33 44
+                 */
+                converted = ByteBuffer.allocate(source.length() * 2);
+                for (int i = 0; i < source.length(); i += 2) {
+                    converted.put((i * 2) + 2, source.getByte(i));
+                    converted.put((i * 2) + 3, source.getByte(i+1));
+                }
+                return new RawArray(converted);
             default:
                 break;
         }
@@ -262,16 +274,10 @@ public class AsDtype implements Interpretation {
         PrimitiveArray.Int4 converted;
         switch (this.dtype) {
             case UINT1:
+            case UINT2:
                 /*
-                 * Conveniently both Java and ROOT are big-endian, to convert
-                 * the following unsigned 8-bit int into a signed 16-bit int,
-                 * add zeros like the following
-                 *
-                 * index:  0  1  2  3  4  5  6  7  8  9
-                 * src:   11 22 33 44
-                 * dest:  00 11 00 22 00 33 00 44
-                 *
-                 * ByteBuffers are always initialized to zero
+                 * The offsets are byte-indexed so if we make the type larger,
+                 * we need to also re-point the offsets
                  */
                 converted = new PrimitiveArray.Int4(source.length());
                 for (int i = 0; i < source.length(); i += 1) {
