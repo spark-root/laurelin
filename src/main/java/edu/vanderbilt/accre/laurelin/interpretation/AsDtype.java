@@ -183,7 +183,7 @@ public class AsDtype implements Interpretation {
             case UINT2:
                 return new PrimitiveArray.Int4(this, sliced);
             case UINT4:
-                throw new UnsupportedOperationException("not implemented yet");
+                return new PrimitiveArray.Int8(this, sliced);
             case UINT8:
                 throw new UnsupportedOperationException("not implemented yet");
             case FLOAT4:
@@ -260,7 +260,21 @@ public class AsDtype implements Interpretation {
                 converted = ByteBuffer.allocate(source.length() * 2);
                 for (int i = 0; i < source.length(); i += 2) {
                     converted.put((i * 2) + 2, source.getByte(i));
-                    converted.put((i * 2) + 3, source.getByte(i+1));
+                    converted.put((i * 2) + 3, source.getByte(i + 1));
+                }
+                return new RawArray(converted);
+            case UINT4:
+                /*
+                 * index:  0  1  2  3  4  5  6  7  8  9
+                 * src:   11 22 33 44
+                 * dest:  00 00 11 22 00 00 33 44
+                 */
+                converted = ByteBuffer.allocate(source.length() * 2);
+                for (int i = 0; i < source.length(); i += 4) {
+                    converted.put((i * 2) + 4, source.getByte(i));
+                    converted.put((i * 2) + 5, source.getByte(i + 1));
+                    converted.put((i * 2) + 6, source.getByte(i + 2));
+                    converted.put((i * 2) + 7, source.getByte(i + 3));
                 }
                 return new RawArray(converted);
             default:
@@ -275,6 +289,7 @@ public class AsDtype implements Interpretation {
         switch (this.dtype) {
             case UINT1:
             case UINT2:
+            case UINT4:
                 /*
                  * The offsets are byte-indexed so if we make the type larger,
                  * we need to also re-point the offsets
