@@ -114,7 +114,7 @@ public abstract class PrimitiveArray extends Array {
 
         public Bool(byte[] data, boolean bigEndian) {
             super(new AsDtype(AsDtype.Dtype.BOOL), data.length);
-            this.buffer = ByteBuffer.allocate(data.length * this.disk_itemsize());
+            this.buffer = ByteBuffer.allocate(data.length * this.memory_itemsize());
             this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             this.buffer.put(data, 0, data.length);
         }
@@ -177,7 +177,7 @@ public abstract class PrimitiveArray extends Array {
 
         public Int1(byte[] data, boolean bigEndian) {
             super(new AsDtype(AsDtype.Dtype.INT1), data.length);
-            this.buffer = ByteBuffer.allocate(data.length * this.disk_itemsize());
+            this.buffer = ByteBuffer.allocate(data.length * this.memory_itemsize());
             //this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             this.buffer.put(data, 0, data.length);
         }
@@ -240,7 +240,7 @@ public abstract class PrimitiveArray extends Array {
 
         public Int2(short[] data, boolean bigEndian) {
             super(new AsDtype(AsDtype.Dtype.INT2), data.length);
-            this.buffer = ByteBuffer.allocate(data.length * this.disk_itemsize());
+            this.buffer = ByteBuffer.allocate(data.length * this.memory_itemsize());
             this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             this.buffer.asShortBuffer().put(data, 0, data.length);
         }
@@ -303,7 +303,7 @@ public abstract class PrimitiveArray extends Array {
 
         public Int4(int[] data, boolean bigEndian) {
             super(new AsDtype(AsDtype.Dtype.INT4), data.length);
-            this.buffer = ByteBuffer.allocate(data.length * this.disk_itemsize());
+            this.buffer = ByteBuffer.allocate(data.length * this.memory_itemsize());
             this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             this.buffer.asIntBuffer().put(data, 0, data.length);
         }
@@ -387,7 +387,7 @@ public abstract class PrimitiveArray extends Array {
 
         public Int8(long[] data, boolean bigEndian) {
             super(new AsDtype(AsDtype.Dtype.INT8), data.length);
-            this.buffer = ByteBuffer.allocate(data.length * this.disk_itemsize());
+            this.buffer = ByteBuffer.allocate(data.length * this.memory_itemsize());
             this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             this.buffer.asLongBuffer().put(data, 0, data.length);
         }
@@ -450,7 +450,7 @@ public abstract class PrimitiveArray extends Array {
 
         public Float4(float[] data, boolean bigEndian) {
             super(new AsDtype(AsDtype.Dtype.FLOAT4), data.length);
-            this.buffer = ByteBuffer.allocate(data.length * this.disk_itemsize());
+            this.buffer = ByteBuffer.allocate(data.length * this.memory_itemsize());
             this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             this.buffer.asFloatBuffer().put(data, 0, data.length);
         }
@@ -513,7 +513,7 @@ public abstract class PrimitiveArray extends Array {
 
         public Float8(double[] data, boolean bigEndian) {
             super(new AsDtype(AsDtype.Dtype.FLOAT8), data.length);
-            this.buffer = ByteBuffer.allocate(data.length * this.disk_itemsize());
+            this.buffer = ByteBuffer.allocate(data.length * this.memory_itemsize());
             this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             this.buffer.asDoubleBuffer().put(data, 0, data.length);
         }
