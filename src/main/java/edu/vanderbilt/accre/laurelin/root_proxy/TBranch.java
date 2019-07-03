@@ -217,7 +217,17 @@ public class TBranch {
         Object className = this.data.getScalar("fClassName");
         if ((ret == null) && (className != null)) {
             switch ((String)this.data.getScalar("fClassName").getVal()) {
+                case "vector<bool>":
+                case "vector<char>":
+                case "vector<unsigned char>":
+                case "vector<short>":
+                case "vector<unsigned short>":
+                case "vector<int>":
+                case "vector<unsigned int>":
+                case "vector<long>":
+                case "vector<unsigned long>":
                 case "vector<float>":
+                case "vector<double>":
                     /*
                      *  need to treat this as a float array and skip the
                      *  first 10 bytes to skip the vector stuff. See Uproot
@@ -260,13 +270,39 @@ public class TBranch {
             Object className = this.data.getScalar("fClassName");
             if ((ret == null) && (className != null)) {
                 switch ((String)this.data.getScalar("fClassName").getVal()) {
+                    // See Uproot interp/auto.py
+                    case "vector<bool>":
+                        ret = new SimpleType.ArrayType(SimpleType.Bool);
+                        break;
+                    case "vector<char>":
+                        ret = new SimpleType.ArrayType(SimpleType.Int8);
+                        break;
+                    case "vector<unsigned char>":
+                        ret = new SimpleType.ArrayType(SimpleType.UInt8);
+                        break;
+                    case "vector<short>":
+                        ret = new SimpleType.ArrayType(SimpleType.Int16);
+                        break;
+                    case "vector<unsigned short>":
+                        ret = new SimpleType.ArrayType(SimpleType.UInt16);
+                        break;
+                    case "vector<int>":
+                        ret = new SimpleType.ArrayType(SimpleType.Int32);
+                        break;
+                    case "vector<unsigned int>":
+                        ret = new SimpleType.ArrayType(SimpleType.UInt32);
+                        break;
+                    case "vector<long>":
+                        ret = new SimpleType.ArrayType(SimpleType.Int64);
+                        break;
+                    case "vector<unsigned long>":
+                        ret = new SimpleType.ArrayType(SimpleType.UInt64);
+                        break;
                     case "vector<float>":
-                        /*
-                         *  need to treat this as a float array and skip the
-                         *  first 10 bytes to skip the vector stuff. See Uproot
-                         *  interp/auto.py
-                         */
                         ret = new SimpleType.ArrayType(SimpleType.Float32);
+                        break;
+                    case "vector<double>":
+                        ret = new SimpleType.ArrayType(SimpleType.Float64);
                         break;
                     default:
                         break;
