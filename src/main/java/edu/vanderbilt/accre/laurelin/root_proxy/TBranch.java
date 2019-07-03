@@ -22,23 +22,42 @@ public class TBranch {
         private boolean isFixed;
         private int fixedLength;
         private String branchName;
-        public static ArrayDescriptor newNumArray(String mag) {
+        private int skipBytes;
+
+        public static ArrayDescriptor newNumArray(String mag, int skipBytes) {
             ArrayDescriptor ret = new ArrayDescriptor();
             ret.isFixed = true;
             ret.fixedLength = Integer.parseInt(mag);
+            ret.skipBytes = skipBytes;
             return ret;
         }
-        public static ArrayDescriptor newVarArray(String mag) {
+
+        public static ArrayDescriptor newNumArray(String mag) {
+            return newNumArray(mag, 0);
+        }
+
+        public static ArrayDescriptor newVarArray(String mag, int skipBytes) {
             ArrayDescriptor ret = new ArrayDescriptor();
             ret.isFixed = false;
             ret.branchName = mag;
+            ret.skipBytes = skipBytes;
             return ret;
         }
+
+        public static ArrayDescriptor newVarArray(String mag) {
+            return newVarArray(mag, 0);
+        }
+
         public boolean isFixed() {
             return isFixed;
         }
+
         public int getFixedLength() {
             return fixedLength;
+        }
+
+        public int getSkipBytes() {
+            return skipBytes;
         }
     }
 
