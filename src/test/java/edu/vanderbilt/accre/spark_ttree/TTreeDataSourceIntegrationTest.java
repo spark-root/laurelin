@@ -67,7 +67,7 @@ public class TTreeDataSourceIntegrationTest {
                 .option("threadCount", "0")
                 .load("testdata/stdvector.root");
         df.printSchema();
-        df.select("vpx").show(false);
+        df.show(false);
     }
 
     @Test

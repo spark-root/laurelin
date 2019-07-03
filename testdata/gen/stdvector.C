@@ -31,6 +31,12 @@ void write()
 	std::vector<float> vpy;
 	std::vector<float> vpz;
 	std::vector<float> vrand;
+	std::vector<char> charv;
+	std::vector<short> shortv;
+	std::vector<int> intv;
+	std::vector<long> longv;
+	std::vector<double> doublev;
+
 
 	// Create a TTree
 	TTree *t = new TTree("tvec","Tree with vectors");
@@ -38,6 +44,11 @@ void write()
 	t->Branch("vpy",&vpy);
 	t->Branch("vpz",&vpz);
 	t->Branch("vrand",&vrand);
+	t->Branch("char",&charv);
+	t->Branch("short",&shortv);
+	t->Branch("int",&intv);
+	t->Branch("long",&longv);
+	t->Branch("double",&doublev);
 
 	gRandom->SetSeed(2072019);
 	for (Int_t i = 0; i < 10; i++) {
@@ -47,6 +58,11 @@ void write()
 		vpy.clear();
 		vpz.clear();
 		vrand.clear();
+        charv.clear();
+        shortv.clear();
+        intv.clear();
+        longv.clear();
+        doublev.clear();
 
 		for (Int_t j = 0; j < npx; ++j) {
 
@@ -59,7 +75,11 @@ void write()
 			vpy.emplace_back(py);
 			vpz.emplace_back(pz);
 			vrand.emplace_back(random);
-
+            charv.emplace_back(px);
+            shortv.emplace_back(px);
+            intv.emplace_back(px);
+            longv.emplace_back(px);
+            doublev.emplace_back(px);
 		}
 		
 		t->Fill();
