@@ -141,6 +141,29 @@ public class TTreeDataSourceUnitTest {
         assertNotNull(reader.planBatchInputPartitions());
     }
 
+    @Test
+    public void testLoadVectorColumns() throws IOException {
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", "testdata/stdvector.root");
+        optmap.put("tree",  "tvec");
+        optmap.put("threadCount", "0");
+        DataSourceOptions opts = new DataSourceOptions(optmap);
+        Root source = new Root();
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts);
+        List<InputPartition<ColumnarBatch>> partitionPlan = reader.planBatchInputPartitions();
+        assertNotNull(partitionPlan);
+        StructType schema = reader.readSchema();
+        System.out.println(schema.prettyJson());
+
+        InputPartition<ColumnarBatch> partition = partitionPlan.get(0);
+        InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
+        assertTrue(partitionReader.next());
+        ColumnarBatch batch = partitionReader.get();
+        ColumnVector col = batch.column(0);
+        ColumnarArray arr = col.getArray(0);
+        arr.getFloat(0);
+    }
+
     /**
      * Ideally implements the same call order as the full-up spark test
      *  [TRACE] 17:24:35.974 e.v.a.l.Root - planbatchinputpartitions

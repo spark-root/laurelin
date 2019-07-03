@@ -20,31 +20,17 @@ public class TTreeDataSourceIntegrationTest {
                 .appName("test").getOrCreate();
     }
 
-//    @Test
-//    public void testLoadDataFrame() {
-//        Dataset<Row> df = spark
-//                .read()
-//                .format("edu.vanderbilt.accre.laurelin.Root")
-//                .option("tree",  "tree")
-//                .load("testdata/uproot-small-flat-tree.root");
-//        df = df.select("Float32", "ArrayFloat32", "SliceFloat32");
-//        df.show();
-//        // assertEquals(100, df.count());
-//    }
-
-//    @Test
-//    public void testLoadNestedDataFrame() {
-//        Dataset<Row> df = spark
-//                .read()
-//                .format("edu.vanderbilt.accre.laurelin.Root")
-//                .option("tree",  "three/tree")
-//                .load("testdata/uproot-nesteddirs.root");
-//        df.printSchema();
-//        // scalars
-//        df.select("evt.I16","evt.I32","evt.I64","evt.F32","evt.F64").show();
-//        // fixed arrays
-//        df.select("evt.ArrayI16[10]","evt.ArrayI32[10]","evt.ArrayI64[10]","evt.ArrayF32[10]","evt.ArrayF64[10]").show();
-//    }
+    @Test
+    public void testLoadDataFrame() {
+        Dataset<Row> df = spark
+                .read()
+                .format("edu.vanderbilt.accre.laurelin.Root")
+                .option("tree",  "tree")
+                .load("testdata/uproot-small-flat-tree.root");
+        df = df.select("Float32", "ArrayFloat32", "SliceFloat32");
+        df.show();
+        assertEquals(100, df.count());
+    }
 
     @Test
     public void testLoadNestedDataFrame() {
@@ -65,9 +51,23 @@ public class TTreeDataSourceIntegrationTest {
                 .read()
                 .format("root")
                 .option("tree",  "Events")
+                .option("threadCount", "0")
                 .load("testdata/all-types.root");
         df.printSchema();
         df.select("ScalarI8").show();
+    }
+
+    @Test
+    public void testVectorLoad() {
+        // try to load an std::vector
+        Dataset<Row> df = spark
+                .read()
+                .format("root")
+                .option("tree",  "tvec")
+                .option("threadCount", "0")
+                .load("testdata/stdvector.root");
+        df.printSchema();
+        df.select("vpx").show(false);
     }
 
     @Test
@@ -76,6 +76,7 @@ public class TTreeDataSourceIntegrationTest {
                 .read()
                 .format("root")
                 .option("tree",  "Events")
+                .option("threadCount", "0")
                 .load("testdata/all-types.root", "testdata/all-types.root");
         assertEquals(18, df.count());
     }

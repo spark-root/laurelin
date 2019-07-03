@@ -210,8 +210,25 @@ public class TBranch {
         if (getLeaves().size() != 1) {
             throw new RuntimeException("Non-split branches are not supported");
         }
+        ArrayDescriptor ret = null;
         TLeaf leaf = getLeaves().get(0);
         String title = leaf.getTitle();
+
+        Object className = this.data.getScalar("fClassName");
+        if ((ret == null) && (className != null)) {
+            switch ((String)this.data.getScalar("fClassName").getVal()) {
+                case "vector<float>":
+                    /*
+                     *  need to treat this as a float array and skip the
+                     *  first 10 bytes to skip the vector stuff. See Uproot
+                     *  interp/auto.py
+                     */
+                    return ArrayDescriptor.newVarArray("", 10);
+                default:
+                    break;
+            }
+        }
+
         if (!title.contains("[")) {
             // no square brackets means no possibility of being an array
             return null;
@@ -234,10 +251,26 @@ public class TBranch {
 
     public SimpleType getSimpleType() {
         SimpleType ret = null;
-        if (leaves.size() == 1){
+        if (leaves.size() == 1) {
             TLeaf leaf = leaves.get(0);
             if (getTitle().length() >= 2) {
                 ret = getTypeFromTitle(getTitle());
+            }
+
+            Object className = this.data.getScalar("fClassName");
+            if ((ret == null) && (className != null)) {
+                switch ((String)this.data.getScalar("fClassName").getVal()) {
+                    case "vector<float>":
+                        /*
+                         *  need to treat this as a float array and skip the
+                         *  first 10 bytes to skip the vector stuff. See Uproot
+                         *  interp/auto.py
+                         */
+                        ret = new SimpleType.ArrayType(SimpleType.Float32);
+                        break;
+                    default:
+                        break;
+                }
             }
 
             if (ret == null) {
