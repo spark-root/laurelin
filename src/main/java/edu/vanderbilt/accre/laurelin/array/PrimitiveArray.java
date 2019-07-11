@@ -139,7 +139,7 @@ public abstract class PrimitiveArray extends Array {
         }
 
         public boolean toBoolean(int index) {
-            return (this.buffer.get(index) != 0);
+            return (this.buffer.get(this.buffer.position() + index) != 0);
         }
 
         @Override
@@ -547,4 +547,3 @@ public abstract class PrimitiveArray extends Array {
         }
     }
 }
-
