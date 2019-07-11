@@ -89,7 +89,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         private long entryEnd;
         private int currBasket = -1;
         private Map<String, SlimTBranch> slimBranches;
-        private static ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
+        private static ThreadPoolExecutor executor;
 
         public TTreeDataSourceV2PartitionReader(CacheFactory basketCacheFactory, StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount) {
             this.basketCache = basketCacheFactory.getCache();
@@ -99,6 +99,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
             this.slimBranches = slimBranches;
 
             if (threadCount >= 1) {
+                executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
                 executor.setCorePoolSize(threadCount);
                 executor.setMaximumPoolSize(threadCount);
             } else {

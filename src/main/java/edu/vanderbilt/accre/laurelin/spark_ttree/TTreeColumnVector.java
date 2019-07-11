@@ -47,7 +47,7 @@ public class TTreeColumnVector extends ColumnVector {
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         } else {
             logger.trace("  slice vec");
-            Interpretation interpretation = new AsJagged(new AsDtype(dtype));
+            Interpretation interpretation = new AsJagged(new AsDtype(dtype), desc.getSkipBytes());
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         }
     }

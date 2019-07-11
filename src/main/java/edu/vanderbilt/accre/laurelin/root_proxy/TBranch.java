@@ -22,23 +22,42 @@ public class TBranch {
         private boolean isFixed;
         private int fixedLength;
         private String branchName;
-        public static ArrayDescriptor newNumArray(String mag) {
+        private int skipBytes;
+
+        public static ArrayDescriptor newNumArray(String mag, int skipBytes) {
             ArrayDescriptor ret = new ArrayDescriptor();
             ret.isFixed = true;
             ret.fixedLength = Integer.parseInt(mag);
+            ret.skipBytes = skipBytes;
             return ret;
         }
-        public static ArrayDescriptor newVarArray(String mag) {
+
+        public static ArrayDescriptor newNumArray(String mag) {
+            return newNumArray(mag, 0);
+        }
+
+        public static ArrayDescriptor newVarArray(String mag, int skipBytes) {
             ArrayDescriptor ret = new ArrayDescriptor();
             ret.isFixed = false;
             ret.branchName = mag;
+            ret.skipBytes = skipBytes;
             return ret;
         }
+
+        public static ArrayDescriptor newVarArray(String mag) {
+            return newVarArray(mag, 0);
+        }
+
         public boolean isFixed() {
             return isFixed;
         }
+
         public int getFixedLength() {
             return fixedLength;
+        }
+
+        public int getSkipBytes() {
+            return skipBytes;
         }
     }
 
@@ -191,8 +210,35 @@ public class TBranch {
         if (getLeaves().size() != 1) {
             throw new RuntimeException("Non-split branches are not supported");
         }
+        ArrayDescriptor ret = null;
         TLeaf leaf = getLeaves().get(0);
         String title = leaf.getTitle();
+
+        Object className = this.data.getScalar("fClassName");
+        if ((ret == null) && (className != null)) {
+            switch ((String)this.data.getScalar("fClassName").getVal()) {
+                case "vector<bool>":
+                case "vector<char>":
+                case "vector<unsigned char>":
+                case "vector<short>":
+                case "vector<unsigned short>":
+                case "vector<int>":
+                case "vector<unsigned int>":
+                case "vector<long>":
+                case "vector<unsigned long>":
+                case "vector<float>":
+                case "vector<double>":
+                    /*
+                     *  need to treat this as a float array and skip the
+                     *  first 10 bytes to skip the vector stuff. See Uproot
+                     *  interp/auto.py
+                     */
+                    return ArrayDescriptor.newVarArray("", 10);
+                default:
+                    break;
+            }
+        }
+
         if (!title.contains("[")) {
             // no square brackets means no possibility of being an array
             return null;
@@ -215,10 +261,52 @@ public class TBranch {
 
     public SimpleType getSimpleType() {
         SimpleType ret = null;
-        if (leaves.size() == 1){
+        if (leaves.size() == 1) {
             TLeaf leaf = leaves.get(0);
             if (getTitle().length() >= 2) {
                 ret = getTypeFromTitle(getTitle());
+            }
+
+            Object className = this.data.getScalar("fClassName");
+            if ((ret == null) && (className != null)) {
+                switch ((String)this.data.getScalar("fClassName").getVal()) {
+                    // See Uproot interp/auto.py
+                    case "vector<bool>":
+                        ret = new SimpleType.ArrayType(SimpleType.Bool);
+                        break;
+                    case "vector<char>":
+                        ret = new SimpleType.ArrayType(SimpleType.Int8);
+                        break;
+                    case "vector<unsigned char>":
+                        ret = new SimpleType.ArrayType(SimpleType.UInt8);
+                        break;
+                    case "vector<short>":
+                        ret = new SimpleType.ArrayType(SimpleType.Int16);
+                        break;
+                    case "vector<unsigned short>":
+                        ret = new SimpleType.ArrayType(SimpleType.UInt16);
+                        break;
+                    case "vector<int>":
+                        ret = new SimpleType.ArrayType(SimpleType.Int32);
+                        break;
+                    case "vector<unsigned int>":
+                        ret = new SimpleType.ArrayType(SimpleType.UInt32);
+                        break;
+                    case "vector<long>":
+                        ret = new SimpleType.ArrayType(SimpleType.Int64);
+                        break;
+                    case "vector<unsigned long>":
+                        ret = new SimpleType.ArrayType(SimpleType.UInt64);
+                        break;
+                    case "vector<float>":
+                        ret = new SimpleType.ArrayType(SimpleType.Float32);
+                        break;
+                    case "vector<double>":
+                        ret = new SimpleType.ArrayType(SimpleType.Float64);
+                        break;
+                    default:
+                        break;
+                }
             }
 
             if (ret == null) {

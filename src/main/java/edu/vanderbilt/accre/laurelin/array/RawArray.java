@@ -56,6 +56,7 @@ public class RawArray extends PrimitiveArray {
                 int start = byteoffsets.get(i) + skipbytes;
                 int count = byteoffsets.get(i + 1) - start;
                 byte[] copy = new byte[count];
+                this.buffer.position(start);
                 this.buffer.get(copy);
                 out.put(copy);
             }

@@ -2,6 +2,8 @@ package edu.vanderbilt.accre.laurelin.interpretation;
 
 import java.nio.ByteBuffer;
 
+import org.apache.logging.log4j.LogManager;
+
 import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.JaggedArray;
 import edu.vanderbilt.accre.laurelin.array.JaggedArrayPrep;
@@ -10,6 +12,8 @@ import edu.vanderbilt.accre.laurelin.array.PrimitiveArray.Int4;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 
 public class AsJagged implements Interpretation {
+    private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+
     Interpretation content;
     int skipbytes;
 
@@ -60,7 +64,11 @@ public class AsJagged implements Interpretation {
         ByteBuffer countsbuf = ByteBuffer.allocate((local_entrystop - local_entrystart) * 4);
         int total = 0;
         for (int i = local_entrystart;  i < local_entrystop;  i++) {
-            int count = (byteoffsets.get(i + 1) - byteoffsets.get(i)) / innersize_memory;
+            /*
+             * I modified the following code to take into account the skipbytes
+             * ... unsure if that's 100% correct..
+             */
+            int count = ((byteoffsets.get(i + 1) - byteoffsets.get(i)) - this.skipbytes) / innersize_memory;
             countsbuf.putInt(count);
             total += count;
         }
