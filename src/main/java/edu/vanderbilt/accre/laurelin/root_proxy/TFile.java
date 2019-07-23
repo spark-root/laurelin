@@ -61,22 +61,6 @@ public class TFile {
         }
 
         /*
-         * Load the list of keys in the file (not sure if this is needed long-term)
-         */
-        long position = fBEGIN;
-        while (position < fEND) {
-            int keyBytes = c.readInt(position);
-            if (keyBytes < 0) {
-                // Negative nBytes are free blocks
-                position += (-keyBytes);
-                continue;
-            }
-            TKey testkey = new TKey();
-            testkey.getFromFile(fh, position);
-            keys.add(testkey);
-            position += testkey.Nbytes;
-        }
-        /*
          * We don't need/want the TNamed stuff for now, which is why we're pushing
          * the inputs by fNbytesName bytes
          */
@@ -101,7 +85,6 @@ public class TFile {
                         streamerKey.KeyLen);
         streamerInfo = new Streamer();
         streamerInfo.getFromCursor(streamerCursor, 0);
-
     }
 
     private void parseHeaderImpl(boolean largeFile) throws IOException {
