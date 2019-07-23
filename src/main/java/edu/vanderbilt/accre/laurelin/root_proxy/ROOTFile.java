@@ -37,12 +37,15 @@ public class ROOTFile {
     }
 
     private FileInterface fh;
+    private FileProfiler profile;
 
     /* Hide constructor */
-    private ROOTFile() { }
+    private ROOTFile(String path) {
+        profile = IOProfile.getInstance().beginProfile(path);
+    }
 
     public static ROOTFile getInputFile(String path) throws IOException {
-        ROOTFile rf = new ROOTFile();
+        ROOTFile rf = new ROOTFile(path);
         rf.fh = IOFactory.openForRead(path);
         return rf;
     }
@@ -60,7 +63,13 @@ public class ROOTFile {
         /*
          * This bytebuffer can be a copy of the internal cache
          */
-        return fh.read(offset, l);
+        ByteBuffer ret;
+        try (Event time = profile.startOp(offset, (int)l)) {
+            ret = fh.read(offset, l);
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+        return ret;
     }
 
     public ByteBuffer read(long offset, long len) throws IOException {
