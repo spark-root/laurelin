@@ -7,6 +7,9 @@ package edu.vanderbilt.accre.laurelin.root_proxy;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
+import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.FileProfiler;
+
 public class ROOTFile {
     public class FileBackedBuf implements BackingBuf {
         ROOTFile fh;

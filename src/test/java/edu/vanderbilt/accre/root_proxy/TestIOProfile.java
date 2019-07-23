@@ -33,10 +33,10 @@ public class TestIOProfile {
         IOProfile profiler = IOProfile.getInstance(1,cb);
         FileProfiler f = profiler.beginProfile("test-path");
         try (Event ev = f.startOp(10, 20)) {
-            assertEquals(0, val.size());
+            assertEquals(1, val.size());
         }
-        assertEquals(1, val.size());
-        Storage stor = val.get(0);
+        assertEquals(2, val.size());
+        Storage stor = val.get(1);
         assertEquals(10, stor.offset);
         assertEquals(20, stor.len);
     }
