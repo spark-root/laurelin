@@ -5,6 +5,8 @@
 package edu.vanderbilt.accre.laurelin.root_proxy;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -71,7 +73,13 @@ public class HadoopFile implements FileInterface {
     public static List<String> expandPathToList(String path) throws IOException {
         Configuration conf = new Configuration();
         FileSystem fileSystem;
-        fileSystem = FileSystem.get(conf);
+        URI uri;
+        try {
+            uri = new URI(path);
+        } catch (URISyntaxException e) {
+            throw new IOException(e);
+        }
+        fileSystem = FileSystem.get(uri, conf);
         Path tmpPath = new Path(path);
         if (!fileSystem.isDirectory(tmpPath)) {
             ArrayList<String> ret = new ArrayList<String>();
