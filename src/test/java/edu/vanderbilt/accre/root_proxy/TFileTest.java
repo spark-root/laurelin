@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -18,6 +20,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 
 public class TFileTest {
     List<Storage> accum;
+    private static final Logger logger = LogManager.getLogger();
 
     @Before
     public void setUp() {
@@ -42,11 +45,8 @@ public class TFileTest {
         TFile testfile = TFile.getFromFile("testdata/nano_tree.root");
         Proxy events = testfile.getProxy("Events");
         TTree tree = new TTree(events, testfile);
-        System.out.println("got size: " + accum.size());
         for (Storage val: accum) {
-            if (val.len > 10) {
-                System.out.println("loaded " + val.len + " bytes at " + val.offset);
-            }
+            logger.trace("loaded " + val.len + " bytes at " + val.offset);
         }
         IOProfile instance = IOProfile.getInstance();
     }
