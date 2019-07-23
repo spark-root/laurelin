@@ -266,7 +266,10 @@ public class Cursor {
     }
 
     public BigInteger readULong(long offset) throws IOException {
-        BigInteger ret = new BigInteger(buf.read(base + offset, 8).array());
+        byte[] tmpArray = new byte[8];
+        ByteBuffer tmpBuf = buf.read(base + offset, 8);
+        tmpBuf.get(tmpArray, 0, 8);
+        BigInteger ret = new BigInteger(tmpArray);
         if (ret.compareTo(BigInteger.ZERO) == -1) {
             ret = ret.add(BigInteger.valueOf(2).pow(64));
         }

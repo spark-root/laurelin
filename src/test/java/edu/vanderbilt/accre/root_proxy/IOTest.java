@@ -72,26 +72,11 @@ public class IOTest {
         ROOTFile rf = ROOTFile.getInputFile(testfile);
 
         for (int x = 0; x < offs.length; x += 1) {
-            assertArrayEquals(rf.read(offs[x], lens[x]).array(), getTestBytes(offs[x], lens[x]).array());
-        }
-    }
-
-    @Test
-    public void readFromRootFileCursor() throws Exception {
-        long[] offs = {0, 1024, 4096};
-        int[] lens = {12, 24, 1024, 96};
-        ROOTFile rf = ROOTFile.getInputFile(testfile);
-        Cursor cursor = rf.getCursor(0);
-
-        assertEquals(cursor.readBuffer(100), getTestBytes(0,100));
-        assertEquals(cursor.readBuffer(100), getTestBytes(100,100));
-        for (int oi = 0; oi < offs.length; oi += 1) {
-            cursor = rf.getCursor(offs[oi]);
-            long my_off = offs[oi];
-            for (int li = 0; li < lens.length; li += 1) {
-                assertEquals(cursor.readBuffer(lens[li]), getTestBytes(my_off, lens[li]));
-                my_off += lens[li];
-            }
+            byte[] expected = new byte[lens[x]];
+            byte[] actual = new byte[lens[x]];
+            rf.read(offs[x], lens[x]).get(actual, 0, lens[x]);
+            getTestBytes(offs[x], lens[x]).get(expected, 0, lens[x]);
+            assertArrayEquals(expected, actual);
         }
     }
 
@@ -163,6 +148,9 @@ public class IOTest {
         for (long x = off; x < off + len; x += 4) {
             buf.putInt((int)x);
         }
+        buf.flip();
+        buf.position(0);
+        buf.limit(len);
         return buf;
     }
 

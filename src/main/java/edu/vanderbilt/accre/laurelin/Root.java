@@ -8,9 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.spark.SparkContext;
 import org.apache.spark.sql.sources.DataSourceRegister;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.DataSourceV2;
@@ -28,9 +30,13 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
+import org.apache.spark.util.CollectionAccumulator;
 
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOFactory;
+import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
+import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
+import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
@@ -40,8 +46,6 @@ import edu.vanderbilt.accre.laurelin.spark_ttree.StructColumnVector;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
 public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
-    // InputPartition is serialized and sent to the executor who then makes the
-    // InputPartitionReader, I don't think we need to have that division
     private static final Logger logger = LogManager.getLogger();
 
     /**
@@ -60,8 +64,10 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         private Map<String, SlimTBranch> slimBranches;
         private CacheFactory basketCacheFactory;
         private int threadCount;
+        private CollectionAccumulator<Storage> profileData;
+        private int pid;
 
-        public TTreeDataSourceV2Partition(StructType schema, CacheFactory basketCacheFactory, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount) {
+        public TTreeDataSourceV2Partition(StructType schema, CacheFactory basketCacheFactory, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount, CollectionAccumulator<Storage> profileData, int pid) {
             logger.trace("dsv2partition new");
             this.schema = schema;
             this.basketCacheFactory = basketCacheFactory;
@@ -69,16 +75,14 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
             this.entryEnd = entryEnd;
             this.slimBranches = slimBranches;
             this.threadCount = threadCount;
+            this.profileData = profileData;
+            this.pid = pid;
         }
-
-        /*
-         * Begin InputPartition overrides
-         */
 
         @Override
         public InputPartitionReader<ColumnarBatch> createPartitionReader() {
             logger.trace("input partition reader");
-            return new TTreeDataSourceV2PartitionReader(basketCacheFactory, schema, entryStart, entryEnd, slimBranches, threadCount);
+            return new TTreeDataSourceV2PartitionReader(basketCacheFactory, schema, entryStart, entryEnd, slimBranches, threadCount, profileData, pid);
         }
     }
 
@@ -90,13 +94,26 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         private int currBasket = -1;
         private Map<String, SlimTBranch> slimBranches;
         private static ThreadPoolExecutor executor;
+        private CollectionAccumulator<Storage> profileData;
+        private int pid;
 
-        public TTreeDataSourceV2PartitionReader(CacheFactory basketCacheFactory, StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount) {
+        public TTreeDataSourceV2PartitionReader(CacheFactory basketCacheFactory, StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount, CollectionAccumulator<Storage> profileData, int pid) {
             this.basketCache = basketCacheFactory.getCache();
             this.schema = schema;
             this.entryStart = entryStart;
             this.entryEnd = entryEnd;
             this.slimBranches = slimBranches;
+            this.profileData = profileData;
+            this.pid = pid;
+
+            Function<Event, Integer> cb = null;
+            if (this.profileData != null) {
+                cb = e -> {
+                    this.profileData.add(e.getStorage());
+                    return 0;
+                };
+            }
+            IOProfile.getInstance(pid, cb);
 
             if (threadCount >= 1) {
                 executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
@@ -174,8 +191,10 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         private CacheFactory basketCacheFactory;
         private StructType schema;
         private int threadCount;
+        private IOProfile profiler;
+        private static CollectionAccumulator<Storage> profileData;
 
-        public TTreeDataSourceV2Reader(DataSourceOptions options, CacheFactory basketCacheFactory) {
+        public TTreeDataSourceV2Reader(DataSourceOptions options, CacheFactory basketCacheFactory, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
             logger.trace("construct ttreedatasourcev2reader");
             try {
                 this.paths = new LinkedList<String>();
@@ -192,6 +211,16 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                 throw new RuntimeException(e);
             }
             threadCount = options.getInt("threadCount", 16);
+
+            Function<Event, Integer> cb = null;
+            if (ioAccum != null) {
+                profileData = ioAccum;
+                cb = e -> {
+                    profileData.add(e.getStorage());
+                    return 0;
+                };
+            }
+            profiler = IOProfile.getInstance(0, cb);
         }
 
         @Override
@@ -270,6 +299,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         public List<InputPartition<ColumnarBatch>> planBatchInputPartitions() {
             logger.trace("planbatchinputpartitions");
             List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
+            int pid = 0;
             for (String path: paths) {
                 TTree inputTree;
                 try {
@@ -288,6 +318,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                 //      smarter later
                 long[] entryOffset = inputTree.getBranches().get(0).getBasketEntryOffsets();
                 for (int i = 0; i < (entryOffset.length - 1); i += 1) {
+                    pid += 1;
                     long entryStart = entryOffset[i];
                     long entryEnd = entryOffset[i + 1];
                     // the last basket is dumb and annoying
@@ -295,12 +326,13 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                         entryEnd = inputTree.getEntries();
                     }
 
-                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, slimBranches, threadCount));
+                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, slimBranches, threadCount, profileData, pid));
                 }
                 if (ret.size() == 0) {
                     // Only one basket?
                     logger.debug("Planned for zero baskets, adding a dummy one");
-                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, 0, inputTree.getEntries(), slimBranches, threadCount));
+                    pid += 1;
+                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, 0, inputTree.getEntries(), slimBranches, threadCount, profileData, pid));
                 }
             }
             return ret;
@@ -327,12 +359,34 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
 
     }
 
+    /*
+     * This is called by Spark, unlike the following function that accepts a
+     * SparkContext
+     */
+
     @Override
     public DataSourceReader createReader(DataSourceOptions options) {
+        return createReader(options, SparkContext.getOrCreate());
+    }
+
+    /**
+     * Used for unit-tests when there is no current spark context
+     * @param options DS options
+     * @param context spark context to use
+     * @return new reader
+     */
+
+    public DataSourceReader createReader(DataSourceOptions options, SparkContext context) {
         logger.trace("make new reader");
         CacheFactory basketCacheFactory = new CacheFactory();
-        return new TTreeDataSourceV2Reader(options, basketCacheFactory);
+        CollectionAccumulator<Event.Storage> ioAccum = null;
+        if (context != null) {
+            ioAccum = new CollectionAccumulator<Event.Storage>();
+            context.register(ioAccum, "edu.vanderbilt.accre.laurelin.ioprofile");
+        }
+        return new TTreeDataSourceV2Reader(options, basketCacheFactory, context, ioAccum);
     }
+
 
     @Override
     public String shortName() {
