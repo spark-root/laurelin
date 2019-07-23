@@ -163,11 +163,6 @@ public class SlimTBranch implements Serializable {
                     compressedLen,
                     uncompressedLen,
                     keyLen);
-            logger.trace("getbasket len: " + uncompressedLen);
-            if (uncompressedLen == 27) {
-                logger.trace("ArrayI8: " + bytesToHex(this.getPayload().array()));
-                logger.trace("limit: " + payload.getLimit());
-            }
         }
 
         public ByteBuffer getPayload(long offset, int len) throws IOException {
