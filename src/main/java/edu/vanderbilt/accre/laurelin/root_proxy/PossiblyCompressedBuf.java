@@ -39,11 +39,10 @@ public class PossiblyCompressedBuf implements BackingBuf {
             }
 
             // Make a copy first to prevent mutating the decompresed buffer
-            ByteBuffer ret1 = tmp.duplicate();
-            ret1.position((int)(off));
-            ret1.limit((int)(off + len));
-            ByteBuffer ret = ret1.slice();
-            return ret;
+            ByteBuffer ret = tmp.duplicate();
+            ret.position((int)(off));
+            ret.limit((int)(off + len));
+            return ret.slice();
         }
     }
 
