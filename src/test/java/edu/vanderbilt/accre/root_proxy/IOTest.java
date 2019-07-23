@@ -5,6 +5,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -83,13 +85,19 @@ public class IOTest {
         ROOTFile rf = ROOTFile.getInputFile(testfile);
         Cursor cursor = rf.getCursor(0);
 
-        assertEquals(cursor.readBuffer(100), getTestBytes(0,100));
-        assertEquals(cursor.readBuffer(100), getTestBytes(100,100));
+        assertEquals(getTestBytes(0,100), cursor.readBuffer(100));
+        assertEquals(getTestBytes(100,100), cursor.readBuffer(100));
         for (int oi = 0; oi < offs.length; oi += 1) {
             cursor = rf.getCursor(offs[oi]);
             long my_off = offs[oi];
             for (int li = 0; li < lens.length; li += 1) {
-                assertEquals(cursor.readBuffer(lens[li]), getTestBytes(my_off, lens[li]));
+                ByteBuffer expected = cursor.readBuffer(my_off, lens[li]);
+                ByteBuffer actual = getTestBytes(my_off, lens[li]);
+                for (int i = 0; i < lens[li]; i += 1) {
+                    byte expB = expected.get();
+                    byte actB = actual.get();
+                    assertEquals("reading index " + i + " off " + my_off, expB, actB);
+                }
                 my_off += lens[li];
             }
         }
@@ -158,11 +166,37 @@ public class IOTest {
         java.nio.file.Files.deleteIfExists(Paths.get(testfile2));
     }
 
+    @Test
+    public void readCompareRead() throws Exception {
+        long[] offs = {0, 1024, 4096};
+        int[] lens = {12, 24, 1024, 96};
+        ROOTFile rf = ROOTFile.getInputFile(testfile);
+        Cursor cursor = rf.getCursor(0);
+        FileInputStream fh = new FileInputStream(new File(testfile));
+        for (int oi = 0; oi < offs.length; oi += 1) {
+            for (int li = 0; li < lens.length; li += 1) {
+                byte[] buf1 = new byte[lens[li]];
+                byte[] buf2 = new byte[lens[li]];
+                fh.read(buf1, (int) offs[oi], lens[li]);
+                ByteBuffer tmpByte = cursor.readBuffer(offs[oi], lens[li]);
+                System.out.println(tmpByte);
+                tmpByte.get(buf2, 0, lens[li]);
+                for (int i = 0; i < lens[li]; i += 1) {
+                    System.out.println("r " + offs[oi] + " " + lens[li] + " " + i);
+                    assertEquals(buf1[i], buf2[i]);
+                }
+            }
+        }
+    }
+
     private static ByteBuffer getTestBytes(long off, int len) {
         ByteBuffer buf = ByteBuffer.allocate(len);
         for (long x = off; x < off + len; x += 4) {
             buf.putInt((int)x);
         }
+        buf.flip();
+        buf.position(0);
+        buf.limit(len);
         return buf;
     }
 

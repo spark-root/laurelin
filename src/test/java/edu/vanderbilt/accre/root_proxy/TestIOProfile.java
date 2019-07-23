@@ -10,13 +10,15 @@ import org.junit.Test;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
+import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.FileProfiler;
 
 public class TestIOProfile {
 
     @Test
     public void testNullCallback() throws Exception {
-        IOProfile profiler = new IOProfile(1, null);
-        try (Event ev = profiler.startOp(0, 1)) {
+        IOProfile profiler = IOProfile.getInstance(1, null);
+        FileProfiler f = profiler.beginProfile("test-path");
+        try (Event ev = f.startOp(0, 1)) {
 
         }
     }
@@ -28,8 +30,9 @@ public class TestIOProfile {
             val.add(e.getStorage());
             return 0;
         };
-        IOProfile profiler = new IOProfile(1, cb);
-        try (Event ev = profiler.startOp(10, 20)) {
+        IOProfile profiler = IOProfile.getInstance(1,cb);
+        FileProfiler f = profiler.beginProfile("test-path");
+        try (Event ev = f.startOp(10, 20)) {
             assertEquals(0, val.size());
         }
         assertEquals(1, val.size());
