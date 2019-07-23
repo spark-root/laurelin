@@ -75,7 +75,7 @@ public class ROOTFile {
             }
             ret = fh.read(offset - myShift, l + myShift);
             ret.position(myShift);
-            ret = ret.slice();
+            ret = ret.slice().asReadOnlyBuffer();
         } catch (Exception e) {
             throw new IOException(e);
         }

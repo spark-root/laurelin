@@ -109,7 +109,9 @@ public class TFile {
 
         String magic = "root";
         ByteBuffer file_magic = buffer.readBuffer(4);
-        String head_str = new String(file_magic.array(), "US-ASCII");
+        byte[] instr = new byte[4];
+        file_magic.get(instr, 0, 4);
+        String head_str = new String(instr, "US-ASCII");
 
         if (!head_str.equals(magic)) {
             throw new IOException("Not a ROOT file (" + head_str + ") not (" + magic + ")");
