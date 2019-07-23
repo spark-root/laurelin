@@ -68,7 +68,14 @@ public class ROOTFile {
          */
         ByteBuffer ret;
         try (Event time = profile.startOp(offset, (int)l)) {
-            ret = fh.read(offset, l);
+            final int OFFSET_SHIFT = 20;
+            int myShift = 0;
+            if (offset > OFFSET_SHIFT) {
+                myShift = OFFSET_SHIFT;
+            }
+            ret = fh.read(offset - myShift, l + myShift);
+            ret.position(myShift);
+            ret = ret.slice();
         } catch (Exception e) {
             throw new IOException(e);
         }
