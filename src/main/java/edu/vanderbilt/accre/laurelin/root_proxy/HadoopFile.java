@@ -86,7 +86,7 @@ public class HadoopFile implements FileInterface {
             while (fileList.hasNext()) {
                 LocatedFileStatus file = fileList.next();
                 if (file.isFile() && (file.getPath().getName().endsWith(".root"))) {
-                    ret.add(file.getPath().getName());
+                    ret.add(file.getPath().toString());
                 }
             }
             return ret;
