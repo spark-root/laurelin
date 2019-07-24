@@ -20,7 +20,6 @@ import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 
-
 public class HadoopFile implements FileInterface {
     FSDataInputStream fd;
     long limit;
