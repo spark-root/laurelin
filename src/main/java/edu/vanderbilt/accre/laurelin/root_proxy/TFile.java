@@ -19,7 +19,7 @@ public class TFile {
     public long fBEGIN;
     private int fCompress;
     public long fEND;
-    private int fNBytesInfo;
+    private long fNBytesInfo;
     private int fNbytesFree;
     private int fNbytesKeys;
     private int fNbytesName;
@@ -59,6 +59,7 @@ public class TFile {
         if (fVersion > 1000000) {
             parseHeaderImpl(true);
         }
+        fVersion %= fVersion;
 
         /*
          * We don't need/want the TNamed stuff for now, which is why we're pushing
@@ -103,7 +104,6 @@ public class TFile {
         // ROOT has a different file format if the file is > 2GB.
         // It signals this by changing the version number
         fVersion = buffer.readInt();
-        fVersion %= 1000000;
         fBEGIN = buffer.readInt();
         if (largeFile) {
             fEND = buffer.readLong();
@@ -114,7 +114,7 @@ public class TFile {
             fUnits = buffer.readChar();
             fCompress = buffer.readInt();
             fSeekInfo = buffer.readLong();
-            fNBytesInfo = buffer.readInt();
+            fNBytesInfo = buffer.readLong();
         } else {
             fEND = buffer.readInt();
             fSeekFree = buffer.readInt();

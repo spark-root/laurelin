@@ -393,7 +393,7 @@ public class Streamer {
             if ((obj == null) || !(obj instanceof Proxy)) {
                 // cursor.index = cursor.origin + beg + bcnt + 4
                 cursor.setOffset(startCursor.getOrigin() + beg + bcnt + 4);
-                throw new IOException("Undefined reference/tag found: " + tag);
+                return null;
             }
             return (Proxy) obj;
         } else if (tag == Constants.kNewClassTag) {
