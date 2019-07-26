@@ -127,8 +127,10 @@ public class ArrayBuilder {
             array = interpretation.destination((int)totalitems, (int)totalentries);
 
             tasks = new ArrayList<FutureTask<Boolean>>(basketstop - basketstart);
+
             for (int j = 0;  j < basketstop - basketstart;  j++) {
-                CallableFill fill = new CallableFill(interpretation, getbasket, j, basketkeys, array, entrystart, entrystop, basketstart, basketstop, basket_itemoffset, basket_entryoffset);
+                CallableFill fill = new CallableFill(interpretation, getbasket, j, basketkeys, array, entrystart, entrystop, basketstart, basketstop, basket_itemoffset, basket_entryoffset, basketEntryOffsets);
+
                 if (executor == null) {
                     fill.call();
                 }
@@ -166,8 +168,9 @@ public class ArrayBuilder {
         int basketstop;
         int[] basket_itemoffset;
         int[] basket_entryoffset;
+        long[] basketEntryOffsets;
 
-        CallableFill(Interpretation interpretation, GetBasket getbasket, int j, BasketKey[] basketkeys, Array destination, long entrystart, long entrystop, int basketstart, int basketstop, int[] basket_itemoffset, int[] basket_entryoffset) {
+        CallableFill(Interpretation interpretation, GetBasket getbasket, int j, BasketKey[] basketkeys, Array destination, long entrystart, long entrystop, int basketstart, int basketstop, int[] basket_itemoffset, int[] basket_entryoffset, long[] basketEntryOffsets) {
             this.interpretation = interpretation;
             this.getbasket = getbasket;
             this.j = j;
@@ -179,21 +182,23 @@ public class ArrayBuilder {
             this.basketstop = basketstop;
             this.basket_itemoffset = basket_itemoffset;
             this.basket_entryoffset = basket_entryoffset;
+            this.basketEntryOffsets = basketEntryOffsets;
         }
 
         @Override
         public Boolean call() {
+            // https://github.com/scikit-hep/uproot/blob/3.8.0/uproot/tree.py#L1361
+            // https://github.com/scikit-hep/uproot/blob/3.8.0/uproot/tree.py#L1132
+
             int i = j + basketstart;
 
-            int local_entrystart = (int)(entrystart - basket_entryoffset[i]);
+            int local_entrystart = (int)(entrystart - basketEntryOffsets[i]);
             if (local_entrystart < 0) {
                 local_entrystart = 0;
             }
-
-            int local_numentries = basket_entryoffset[i + 1] - basket_entryoffset[i];
-            int local_entrystop = (int)(entrystop - basket_entryoffset[i]);
-            if (local_entrystop > local_numentries) {
-                local_entrystop = local_numentries;
+            int local_entrystop = (int)(entrystop - basketEntryOffsets[i]);
+            if (local_entrystop > (int)(basketEntryOffsets[i + 1] - basketEntryOffsets[i])) {
+                local_entrystop = (int)(basketEntryOffsets[i + 1] - basketEntryOffsets[i]);
             }
             if (local_entrystop < 0) {
                 local_entrystop = 0;
@@ -202,14 +207,14 @@ public class ArrayBuilder {
             RawArray basketdata = getbasket.dataWithoutKey(i);
 
             Array source = null;
-            int border = basketkeys[i].fLast - basketkeys[i].fKeylen;
+            int border = basketkeys[j].fLast - basketkeys[j].fKeylen;
 
-            if (basketkeys[i].fObjlen == border) {
+            if (basketkeys[j].fObjlen == border) {
                 basketdata = interpretation.convertBufferDiskToMemory(basketdata);
                 source = interpretation.fromroot(basketdata, null, local_entrystart, local_entrystop);
             } else {
                 RawArray content = basketdata.slice(0, border);
-                PrimitiveArray.Int4 byteoffsets = new PrimitiveArray.Int4(basketdata.slice(border + 4, basketkeys[i].fObjlen)).add(true, -basketkeys[i].fKeylen);
+                PrimitiveArray.Int4 byteoffsets = new PrimitiveArray.Int4(basketdata.slice(border + 4, basketkeys[j].fObjlen)).add(true, -basketkeys[j].fKeylen);
                 byteoffsets.put(byteoffsets.length() - 1, border);
                 content = interpretation.subarray().convertBufferDiskToMemory(content);
                 byteoffsets = interpretation.subarray().convertOffsetDiskToMemory(byteoffsets);
@@ -244,6 +249,7 @@ public class ArrayBuilder {
                                 basket_itemoffset[j + 1],
                                 basket_entryoffset[j],
                                 basket_entryoffset[j + 1]);
+
             return true;
         }
     }

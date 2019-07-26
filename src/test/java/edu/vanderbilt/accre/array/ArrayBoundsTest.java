@@ -17,12 +17,15 @@ public class ArrayBoundsTest {
         class DummyBranchCallback implements ArrayBuilder.GetBasket {
             @Override
             public ArrayBuilder.BasketKey basketkey(int basketid) {
-                return new ArrayBuilder.BasketKey(0, 2 * (int)basketEntryOffsets[basketid + 1], (int) (2 * (basketEntryOffsets[basketid + 1] - basketEntryOffsets[basketid])));
+                int keylen = 0;
+                int last = (int) (2 * (basketEntryOffsets[basketid + 1] - basketEntryOffsets[basketid]));
+                int objlen = last;
+                return new ArrayBuilder.BasketKey(keylen, last, objlen);
             }
 
             @Override
             public RawArray dataWithoutKey(int basketid) {
-                return new RawArray(ByteBuffer.allocate(1000090));
+                return new RawArray(ByteBuffer.allocate((int) (2 * (basketEntryOffsets[basketid + 1] - basketEntryOffsets[basketid]))));
             }
         }
 
