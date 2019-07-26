@@ -42,7 +42,7 @@ public class JaggedArrayPrep extends Array {
 
         int itemstart = this.offsets.get(start);
         int itemstop = this.offsets.get(stop);
-        return this.content.clip(itemstart, itemstop);
+        return new JaggedArrayPrep(this.interpretation, stop - start, (PrimitiveArray.Int4)this.counts.clip(start, stop), this.content.clip(itemstart, itemstop));
     }
 
     public Object toArray(boolean bigEndian) {
