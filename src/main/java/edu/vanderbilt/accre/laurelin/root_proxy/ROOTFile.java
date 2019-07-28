@@ -95,34 +95,41 @@ public class ROOTFile {
 
         protected FileBackedBuf(ROOTFile fh) {
             this.fh = fh;
+
         }
 
+        /*
+         * All application-level reads enter the I/O subsystem here
+         */
         @Override
         public ByteBuffer read(long off, long len) throws IOException {
             ByteBuffer ret;
             long lowerPage = off / CACHE_PAGE_SIZE;
             long upperPage = (off + len) / CACHE_PAGE_SIZE;
-
-            if ((len > CACHE_READ_MAX)
-                    || (lowerPage != upperPage)) {
-                /*
-                 *  1) Don't cache very large reads, since they will end up
-                 *     being compressed baskets more often than not (and
-                 *     the decompressed versions are what's stored)
-                 *  2) Shortcut out if the read would otherwise straddle
-                 *     a cache to make the initial code simpler
-                 */
-                ret = fh.read(off, len);
-            } else {
-                try {
-                    ret = cache.get(new CacheKey(fh, lowerPage * CACHE_PAGE_SIZE)).duplicate();
-                    long newPos = (off - (CACHE_PAGE_SIZE * lowerPage));
-                    ret.position((int) newPos);
-                    ret.limit((int)(newPos + len));
-                    ret = ret.slice();
-                } catch (ExecutionException e) {
-                    throw new IOException(e);
+            try (Event ev = this.fh.profile.startUpperOp(off, (int)len)) {
+                if ((len > CACHE_READ_MAX)
+                        || (lowerPage != upperPage)) {
+                    /*
+                     *  1) Don't cache very large reads, since they will end up
+                     *     being compressed baskets more often than not (and
+                     *     the decompressed versions are what's stored)
+                     *  2) Shortcut out if the read would otherwise straddle
+                     *     a cache to make the initial code simpler
+                     */
+                    ret = fh.read(off, len);
+                } else {
+                    try {
+                        ret = cache.get(new CacheKey(fh, lowerPage * CACHE_PAGE_SIZE)).duplicate();
+                        long newPos = (off - (CACHE_PAGE_SIZE * lowerPage));
+                        ret.position((int) newPos);
+                        ret.limit((int)(newPos + len));
+                        ret = ret.slice();
+                    } catch (ExecutionException e) {
+                        throw new IOException(e);
+                    }
                 }
+            }  catch (Exception e) {
+                throw new IOException(e);
             }
             return ret;
         }
@@ -144,7 +151,7 @@ public class ROOTFile {
     }
 
     private FileInterface fh;
-    private FileProfiler profile;
+    protected FileProfiler profile;
 
     /* Hide constructor */
     private ROOTFile(String path) {

@@ -33,10 +33,12 @@ public class TestIOProfile {
         IOProfile profiler = IOProfile.getInstance(1,cb);
         FileProfiler f = profiler.beginProfile("test-path");
         try (Event ev = f.startLowerOp(10, 20)) {
-            assertEquals(1, val.size());
+            // One element each for the upper and lower opens
+            assertEquals(2, val.size());
         }
-        assertEquals(2, val.size());
-        Storage stor = val.get(1);
+        // But only a single lower read
+        assertEquals(3, val.size());
+        Storage stor = val.get(2);
         assertEquals(10, stor.offset);
         assertEquals(20, stor.len);
     }
