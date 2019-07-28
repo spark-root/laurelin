@@ -38,7 +38,7 @@ public class HadoopFile implements FileInterface {
      */
     @Override
     public ByteBuffer read(long offset, long len) throws IOException {
-        if (len > (Math.pow(2, 32) - 1)) {
+        if (len != ((int) len)) {
             throw new RuntimeException("Cannot perform a single read > 2GB");
         }
         ByteBuffer ret = ByteBuffer.allocate((int)len);
