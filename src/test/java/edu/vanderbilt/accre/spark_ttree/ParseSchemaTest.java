@@ -11,10 +11,11 @@ import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.StructType;
 import org.junit.Test;
 
+import edu.vanderbilt.accre.LaurelinTest;
 import edu.vanderbilt.accre.laurelin.Root;
 import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
 
-public class ParseSchemaTest {
+public class ParseSchemaTest extends LaurelinTest {
     @Test
     public void testGetSchemaNano() {
         Map<String, String> optmap = new HashMap<String, String>();
@@ -32,7 +33,7 @@ public class ParseSchemaTest {
      */
     @Test
     public void testGetSchemaBigNano() {
-        String testPath = getBigTestDataIfExists("testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root");
+        String testPath = getBigTestDataIfExists(this, "testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root");
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", testPath);
         DataSourceOptions opts = new DataSourceOptions(optmap);
@@ -41,6 +42,19 @@ public class ParseSchemaTest {
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(866, schemaCast.size());
+    }
+
+    @Test
+    public void testGetSchema100MBNano() {
+        String testPath = getBigTestDataIfExists(this, "testdata/nano_19.root");
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", testPath);
+        DataSourceOptions opts = new DataSourceOptions(optmap);
+        Root source = new Root();
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
+        DataType schema = reader.readSchema();
+        StructType schemaCast = (StructType) schema;
+        assertEquals(1119, schemaCast.size());
     }
 
     @Test
