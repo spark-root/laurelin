@@ -18,7 +18,7 @@ public class TestIOProfile {
     public void testNullCallback() throws Exception {
         IOProfile profiler = IOProfile.getInstance(1, null);
         FileProfiler f = profiler.beginProfile("test-path");
-        try (Event ev = f.startOp(0, 1)) {
+        try (Event ev = f.startLowerOp(0, 1)) {
 
         }
     }
@@ -32,7 +32,7 @@ public class TestIOProfile {
         };
         IOProfile profiler = IOProfile.getInstance(1,cb);
         FileProfiler f = profiler.beginProfile("test-path");
-        try (Event ev = f.startOp(10, 20)) {
+        try (Event ev = f.startLowerOp(10, 20)) {
             assertEquals(1, val.size());
         }
         assertEquals(2, val.size());

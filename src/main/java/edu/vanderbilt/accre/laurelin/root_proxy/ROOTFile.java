@@ -171,7 +171,7 @@ public class ROOTFile {
          * This bytebuffer can be a copy of the internal cache
          */
         ByteBuffer ret;
-        try (Event time = profile.startOp(offset, (int)l)) {
+        try (Event time = profile.startLowerOp(offset, (int)l)) {
             // This is a call to the actual filesystem
             ret = fh.read(offset, l);
             ret.position(0);
