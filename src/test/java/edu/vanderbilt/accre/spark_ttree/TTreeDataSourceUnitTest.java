@@ -1,12 +1,11 @@
 package edu.vanderbilt.accre.spark_ttree;
 
+import static edu.vanderbilt.accre.Helpers.getBigTestDataIfExists;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -72,9 +71,7 @@ public class TTreeDataSourceUnitTest {
 
     @Test
     public void testMultipleBasketsForBigNano() throws IOException {
-        String testPath = "testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root";
-        File f = new File(testPath);
-        assumeTrue(f.isFile());
+        String testPath = getBigTestDataIfExists("testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root");
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", testPath);
         optmap.put("tree",  "Events");

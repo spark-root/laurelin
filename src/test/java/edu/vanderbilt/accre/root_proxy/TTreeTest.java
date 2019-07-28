@@ -1,9 +1,8 @@
 package edu.vanderbilt.accre.root_proxy;
 
+import static edu.vanderbilt.accre.Helpers.getBigTestDataIfExists;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeTrue;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -26,19 +25,15 @@ import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 
 public class TTreeTest {
     private TTree getTestTree() throws IOException {
-        String testPath = "testdata/uproot-small-flat-tree.root";
+        String testPath = getBigTestDataIfExists("testdata/uproot-small-flat-tree.root");
         String testTree = "tree";
-        File f = new File(testPath);
-        assumeTrue(f.isFile());
         TFile currFile = TFile.getFromFile(testPath);
         return new TTree(currFile.getProxy(testTree), currFile);
     }
 
     private TTree getBigTestTree() throws IOException {
-        String testPath = "testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root";
+        String testPath = getBigTestDataIfExists("testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root");
         String testTree = "Events";
-        File f = new File(testPath);
-        assumeTrue(f.isFile());
         TFile currFile = TFile.getFromFile(testPath);
         return new TTree(currFile.getProxy(testTree), currFile);
     }
