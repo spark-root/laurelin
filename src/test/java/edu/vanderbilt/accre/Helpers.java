@@ -1,5 +1,6 @@
 package edu.vanderbilt.accre;
 
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.BufferedWriter;
@@ -7,8 +8,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
@@ -21,10 +24,20 @@ import com.google.common.collect.TreeRangeSet;
 
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
+import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage.TypeEnum;
 
 public class Helpers {
     private static final Logger logger = LogManager.getLogger();
+
+    /**
+     * A debug-only option to read minified files even if the pristine files
+     * are present. This should <b>never</b> be committed as true. If this is
+     * enabled, all reads against the minified source will be compared against
+     * the pristine source to verify that the content matches.
+     */
+    public static final boolean overridePristineReads = false;
+
     /**
      * To prevent having an enormous git repo, we try to keep only small
      * (1-10 kB) ROOT files as our test cases. However, incoming bugs will be
@@ -34,7 +47,13 @@ public class Helpers {
      * <p>To try and keep the repo size to a minimum, the "pristine" error cases
      * will be stored outside of git, and any test cases that depend on it will
      * be skipped if the file isn't there. These data will be stored under
-     * testdata/pristine
+     * testdata/pristine.
+     *
+     * <p>These data could eventually take up quite a significant amount of
+     * space, so an additional space-saving measure is minification of the
+     * files. This is accomplished by recording a trace of all I/O performed
+     * against the test file, then zeroing out all the bytes that are not
+     * touched and compressing the result.
      *
      * @param testClass Used to enforce that our custom AfterClass handler is called
      * @param path File name of the desired test data
@@ -49,13 +68,24 @@ public class Helpers {
         };
         IOProfile.getInstance(1, cb);
         String pristinePath = path.replace("testdata/", "testdata/pristine/");
-        File f = new File(pristinePath);
-        if (f.isFile()) {
+        File p = new File(pristinePath);
+        boolean pristineExists = p.isFile();
+
+        String minifiedPath = path.replace("testdata/", "testdata/minified/") + ".xz";
+        // tell the file I/O subsystem the whole file is xz compressed
+        minifiedPath = "$$XZ$$" + minifiedPath;
+        File m = new File(pristinePath);
+        boolean minifiedExists = m.isFile();
+
+        assumeTrue(pristineExists || minifiedExists);
+        if (pristineExists && !overridePristineReads) {
             return pristinePath;
+        } else if (minifiedExists) {
+            return minifiedPath;
+        } else {
+            assumeFalse(true);
+            return null;
         }
-        f = new File(path);
-        assumeTrue(f.isFile());
-        return path;
     }
 
     /**
@@ -65,27 +95,28 @@ public class Helpers {
      * before the JVM shuts down, so users have to manually call checkpointIO
      * after each test class to make sure all the info is properly stored
      */
-    public static LinkedList<IOProfile.Event.Storage> profileStorage = new LinkedList<IOProfile.Event.Storage>();
+    public static List<Storage> profileStorage = Collections.synchronizedList(new LinkedList<IOProfile.Event.Storage>());
     public static String profilePath = Paths.get("").toAbsolutePath().toString() + "/unittest_ioprofile.txt";
 
     public static void checkpointIO() {
         logger.info("Checkpointing IOProfile data to " + profilePath);
         HashMap<Integer, String> fidMap = new HashMap<Integer, String>();
         HashMap<Integer, RangeSet<Long>> rangeMap = new HashMap<Integer, RangeSet<Long>>();
-
-        for (IOProfile.Event.Storage stor: profileStorage) {
-            if (stor.type == TypeEnum.UPPER) {
-                if ((stor.fileName != null)) {
-                    assert ((fidMap.containsKey(stor.fid) == false) || (fidMap.get(stor.fid).equals(stor.fileName)));
-                    fidMap.put(stor.fid, stor.fileName);
-                    rangeMap.putIfAbsent(stor.fid, TreeRangeSet.create());
-                } else {
-                    if (fidMap.get(stor.fid).startsWith("testdata/pristine")) {
-                        /*
-                         *  Only care to log the IO of the pristine files since
-                         *  that's what will be minimized
-                         */
-                        rangeMap.get(stor.fid).add(Range.closedOpen(stor.offset, stor.offset + stor.len));
+        synchronized (profileStorage) {
+            for (IOProfile.Event.Storage stor: profileStorage) {
+                if (stor.type == TypeEnum.UPPER) {
+                    if ((stor.fileName != null)) {
+                        assert ((fidMap.containsKey(stor.fid) == false) || (fidMap.get(stor.fid).equals(stor.fileName)));
+                        fidMap.put(stor.fid, stor.fileName);
+                        rangeMap.putIfAbsent(stor.fid, TreeRangeSet.create());
+                    } else {
+                        if (fidMap.get(stor.fid).startsWith("testdata/pristine")) {
+                            /*
+                             *  Only care to log the IO of the pristine files since
+                             *  that's what will be minimized
+                             */
+                            rangeMap.get(stor.fid).add(Range.closedOpen(stor.offset, stor.offset + stor.len));
+                        }
                     }
                 }
             }
