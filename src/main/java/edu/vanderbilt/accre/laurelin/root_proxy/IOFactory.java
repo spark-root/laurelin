@@ -15,11 +15,25 @@ public class IOFactory {
         /**
          * Depending on the incoming path, load an implementation
          */
-        if (Pattern.matches(hadoopPattern, path)) {
-            return new HadoopFile(path);
+
+        /*
+         *  We dedup and shrink debug data by filling unread parts with zeros
+         *  and then compressing the file. This data needs to be wrapped in an
+         *  xz decompressor to load everything
+         */
+        FileInterface ret;
+        if (path.startsWith("$$XZ$$")) {
+            //Only support reading xz-compressed files locally
+            path = path.replace("$$XZ$$", "");
+            ret = new XZDecompressionWrapper(path);
+
+        } else if (Pattern.matches(hadoopPattern, path)) {
+            ret = new HadoopFile(path);
         } else {
-            return new NIOFile(path);
+            ret = new NIOFile(path);
         }
+
+        return ret;
     }
 
     public static List<String> expandPathToList(String path) throws IOException {
