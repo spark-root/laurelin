@@ -26,8 +26,9 @@ public class HadoopFile implements FileInterface {
 
     public HadoopFile(String pathStr) throws IOException {
         Configuration conf = new Configuration();
-        FileSystem fileSystem = FileSystem.get(conf);
-        Path path = new Path(pathStr);
+	URI uri = URI.create(pathStr);
+        FileSystem fileSystem = FileSystem.get(uri, conf);
+        Path path = new Path(uri);
         fd = fileSystem.open(path, 'r');
         limit = fileSystem.getFileStatus(path).getLen();
     }
@@ -72,15 +73,9 @@ public class HadoopFile implements FileInterface {
 
     public static List<String> expandPathToList(String path) throws IOException {
         Configuration conf = new Configuration();
-        FileSystem fileSystem;
-        URI uri;
-        try {
-            uri = new URI(path);
-        } catch (URISyntaxException e) {
-            throw new IOException(e);
-        }
-        fileSystem = FileSystem.get(uri, conf);
-        Path tmpPath = new Path(path);
+        URI uri = URI.create(path);
+        FileSystem fileSystem = FileSystem.get(uri, conf);
+	Path tmpPath = new Path(uri);
         if (!fileSystem.isDirectory(tmpPath)) {
             ArrayList<String> ret = new ArrayList<String>();
             ret.add(path);
@@ -91,7 +86,7 @@ public class HadoopFile implements FileInterface {
             while (fileList.hasNext()) {
                 LocatedFileStatus file = fileList.next();
                 if (file.isFile() && (file.getPath().getName().endsWith(".root"))) {
-                    ret.add(file.getPath().getName());
+                    ret.add(file.getPath().toString());
                 }
             }
             return ret;
