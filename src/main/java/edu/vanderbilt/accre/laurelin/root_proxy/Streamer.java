@@ -101,6 +101,12 @@ public class Streamer {
                     break;
                 case "TStreamerObject":
                 case "TStreamerObjectAny":
+                    if (fClassName.equals("TBranch") && ((String) ele.getScalar("fName").getVal()).equals("fBaskets")) {
+                        // The baskets inside a TBranch aren't useful
+                        RangeCheck check2 = new RangeCheck(c);
+                        c.setOffset(check2.getStart() + check2.getCount());
+                        continue;
+                    }
                     subObj = new Proxy();
                     subObj.createPlace = "tstreamerobj";
                     subObj = deserializeWithStreamerImpl((String) ele.getScalar("fTypeName").getVal(), c, subObj);
