@@ -100,7 +100,36 @@ public class IOProfile {
         }
     }
 
-    public static class FileProfiler {
+    public interface FileProfiler {
+        public Event startLowerOp(long offset, int len);
+
+        public Event startUpperOp(long offset, int len);
+
+        public Function<Event, Integer> getCallback();
+    }
+
+    /*
+     * IF there's no callback, there's no sense in generating profiling info
+     */
+    public static class NullFileProfiler implements FileProfiler {
+        @Override
+        public Event startLowerOp(long offset, int len) {
+            return null;
+        }
+
+        @Override
+        public Event startUpperOp(long offset, int len) {
+            return null;
+        }
+
+        @Override
+        public Function<Event, Integer> getCallback() {
+            return null;
+        }
+
+    }
+
+    public static class RealFileProfiler implements FileProfiler {
         int fid;
         int eid;
         String path;
@@ -121,7 +150,7 @@ public class IOProfile {
             return ev;
         }
 
-        protected FileProfiler(int eid, int fid, String path, Function<Event, Integer> callback) {
+        protected RealFileProfiler(int eid, int fid, String path, Function<Event, Integer> callback) {
             this.fid = fid;
             this.eid = eid;
             this.path = path;
@@ -137,14 +166,17 @@ public class IOProfile {
             }
         }
 
+        @Override
         public Event startLowerOp(long offset, int len) {
             return Event.startOp(this, offset, len, eventID.addAndGet(1), fid, eid, TypeEnum.LOWER);
         }
 
+        @Override
         public Event startUpperOp(long offset, int len) {
             return Event.startOp(this, offset, len, eventID.addAndGet(1), fid, eid, TypeEnum.UPPER);
         }
 
+        @Override
         public Function<Event, Integer> getCallback() {
             return callback;
         }
@@ -169,7 +201,11 @@ public class IOProfile {
     }
 
     public FileProfiler beginProfile(String path) {
-        return new FileProfiler(eid, globalFid.getAndAdd(1), path, callback);
+        if (callback != null) {
+            return new RealFileProfiler(eid, globalFid.getAndAdd(1), path, callback);
+        } else {
+            return new NullFileProfiler();
+        }
     }
 
     private static IOProfile instance;
