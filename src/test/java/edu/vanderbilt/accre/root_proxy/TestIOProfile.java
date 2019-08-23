@@ -18,7 +18,7 @@ public class TestIOProfile {
     public void testNullCallback() throws Exception {
         IOProfile profiler = IOProfile.getInstance(1, null);
         FileProfiler f = profiler.beginProfile("test-path");
-        try (Event ev = f.startOp(0, 1)) {
+        try (Event ev = f.startLowerOp(0, 1)) {
 
         }
     }
@@ -32,11 +32,13 @@ public class TestIOProfile {
         };
         IOProfile profiler = IOProfile.getInstance(1,cb);
         FileProfiler f = profiler.beginProfile("test-path");
-        try (Event ev = f.startOp(10, 20)) {
-            assertEquals(1, val.size());
+        try (Event ev = f.startLowerOp(10, 20)) {
+            // One element each for the upper and lower opens
+            assertEquals(2, val.size());
         }
-        assertEquals(2, val.size());
-        Storage stor = val.get(1);
+        // But only a single lower read
+        assertEquals(3, val.size());
+        Storage stor = val.get(2);
         assertEquals(10, stor.offset);
         assertEquals(20, stor.len);
     }

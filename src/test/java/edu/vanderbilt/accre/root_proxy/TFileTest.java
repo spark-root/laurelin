@@ -46,7 +46,9 @@ public class TFileTest {
         Proxy events = testfile.getProxy("Events");
         TTree tree = new TTree(events, testfile);
         for (Storage val: accum) {
-            logger.trace("loaded " + val.len + " bytes at " + val.offset);
+            if (val.type == Storage.TypeEnum.LOWER) {
+                logger.trace("loaded " + val.len + " bytes at " + val.offset);
+            }
         }
         IOProfile instance = IOProfile.getInstance();
     }

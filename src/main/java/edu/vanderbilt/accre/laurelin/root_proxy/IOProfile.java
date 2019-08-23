@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage.TypeEnum;
+
 /*
  * Toolkit to profile IO, specifically storing operations performed and their
  * timings
@@ -42,6 +44,19 @@ public class IOProfile {
              */
             public String fileName;
 
+
+            public enum TypeEnum {
+                LOWER,
+                UPPER
+            }
+
+            /**
+             * There are two types of IO we care about - "Upper" IO, is IO from
+             * the application before any caching/prefetching/etc occurs.
+             * "Lower" IO is a request that reaches an actual filesystem call.
+             */
+            public TypeEnum type;
+
         }
 
         Storage storage;
@@ -51,23 +66,31 @@ public class IOProfile {
             storage = new Storage();
         }
 
-        protected static Event startOp(FileProfiler fileProfiler, long offset, int len, int count, int fid, int eid) {
-            Event event = new Event();
-            event.parent = fileProfiler;
-            event.storage.offset = offset;
-            event.storage.len = len;
-            event.storage.startTime = System.nanoTime();
-            event.storage.count = count;
-            event.storage.eid = eid;
-            event.storage.fid = fid;
-            return event;
+        protected static Event startOp(FileProfiler fileProfiler, long offset, int len, int count, int fid, int eid, TypeEnum type) {
+            Function<Event, Integer> cb = fileProfiler.getCallback();
+            if (cb != null) {
+                Event event = new Event();
+                event.parent = fileProfiler;
+                event.storage.offset = offset;
+                event.storage.len = len;
+                event.storage.startTime = System.nanoTime();
+                event.storage.count = count;
+                event.storage.eid = eid;
+                event.storage.fid = fid;
+                event.storage.type = type;
+                return event;
+            } else {
+                Event event = new Event();
+                event.parent = fileProfiler;
+                return event;
+            }
         }
 
         @Override
         public void close() throws Exception {
-            this.storage.endTime = System.nanoTime();
             Function<Event, Integer> cb = parent.getCallback();
             if (cb != null) {
+                this.storage.endTime = System.nanoTime();
                 cb.apply(this);
             }
         }
@@ -84,7 +107,21 @@ public class IOProfile {
         Function<Event, Integer> callback;
         static AtomicInteger eventID = new AtomicInteger();
 
-        protected FileProfiler(int fid, int eid, String path, Function<Event, Integer> callback) {
+        private Event getFileLoadEvent(int eid, int fid, String path, TypeEnum type) {
+            Event.Storage init = new IOProfile.Event.Storage();
+            init.fileName = path;
+            init.fid = fid;
+            init.eid = eid;
+            init.count = eventID.addAndGet(1);
+            init.offset = 0;
+            init.len = 0;
+            init.type = TypeEnum.UPPER;
+            Event ev = new IOProfile.Event();
+            ev.storage = init;
+            return ev;
+        }
+
+        protected FileProfiler(int eid, int fid, String path, Function<Event, Integer> callback) {
             this.fid = fid;
             this.eid = eid;
             this.path = path;
@@ -95,21 +132,17 @@ public class IOProfile {
              * we need to backtrace what filename belongs to a given fid
              */
             if (callback != null) {
-                Event.Storage init = new IOProfile.Event.Storage();
-                init.fileName = path;
-                init.fid = fid;
-                init.eid = eid;
-                init.count = eventID.addAndGet(1);
-                init.offset = 0;
-                init.len = 0;
-                Event ev = new IOProfile.Event();
-                ev.storage = init;
-                callback.apply(ev);
+                callback.apply(getFileLoadEvent(eid, fid, path, TypeEnum.UPPER));
+                callback.apply(getFileLoadEvent(eid, fid, path, TypeEnum.LOWER));
             }
         }
 
-        public Event startOp(long offset, int len) {
-            return Event.startOp(this, offset, len, eventID.addAndGet(1), fid, eid);
+        public Event startLowerOp(long offset, int len) {
+            return Event.startOp(this, offset, len, eventID.addAndGet(1), fid, eid, TypeEnum.LOWER);
+        }
+
+        public Event startUpperOp(long offset, int len) {
+            return Event.startOp(this, offset, len, eventID.addAndGet(1), fid, eid, TypeEnum.UPPER);
         }
 
         public Function<Event, Integer> getCallback() {
