@@ -315,12 +315,16 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         }
 
         public List<InputPartition<ColumnarBatch>> partitionSingleFile(String path) {
+            return partitionSingleFileImpl(path, treeName, schema, threadCount, basketCacheFactory);
+        }
+
+        public static List<InputPartition<ColumnarBatch>> partitionSingleFileImpl(String path, String treeName, StructType schema, int threadCount, CacheFactory basketCacheFactory) {
             List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
             int pid = 0;
             TTree inputTree;
             try {
                 TFile inputFile = TFile.getFromFile(path);
-                inputTree = new TTree(currFile.getProxy(treeName), inputFile);
+                inputTree = new TTree(inputFile.getProxy(treeName), inputFile);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -360,7 +364,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
             return planBatchInputPartitionsWithContext(sc);
         }
 
-        private void parseStructFields(TTree inputTree, Map<String, SlimTBranch> slimBranches, StructType struct, String namespace) {
+        private static void parseStructFields(TTree inputTree, Map<String, SlimTBranch> slimBranches, StructType struct, String namespace) {
             for (StructField field: struct.fields())  {
                 if (field.dataType() instanceof StructType) {
                     parseStructFields(inputTree, slimBranches, (StructType) field.dataType(), namespace + field.name() + ".");
