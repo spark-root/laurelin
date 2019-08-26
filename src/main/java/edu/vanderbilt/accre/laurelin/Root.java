@@ -1,8 +1,10 @@
 package edu.vanderbilt.accre.laurelin;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +15,9 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.spark.SparkContext;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.sql.sources.DataSourceRegister;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.DataSourceV2;
@@ -300,11 +304,89 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
             return ret;
         }
 
+        protected static class PartitionHelper implements Serializable {
+            private static final long serialVersionUID = 1L;
+            String treeName;
+            StructType schema;
+            int threadCount;
+            CacheFactory basketCacheFactory;
+
+            public PartitionHelper(String treeName, StructType schema, int threadCount, CacheFactory basketCacheFactory) {
+                this.treeName = treeName;
+                this.schema = schema;
+                this.threadCount = threadCount;
+                this.basketCacheFactory = basketCacheFactory;
+            }
+
+            private static void parseStructFields(TTree inputTree, Map<String, SlimTBranch> slimBranches, StructType struct, String namespace) {
+                for (StructField field: struct.fields())  {
+                    if (field.dataType() instanceof StructType) {
+                        parseStructFields(inputTree, slimBranches, (StructType) field.dataType(), namespace + field.name() + ".");
+                    }
+                    ArrayList<TBranch> branchList = inputTree.getBranches(namespace + field.name());
+                    assert branchList.size() == 1;
+                    TBranch fatBranch = branchList.get(0);
+                    SlimTBranch slimBranch = SlimTBranch.getFromTBranch(fatBranch);
+                    slimBranches.put(fatBranch.getName(), slimBranch);
+                }
+            }
+
+            public static Iterator<InputPartition<ColumnarBatch>> partitionSingleFileImpl(String path, String treeName, StructType schema, int threadCount, CacheFactory basketCacheFactory) {
+                List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
+                int pid = 0;
+                TTree inputTree;
+                try {
+                    TFile inputFile = TFile.getFromFile(path);
+                    inputTree = new TTree(inputFile.getProxy(treeName), inputFile);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                Map<String, SlimTBranch> slimBranches = new HashMap<String, SlimTBranch>();
+                parseStructFields(inputTree, slimBranches, schema, "");
+
+
+                // TODO We partition based on the basketing of the first branch
+                //      which might not be optimal. We should do something
+                //      smarter later
+                long[] entryOffset = inputTree.getBranches().get(0).getBasketEntryOffsets();
+                for (int i = 0; i < (entryOffset.length - 1); i += 1) {
+                    pid += 1;
+                    long entryStart = entryOffset[i];
+                    long entryEnd = entryOffset[i + 1];
+                    // the last basket is dumb and annoying
+                    if (i == (entryOffset.length - 1)) {
+                        entryEnd = inputTree.getEntries();
+                    }
+
+                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, slimBranches, threadCount, profileData, pid));
+                }
+                if (ret.size() == 0) {
+                    // Only one basket?
+                    logger.debug("Planned for zero baskets, adding a dummy one");
+                    pid += 1;
+                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, 0, inputTree.getEntries(), slimBranches, threadCount, profileData, pid));
+                }
+                return ret.iterator();
+            }
+
+            FlatMapFunction<String, InputPartition<ColumnarBatch>> getLambda() {
+                return s -> PartitionHelper.partitionSingleFileImpl(s, treeName, schema, threadCount, basketCacheFactory);
+            }
+        }
+
         public List<InputPartition<ColumnarBatch>> planBatchInputPartitionsWithContext(JavaSparkContext sc) {
             logger.trace("planbatchinputpartitions");
             List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
-            for (String path: paths) {
-                ret.addAll(partitionSingleFile(path));
+            if (sc == null) {
+                for (String path: paths) {
+                    partitionSingleFile(path).forEachRemaining(ret::add);;
+                }
+            } else {
+                JavaRDD<String> rdd_paths = sc.parallelize(paths, paths.size());
+                PartitionHelper helper = new PartitionHelper(treeName, schema, threadCount, basketCacheFactory);
+                JavaRDD<InputPartition<ColumnarBatch>> partitions = rdd_paths.flatMap(helper.getLambda());
+                ret = partitions.collect();
             }
             int pid = 0;
             for (InputPartition<ColumnarBatch> x: ret) {
@@ -314,47 +396,8 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
             return ret;
         }
 
-        public List<InputPartition<ColumnarBatch>> partitionSingleFile(String path) {
-            return partitionSingleFileImpl(path, treeName, schema, threadCount, basketCacheFactory);
-        }
-
-        public static List<InputPartition<ColumnarBatch>> partitionSingleFileImpl(String path, String treeName, StructType schema, int threadCount, CacheFactory basketCacheFactory) {
-            List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
-            int pid = 0;
-            TTree inputTree;
-            try {
-                TFile inputFile = TFile.getFromFile(path);
-                inputTree = new TTree(inputFile.getProxy(treeName), inputFile);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            Map<String, SlimTBranch> slimBranches = new HashMap<String, SlimTBranch>();
-            parseStructFields(inputTree, slimBranches, schema, "");
-
-
-            // TODO We partition based on the basketing of the first branch
-            //      which might not be optimal. We should do something
-            //      smarter later
-            long[] entryOffset = inputTree.getBranches().get(0).getBasketEntryOffsets();
-            for (int i = 0; i < (entryOffset.length - 1); i += 1) {
-                pid += 1;
-                long entryStart = entryOffset[i];
-                long entryEnd = entryOffset[i + 1];
-                // the last basket is dumb and annoying
-                if (i == (entryOffset.length - 1)) {
-                    entryEnd = inputTree.getEntries();
-                }
-
-                ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, slimBranches, threadCount, profileData, pid));
-            }
-            if (ret.size() == 0) {
-                // Only one basket?
-                logger.debug("Planned for zero baskets, adding a dummy one");
-                pid += 1;
-                ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, 0, inputTree.getEntries(), slimBranches, threadCount, profileData, pid));
-            }
-            return ret;
+        public Iterator<InputPartition<ColumnarBatch>> partitionSingleFile(String path) {
+            return PartitionHelper.partitionSingleFileImpl(path, treeName, schema, threadCount, basketCacheFactory);
         }
 
         @Override
@@ -364,18 +407,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
             return planBatchInputPartitionsWithContext(sc);
         }
 
-        private static void parseStructFields(TTree inputTree, Map<String, SlimTBranch> slimBranches, StructType struct, String namespace) {
-            for (StructField field: struct.fields())  {
-                if (field.dataType() instanceof StructType) {
-                    parseStructFields(inputTree, slimBranches, (StructType) field.dataType(), namespace + field.name() + ".");
-                }
-                ArrayList<TBranch> branchList = inputTree.getBranches(namespace + field.name());
-                assert branchList.size() == 1;
-                TBranch fatBranch = branchList.get(0);
-                SlimTBranch slimBranch = SlimTBranch.getFromTBranch(fatBranch);
-                slimBranches.put(fatBranch.getName(), slimBranch);
-            }
-        }
+
 
         @Override
         public void pruneColumns(StructType requiredSchema) {
