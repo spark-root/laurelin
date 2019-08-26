@@ -129,7 +129,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
     }
 
     @Test
-    public void testPlanBatchInputPartitions() {
+    public void testplanBatchInputPartitions() {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-small-flat-tree.root");
         optmap.put("tree",  "tree");
