@@ -55,7 +55,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(1, schemaCast.size());
-        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitionsWithContext(null);
         assertNotNull(partitions);
         assertEquals(8, partitions.size());
         InputPartition<ColumnarBatch> partition;
@@ -85,7 +85,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         StructType prune = new StructType()
                             .add(new StructField("CaloMET_pt", DataTypes.FloatType, false, metadata.build()));
         reader.pruneColumns(prune);
-        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitionsWithContext(null);
         assertNotNull(partitions);
         assertEquals(13, partitions.size());
         InputPartition<ColumnarBatch> partition;
@@ -124,19 +124,19 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
-        List<InputPartition<ColumnarBatch>> batch = reader.planBatchInputPartitions();
+        List<InputPartition<ColumnarBatch>> batch = reader.planBatchInputPartitionsWithContext(null);
         assertNotNull(batch);
     }
 
     @Test
-    public void testPlanBatchInputPartitions() {
+    public void testplanBatchInputPartitions() {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-small-flat-tree.root");
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
-        assertNotNull(reader.planBatchInputPartitions());
+        assertNotNull(reader.planBatchInputPartitionsWithContext(null));
     }
 
     @Test
@@ -148,7 +148,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
-        List<InputPartition<ColumnarBatch>> partitionPlan = reader.planBatchInputPartitions();
+        List<InputPartition<ColumnarBatch>> partitionPlan = reader.planBatchInputPartitionsWithContext(null);
         assertNotNull(partitionPlan);
         StructType schema = reader.readSchema();
         System.out.println(schema.prettyJson());
@@ -182,7 +182,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
-        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitionsWithContext(null);
         assertNotNull(partitions);
         assertEquals(1, partitions.size());
         StructType schema = reader.readSchema();
@@ -222,7 +222,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
-        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitionsWithContext(null);
         assertNotNull(partitions);
         assertEquals(1, partitions.size());
         StructType schema = reader.readSchema();

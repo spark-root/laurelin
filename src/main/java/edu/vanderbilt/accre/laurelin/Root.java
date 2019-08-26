@@ -13,6 +13,7 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.spark.SparkContext;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.sources.DataSourceRegister;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.DataSourceV2;
@@ -295,8 +296,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
             return ret;
         }
 
-        @Override
-        public List<InputPartition<ColumnarBatch>> planBatchInputPartitions() {
+        public List<InputPartition<ColumnarBatch>> planBatchInputPartitionsWithContext(JavaSparkContext sc) {
             logger.trace("planbatchinputpartitions");
             List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
             int pid = 0;
@@ -336,6 +336,13 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                 }
             }
             return ret;
+        }
+
+        @Override
+        public List<InputPartition<ColumnarBatch>> planBatchInputPartitions() {
+            SparkContext gsc = SparkContext.getOrCreate();
+            JavaSparkContext sc = JavaSparkContext.fromSparkContext(gsc);
+            return planBatchInputPartitionsWithContext(sc);
         }
 
         private void parseStructFields(TTree inputTree, Map<String, SlimTBranch> slimBranches, StructType struct, String namespace) {
