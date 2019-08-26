@@ -85,6 +85,10 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
             logger.trace("input partition reader");
             return new TTreeDataSourceV2PartitionReader(basketCacheFactory, schema, entryStart, entryEnd, slimBranches, threadCount, profileData, pid);
         }
+
+        public void setPid(int pid) {
+            this.pid = pid;
+        }
     }
 
     static class TTreeDataSourceV2PartitionReader implements InputPartitionReader<ColumnarBatch> {
@@ -299,41 +303,52 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         public List<InputPartition<ColumnarBatch>> planBatchInputPartitionsWithContext(JavaSparkContext sc) {
             logger.trace("planbatchinputpartitions");
             List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
-            int pid = 0;
             for (String path: paths) {
-                TTree inputTree;
-                try {
-                    TFile inputFile = TFile.getFromFile(path);
-                    inputTree = new TTree(currFile.getProxy(treeName), inputFile);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                ret.addAll(partitionSingleFile(path));
+            }
+            int pid = 0;
+            for (InputPartition<ColumnarBatch> x: ret) {
+                ((TTreeDataSourceV2Partition)x).setPid(pid);
+                pid += 1;
+            }
+            return ret;
+        }
+
+        public List<InputPartition<ColumnarBatch>> partitionSingleFile(String path) {
+            List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
+            int pid = 0;
+            TTree inputTree;
+            try {
+                TFile inputFile = TFile.getFromFile(path);
+                inputTree = new TTree(currFile.getProxy(treeName), inputFile);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            Map<String, SlimTBranch> slimBranches = new HashMap<String, SlimTBranch>();
+            parseStructFields(inputTree, slimBranches, schema, "");
+
+
+            // TODO We partition based on the basketing of the first branch
+            //      which might not be optimal. We should do something
+            //      smarter later
+            long[] entryOffset = inputTree.getBranches().get(0).getBasketEntryOffsets();
+            for (int i = 0; i < (entryOffset.length - 1); i += 1) {
+                pid += 1;
+                long entryStart = entryOffset[i];
+                long entryEnd = entryOffset[i + 1];
+                // the last basket is dumb and annoying
+                if (i == (entryOffset.length - 1)) {
+                    entryEnd = inputTree.getEntries();
                 }
 
-                Map<String, SlimTBranch> slimBranches = new HashMap<String, SlimTBranch>();
-                parseStructFields(inputTree, slimBranches, schema, "");
-
-
-                // TODO We partition based on the basketing of the first branch
-                //      which might not be optimal. We should do something
-                //      smarter later
-                long[] entryOffset = inputTree.getBranches().get(0).getBasketEntryOffsets();
-                for (int i = 0; i < (entryOffset.length - 1); i += 1) {
-                    pid += 1;
-                    long entryStart = entryOffset[i];
-                    long entryEnd = entryOffset[i + 1];
-                    // the last basket is dumb and annoying
-                    if (i == (entryOffset.length - 1)) {
-                        entryEnd = inputTree.getEntries();
-                    }
-
-                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, slimBranches, threadCount, profileData, pid));
-                }
-                if (ret.size() == 0) {
-                    // Only one basket?
-                    logger.debug("Planned for zero baskets, adding a dummy one");
-                    pid += 1;
-                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, 0, inputTree.getEntries(), slimBranches, threadCount, profileData, pid));
-                }
+                ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, slimBranches, threadCount, profileData, pid));
+            }
+            if (ret.size() == 0) {
+                // Only one basket?
+                logger.debug("Planned for zero baskets, adding a dummy one");
+                pid += 1;
+                ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, 0, inputTree.getEntries(), slimBranches, threadCount, profileData, pid));
             }
             return ret;
         }
