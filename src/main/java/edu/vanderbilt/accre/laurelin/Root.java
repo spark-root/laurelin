@@ -202,9 +202,11 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         private int threadCount;
         private IOProfile profiler;
         private static CollectionAccumulator<Storage> profileData;
+        private SparkContext sparkContext;
 
         public TTreeDataSourceV2Reader(DataSourceOptions options, CacheFactory basketCacheFactory, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
             logger.trace("construct ttreedatasourcev2reader");
+            this.sparkContext = sparkContext;
             try {
                 this.paths = new LinkedList<String>();
                 for (String path: options.paths()) {
@@ -375,14 +377,16 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
             }
         }
 
-        public List<InputPartition<ColumnarBatch>> planBatchInputPartitionsWithContext(JavaSparkContext sc) {
+        @Override
+        public List<InputPartition<ColumnarBatch>> planBatchInputPartitions() {
             logger.trace("planbatchinputpartitions");
             List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
-            if (sc == null) {
+            if (sparkContext == null) {
                 for (String path: paths) {
                     partitionSingleFile(path).forEachRemaining(ret::add);;
                 }
             } else {
+                JavaSparkContext sc = JavaSparkContext.fromSparkContext(sparkContext);
                 JavaRDD<String> rdd_paths = sc.parallelize(paths, paths.size());
                 PartitionHelper helper = new PartitionHelper(treeName, schema, threadCount, basketCacheFactory);
                 JavaRDD<InputPartition<ColumnarBatch>> partitions = rdd_paths.flatMap(helper.getLambda());
@@ -399,15 +403,6 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         public Iterator<InputPartition<ColumnarBatch>> partitionSingleFile(String path) {
             return PartitionHelper.partitionSingleFileImpl(path, treeName, schema, threadCount, basketCacheFactory);
         }
-
-        @Override
-        public List<InputPartition<ColumnarBatch>> planBatchInputPartitions() {
-            SparkContext gsc = SparkContext.getOrCreate();
-            JavaSparkContext sc = JavaSparkContext.fromSparkContext(gsc);
-            return planBatchInputPartitionsWithContext(sc);
-        }
-
-
 
         @Override
         public void pruneColumns(StructType requiredSchema) {

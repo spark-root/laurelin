@@ -55,7 +55,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(1, schemaCast.size());
-        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitionsWithContext(null);
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
         assertEquals(8, partitions.size());
         InputPartition<ColumnarBatch> partition;
@@ -85,7 +85,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         StructType prune = new StructType()
                             .add(new StructField("CaloMET_pt", DataTypes.FloatType, false, metadata.build()));
         reader.pruneColumns(prune);
-        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitionsWithContext(null);
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
         assertEquals(13, partitions.size());
         InputPartition<ColumnarBatch> partition;
@@ -124,7 +124,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
-        List<InputPartition<ColumnarBatch>> batch = reader.planBatchInputPartitionsWithContext(null);
+        List<InputPartition<ColumnarBatch>> batch = reader.planBatchInputPartitions();
         assertNotNull(batch);
     }
 
@@ -136,7 +136,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
-        assertNotNull(reader.planBatchInputPartitionsWithContext(null));
+        assertNotNull(reader.planBatchInputPartitions());
     }
 
     @Test
@@ -148,7 +148,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
-        List<InputPartition<ColumnarBatch>> partitionPlan = reader.planBatchInputPartitionsWithContext(null);
+        List<InputPartition<ColumnarBatch>> partitionPlan = reader.planBatchInputPartitions();
         assertNotNull(partitionPlan);
         StructType schema = reader.readSchema();
         System.out.println(schema.prettyJson());
@@ -182,7 +182,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
-        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitionsWithContext(null);
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
         assertEquals(1, partitions.size());
         StructType schema = reader.readSchema();
@@ -222,7 +222,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
         TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
-        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitionsWithContext(null);
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
         assertEquals(1, partitions.size());
         StructType schema = reader.readSchema();
