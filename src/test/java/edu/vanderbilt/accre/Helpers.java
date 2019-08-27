@@ -72,16 +72,18 @@ public class Helpers {
         boolean pristineExists = p.isFile();
 
         String minifiedPath = path.replace("testdata/", "testdata/minified/") + ".xz";
-        // tell the file I/O subsystem the whole file is xz compressed
-        minifiedPath = "$$XZ$$" + minifiedPath;
-        File m = new File(pristinePath);
+        File m = new File(minifiedPath);
         boolean minifiedExists = m.isFile();
 
         assumeTrue(pristineExists || minifiedExists);
         if (pristineExists && !overridePristineReads) {
             return pristinePath;
         } else if (minifiedExists) {
+            // tell the file I/O subsystem the whole file is xz compressed
+            minifiedPath = "$$XZ$$" + minifiedPath;
             return minifiedPath;
+        } else if (pristineExists) {
+            return pristinePath;
         } else {
             assumeFalse(true);
             return null;
