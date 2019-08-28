@@ -1,4 +1,4 @@
-# spark-ttree [![Build Status](https://travis-ci.org/PerilousApricot/spark-ttree.svg?branch=master)](https://travis-ci.org/PerilousApricot/spark-ttree)[![Maven Central](https://img.shields.io/maven-central/v/edu.vanderbilt.accre/laurelin.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22edu.vanderbilt.accre%22%20AND%20a:%22laurelin%22)
+# spark-ttree [![Build Status](https://travis-ci.org/spark-root/laurelin.svg?branch=master)](https://travis-ci.org/spark-root/laurelin)[![Maven Central](https://img.shields.io/maven-central/v/edu.vanderbilt.accre/laurelin.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22edu.vanderbilt.accre%22%20AND%20a:%22laurelin%22)
 
 Implementation of ROOT I/O designed to get TTrees into Spark DataFrames.
 Consists of the following three components:
