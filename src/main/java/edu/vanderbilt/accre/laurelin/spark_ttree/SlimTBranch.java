@@ -162,7 +162,7 @@ public class SlimTBranch implements Serializable {
             this.payload = fileCursor.getPossiblyCompressedSubcursor(0,
                     compressedLen,
                     uncompressedLen,
-                    keyLen);
+                    0);
         }
 
         public ByteBuffer getPayload(long offset, int len) throws IOException {
@@ -177,7 +177,7 @@ public class SlimTBranch implements Serializable {
                 initializePayload();
             }
             long len = payload.getLimit();
-            return this.payload.readBuffer(0, len);
+            return this.payload.readBuffer(0, uncompressedLen);
         }
 
     }

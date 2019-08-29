@@ -17,8 +17,26 @@ import java.nio.ByteBuffer;
  * so they can be more easily GCd by java
  */
 public class Cursor {
+    /*
+     * Visually - in the case of reading from a file:
+     *
+     * Buf     |    1                      |
+     *
+     * Parent       |       2              |
+     *
+     * Child                |     3        |
+     *
+     * 1: Parent.base
+     * 2: Child.base
+     * 3: Child.base + Child.off
+     *
+     */
+
+
+
     /**
-     * Where "zero" is for this buffer. Sub-cursors start at their initialized
+     * Where "zero" is for this buffer in absolute coordinates (e.g. not
+     * relative to the parent). Sub-cursors start at their initialized
      * position
      */
     protected long base;
@@ -32,6 +50,7 @@ public class Cursor {
      * The current offset into this buffer
      */
     protected long off;
+
     private BackingBuf buf;
     private Cursor parent;
 
@@ -133,15 +152,21 @@ public class Cursor {
      * @return Cursor pointing into new byterange
      */
     public Cursor getPossiblyCompressedSubcursor(long off, int compressedLen, int uncompressedLen, int keyLen) {
-        BackingBuf bbuf = new PossiblyCompressedBuf(this, off, compressedLen, uncompressedLen);
-        Cursor ret = new Cursor(bbuf, 0);
         if (compressedLen == uncompressedLen) {
-            ret.origin = keyLen;
-        } else {
+            // If the object is uncompressed, just make a new subcursor that
+            // points into this current one
+            Cursor ret = this.duplicate();
+            ret.base = off +  this.off + this.base;
+            ret.off = keyLen;
             ret.origin = -keyLen;
+            return ret;
+        } else {
+            BackingBuf bbuf = new PossiblyCompressedBuf(this, off, compressedLen, uncompressedLen);
+            Cursor ret = new Cursor(bbuf, 0);
+            ret.origin = -keyLen;
+            ret.parent = this;
+            return ret;
         }
-        ret.parent = this;
-        return ret;
     }
 
     public long getOffset() {
@@ -161,7 +186,7 @@ public class Cursor {
     }
 
     public ByteBuffer readBuffer(long len) throws IOException {
-        ByteBuffer ret = buf.read(off, len);
+        ByteBuffer ret = buf.read(base + off, len);
         off += ret.limit();
         return ret;
     }
