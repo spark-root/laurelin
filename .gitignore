@@ -39,3 +39,6 @@ testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root
 
 # IOProfile output
 unittest_ioprofile.txt
+
+# Virtualenv
+venv/
