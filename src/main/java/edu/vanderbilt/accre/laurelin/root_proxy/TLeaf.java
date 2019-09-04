@@ -109,6 +109,10 @@ public class TLeaf extends TBranch {
                     // kULong
                     ret = SimpleType.UInt64;
                     break;
+                case 18:
+                    // kBool
+                    ret = SimpleType.Bool;
+                    break;
                 default:
                     throw new RuntimeException("Unknown fType: " + fType);
             }
