@@ -61,9 +61,10 @@ public class TTree {
             boolean [] nameFound = new boolean[names.length];
             ArrayList<TBranch> branchList = getNestedBranches();
             for (TBranch branch: branchList) {
+                String branchName = branch.getFullName();
                 for (int i = 0; i < names.length; i += 1) {
                     String name = names[i];
-                    if (branch.getFullName().equals(name)) {
+                    if (branchName.equals(name)) {
                         if (nameFound[i] == false) {
                             nameFound[i] = true;
                             ret.add(branch);
