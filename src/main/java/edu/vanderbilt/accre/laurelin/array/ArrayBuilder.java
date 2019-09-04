@@ -106,7 +106,7 @@ public class ArrayBuilder {
             basket_itemoffset[0] = 0;
             basket_entryoffset[0] = 0;
             for (int j = 1;  j < 1 + basketstop - basketstart;  j++) {
-                long numentries = basketEntryOffsets[j] - basketEntryOffsets[j - 1];
+                long numentries = basketEntryOffsets[j + basketstart] - basketEntryOffsets[j + basketstart - 1];
                 totalentries += numentries;
                 if (totalentries != (int)totalentries) {
                     throw new IllegalArgumentException("number of entries requested of ArrayBuilder.build must fit into a 32-bit integer");
