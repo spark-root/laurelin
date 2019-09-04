@@ -1,5 +1,7 @@
 package edu.vanderbilt.accre.laurelin.root_proxy;
 
+import edu.vanderbilt.accre.laurelin.root_proxy.ROOTException.UnsupportedBranchTypeException;
+
 public class TLeaf extends TBranch {
 
     public TLeaf(Proxy data, TTree tree, TBranch parent) {
@@ -109,15 +111,19 @@ public class TLeaf extends TBranch {
                     // kULong
                     ret = SimpleType.UInt64;
                     break;
+                case 18:
+                    // kBool
+                    ret = SimpleType.Bool;
+                    break;
                 default:
-                    throw new RuntimeException("Unknown fType: " + fType);
+                    throw new UnsupportedBranchTypeException("Unknown fType: " + fType);
             }
 
         }
 
         if (ret == null) {
             data.dump();
-            throw new RuntimeException("Unknown TLeaf type. name: " + getName() + " class: " + data.className + " type " + getType() + "\n" + data.dumpStr());
+            throw new UnsupportedBranchTypeException("Unknown TLeaf type. name: " + getName() + " class: " + data.className + " type " + getType() + "\n" + data.dumpStr());
         }
 
         // Do I later want to separate fixed and not-fixed arrays?

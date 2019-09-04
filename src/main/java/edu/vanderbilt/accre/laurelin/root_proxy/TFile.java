@@ -58,6 +58,7 @@ public class TFile {
         parseHeaderImpl(false);
         if (fVersion > 1000000) {
             parseHeaderImpl(true);
+            fVersion %= 1000000;
         }
 
         /*
@@ -103,7 +104,6 @@ public class TFile {
         // ROOT has a different file format if the file is > 2GB.
         // It signals this by changing the version number
         fVersion = buffer.readInt();
-        fVersion %= 1000000;
         fBEGIN = buffer.readInt();
         if (largeFile) {
             fEND = buffer.readLong();

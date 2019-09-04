@@ -42,6 +42,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.IOFactory;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
+import edu.vanderbilt.accre.laurelin.root_proxy.ROOTException.UnsupportedBranchTypeException;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
@@ -252,25 +253,46 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         private List<StructField> readSchemaPart(List<TBranch> branches, String prefix) {
             List<StructField> fields = new ArrayList<StructField>();
             for (TBranch branch: branches) {
-                int branchCount = branch.getBranches().size();
-                int leafCount = branch.getLeaves().size();
-                MetadataBuilder metadata = new MetadataBuilder();
-                if (branchCount != 0) {
-                    /*
-                     * We have sub-branches, so we need to recurse.
-                     */
-                    List<StructField> subFields = readSchemaPart(branch.getBranches(), prefix);
-                    StructField[] subFieldArray = new StructField[subFields.size()];
-                    subFieldArray = subFields.toArray(subFieldArray);
-                    StructType subStruct = new StructType(subFieldArray);
-                    metadata.putString("rootType", "nested");
-                    fields.add(new StructField(branch.getName(), subStruct, false, Metadata.empty()));
-                } else if ((branchCount == 0) && (leafCount == 1)) {
-                    DataType sparkType = rootToSparkType(branch.getSimpleType());
-                    metadata.putString("rootType", branch.getSimpleType().getBaseType().toString());
-                    fields.add(new StructField(branch.getName(), sparkType, false, metadata.build()));
-                } else {
-                    throw new RuntimeException("Unsupported schema for branch " + branch.getName() + " branchCount: " + branchCount + " leafCount: " + leafCount);
+                // The ROOT-given branch name
+                String name = branch.getName();
+                try {
+                    // The name of the "current" level of the branch e.g. what
+                    // we would name this StructField
+                    String currName = name;
+                    if (currName.startsWith(prefix)) {
+                        int len = prefix.length();
+                        currName = name.substring(len);
+                    }
+                    if (currName.endsWith(".")) {
+                        currName = currName.substring(0, currName.length() - 1);
+                    }
+                    if (currName.startsWith(".")) {
+                        currName = currName.substring(1);
+                    }
+
+                    int branchCount = branch.getBranches().size();
+                    int leafCount = branch.getLeaves().size();
+                    MetadataBuilder metadata = new MetadataBuilder();
+                    if (branchCount != 0) {
+                        /*
+                         * We have sub-branches, so we need to recurse.
+                         */
+                        String subname = name.substring(prefix.length());
+                        List<StructField> subFields = readSchemaPart(branch.getBranches(), name);
+                        StructField[] subFieldArray = new StructField[subFields.size()];
+                        subFieldArray = subFields.toArray(subFieldArray);
+                        StructType subStruct = new StructType(subFieldArray);
+                        metadata.putString("rootType", "nested");
+                        fields.add(new StructField(currName, subStruct, false, Metadata.empty()));
+                    } else if ((branchCount == 0) && (leafCount == 1)) {
+                        DataType sparkType = rootToSparkType(branch.getSimpleType());
+                        metadata.putString("rootType", branch.getSimpleType().getBaseType().toString());
+                        fields.add(new StructField(currName, sparkType, false, metadata.build()));
+                    } else {
+                        throw new RuntimeException("Unsupported schema for branch " + branch.getName() + " branchCount: " + branchCount + " leafCount: " + leafCount);
+                    }
+                } catch (UnsupportedBranchTypeException e) {
+                    logger.error(String.format("The branch \"%s\" is unable to be deserialized and will be skipped", name));
                 }
             }
             return fields;

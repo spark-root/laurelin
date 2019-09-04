@@ -5,7 +5,6 @@ import java.nio.ByteBuffer;
 import org.apache.logging.log4j.LogManager;
 
 import edu.vanderbilt.accre.laurelin.array.Array;
-import edu.vanderbilt.accre.laurelin.array.JaggedArray;
 import edu.vanderbilt.accre.laurelin.array.JaggedArrayPrep;
 import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
 import edu.vanderbilt.accre.laurelin.array.PrimitiveArray.Int4;
@@ -101,23 +100,6 @@ public class AsJagged implements Interpretation {
     }
 
     @Override
-    public Array finalize(Array destination) {
-        PrimitiveArray.Int4 counts = ((JaggedArrayPrep)destination).counts();
-
-        ByteBuffer offsetsbuf = ByteBuffer.allocate((counts.length() + 1) * 4);
-        int last = 0;
-        offsetsbuf.putInt(last);
-        for (int i = 0;  i < counts.length();  i++) {
-            last += counts.get(i);
-            offsetsbuf.putInt(last);
-        }
-        offsetsbuf.position(0);
-        PrimitiveArray.Int4 offsets = new PrimitiveArray.Int4(new RawArray(offsetsbuf));
-
-        return new JaggedArray(this, counts.length(), offsets, ((JaggedArrayPrep)destination).content());
-    }
-
-    @Override
     public Interpretation subarray() {
         return this.content();
     }
@@ -130,6 +112,11 @@ public class AsJagged implements Interpretation {
     @Override
     public Int4 convertOffsetDiskToMemory(Int4 source) {
         throw new RuntimeException("Bad offset");
+    }
+
+    @Override
+    public Array finalize(Array destination) {
+        throw new RuntimeException("Purposely unimplemented");
     }
 
 }
