@@ -1,5 +1,7 @@
 package edu.vanderbilt.accre.array;
 
+import static org.junit.Assume.assumeTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -50,6 +52,7 @@ public class ArrayBoundsTest {
         String testPath = "testdata/nano_19.root";
         String testTree = "Events";
         File f = new File(testPath);
+        assumeTrue(f.isFile());
         TFile currFile = TFile.getFromFile(testPath);
         return new TTree(currFile.getProxy(testTree), currFile);
     }
@@ -73,11 +76,6 @@ public class ArrayBoundsTest {
     @Test
     public void testNano19_jetPt() throws IOException {
         testNano19Impl("Jet_pt", AsDtype.Dtype.FLOAT4);
-    }
-
-    @Test
-    public void testNano19_nMuon() throws IOException {
-        testNano19Impl("nMuon", AsDtype.Dtype.INT4);
     }
 
 }
