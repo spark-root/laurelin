@@ -1,10 +1,7 @@
 package edu.vanderbilt.accre.laurelin.array;
 
-import java.lang.UnsupportedOperationException;
 import java.nio.ByteBuffer;
 
-import edu.vanderbilt.accre.laurelin.array.Array;
-import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 
 public class JaggedArrayPrep extends Array {
@@ -15,8 +12,8 @@ public class JaggedArrayPrep extends Array {
     public JaggedArrayPrep(Interpretation interpretation, int length, PrimitiveArray.Int4 counts, Array content) {
         super(interpretation, length);
         this.counts = counts;
-        this.offsets = null;
         this.content = content;
+        this.offsets = null;
     }
 
     public PrimitiveArray.Int4 counts() {
@@ -27,31 +24,44 @@ public class JaggedArrayPrep extends Array {
         return this.content;
     }
 
+    private void allocateOffsets() {
+        ByteBuffer offsetsbuf = ByteBuffer.allocate((this.counts.length() + 1) * 4);
+        int last = 0;
+        int startpos = this.counts.get(0);
+        offsetsbuf.putInt(last);
+        for (int i = 0; i < this.counts.length(); i++) {
+            last += this.counts.get(i);
+            offsetsbuf.putInt(last);
+        }
+        offsetsbuf.flip();
+        this.offsets = new PrimitiveArray.Int4(new RawArray(offsetsbuf));
+    }
+
+    @Override
     public Array clip(int start, int stop) {
         if (this.offsets == null) {
-            ByteBuffer offsetsbuf = ByteBuffer.allocate((this.counts.length() + 1) * 4);
-            int last = 0;
-            offsetsbuf.putInt(last);
-            for (int i = 0;  i < this.counts.length();  i++) {
-                last += this.counts.get(i);
-                offsetsbuf.putInt(last);
-            }
-            offsetsbuf.position(0);
-            this.offsets = new PrimitiveArray.Int4(new RawArray(offsetsbuf));
+            allocateOffsets();
         }
-
         int itemstart = this.offsets.get(start);
         int itemstop = this.offsets.get(stop);
         return new JaggedArrayPrep(this.interpretation, stop - start, (PrimitiveArray.Int4)this.counts.clip(start, stop), this.content.clip(itemstart, itemstop));
     }
 
+    @Override
     public Object toArray(boolean bigEndian) {
+
         throw new UnsupportedOperationException("not implemented yet");
     }
 
     @Override
     public Array subarray() {
-        throw new UnsupportedOperationException("not implemented yet");
+        if (this.offsets == null) {
+            allocateOffsets();
+        }
+        int low = this.offsets.get(0);
+        int high = this.offsets.get(1);
+        Array ret = this.content.clip(low, high);
+        return ret;
     }
 
 }

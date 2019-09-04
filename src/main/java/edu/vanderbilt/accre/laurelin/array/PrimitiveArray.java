@@ -69,7 +69,7 @@ public abstract class PrimitiveArray extends Array {
         ByteBuffer out = this.buffer.duplicate();
         out.position(bytestart);
         out.limit(bytestop);
-        return this.make(out);
+        return this.make(out.slice());
     }
 
     public RawArray rawarray() {

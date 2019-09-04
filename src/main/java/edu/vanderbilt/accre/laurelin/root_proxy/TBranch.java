@@ -136,20 +136,12 @@ public class TBranch {
     }
 
     public String getFullName() {
-        if (parent == null) {
-            return (String) data.getScalar("fName").getVal();
-        } else {
-            TBranch tmpParent = parent;
-            String ret = "." + getName();
-            while (tmpParent != null) {
-                ret = tmpParent.getName() + ret;
-                tmpParent = tmpParent.parent;
-                if (tmpParent != null) {
-                    ret = "." + ret;
-                }
-            }
-            return ret;
+        String ret;
+        ret = (String) data.getScalar("fName").getVal();
+        if (ret.endsWith(".")) {
+            ret = ret.substring(0, ret.length() - 1);
         }
+        return ret;
     }
 
     public String getClassName() {
@@ -207,7 +199,9 @@ public class TBranch {
      *         null otherwise
      */
     public ArrayDescriptor getArrayDescriptor() {
-        if (getLeaves().size() != 1) {
+        if (getLeaves().size() == 0) {
+            return null;
+        } else  if (getLeaves().size() != 1) {
             throw new RuntimeException("Non-split branches are not supported");
         }
         ArrayDescriptor ret = null;

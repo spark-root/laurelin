@@ -113,9 +113,10 @@ public class TTreeColumnVector extends ColumnVector {
 
     @Override
     public ColumnarArray getArray(int rowId) {
-        Array array = builder.getArray(rowId, 1).subarray();
-        ArrayColumnVector tmpvec = new ArrayColumnVector(((ArrayType)dataType()).elementType(), array);
-        return new ColumnarArray(tmpvec, 0, array.length());
+        Array array = builder.getArray(rowId, 1);
+        Array subarray = array.subarray();
+        ArrayColumnVector tmpvec = new ArrayColumnVector(((ArrayType)dataType()).elementType(), subarray);
+        return new ColumnarArray(tmpvec, 0, subarray.length());
     }
 
     @Override
