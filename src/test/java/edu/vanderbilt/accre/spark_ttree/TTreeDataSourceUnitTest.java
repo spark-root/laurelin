@@ -1249,6 +1249,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         for (int i = 0;  i < 100;  i++) {
             assertEquals(result.getFloat(i), i, 0.0001);
         }
+        result.close();
     }
 
     @Test
@@ -1264,9 +1265,10 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
             ColumnarArray event = result.getArray(i);
             assertEquals(event.numElements(), 10);
             for (int j = 0;  j < 10;  j++) {
-                assertEquals(result.getFloat(i), i, 0.0001);
+                assertEquals(event.getFloat(j), i, 0.0001);
             }
         }
+        result.close();
     }
 
     @Test
@@ -1282,7 +1284,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
             ColumnarArray event = result.getArray(i);
             assertEquals(event.numElements(), i % 10);
             for (int j = 0;  j < i % 10;  j++) {
-                assertEquals(result.getFloat(i), i, 0.0001);
+                assertEquals(event.getFloat(j), i, 0.0001);
             }
         }
     }
@@ -1299,6 +1301,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
         for (int i = 0;  i < 100;  i++) {
             assertEquals(result.getDouble(i), i, 0.0001);
         }
+        result.close();
     }
 
     @Test
@@ -1314,9 +1317,10 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
             ColumnarArray event = result.getArray(i);
             assertEquals(event.numElements(), 10);
             for (int j = 0;  j < 10;  j++) {
-                assertEquals(result.getDouble(i), i, 0.0001);
+                assertEquals(event.getDouble(j), i, 0.0001);
             }
         }
+        result.close();
     }
 
     @Test
@@ -1332,9 +1336,10 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
             ColumnarArray event = result.getArray(i);
             assertEquals(event.numElements(), i % 10);
             for (int j = 0;  j < i % 10;  j++) {
-                assertEquals(result.getDouble(i), i, 0.0001);
+                assertEquals(event.getDouble(j), i, 0.0001);
             }
         }
+        result.close();
     }
 
 }
