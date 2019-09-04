@@ -383,13 +383,10 @@ public class Streamer {
             start = cursor.getOffset() - cursor.getOrigin();
             tag = cursor.readUInt();
         }
-        //System.out.println(" val1 " + (tag & Constants.kClassMask));
-        //System.out.println(" val2 " + tag + " class tag " + Constants.kNewClassTag);
+
         if ((tag & Constants.kClassMask) == 0) {
-            //System.out.println(" break1 " + (tag & Constants.kClassMask));
             // Reference Object
             if (tag == 0) {
-                //System.out.println("zero ref at " + beg + " tag is " + tag + " bcnt " + bcnt + " vers " + vers + " start " + start);
                 return null;
             } else if (tag == 1) {
                 // FixMe: tag == 1 means "self", but don't currently have self available.
@@ -397,9 +394,10 @@ public class Streamer {
             }
             Object obj = classMap.get(new Long(tag));
             if ((obj == null) || !(obj instanceof Proxy)) {
-                // cursor.index = cursor.origin + beg + bcnt + 4
                 cursor.setOffset(startCursor.getOrigin() + beg + bcnt + 4);
-                throw new IOException("Undefined reference/tag found: " + tag);
+                ProxyElement<String> ret = new ProxyElement<String>();
+                ret.setVal(String.format("Unknown object at tag %s", tag));
+                return ret;
             }
             return (Proxy) obj;
         } else if (tag == Constants.kNewClassTag) {
