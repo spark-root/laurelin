@@ -1,5 +1,6 @@
 package edu.vanderbilt.accre.array;
 
+import static edu.vanderbilt.accre.Helpers.getBigTestDataIfExists;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
@@ -10,6 +11,7 @@ import java.util.List;
 
 import org.junit.Test;
 
+import edu.vanderbilt.accre.LaurelinTest;
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.JaggedArrayPrep;
@@ -23,7 +25,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 
-public class ArrayBoundsTest {
+public class ArrayBoundsTest extends LaurelinTest {
 
     @Test
     public void testNanoBaskets() {
@@ -49,7 +51,7 @@ public class ArrayBoundsTest {
     }
 
     private TTree getTestTree() throws IOException {
-        String testPath = "testdata/nano_19.root";
+        String testPath = getBigTestDataIfExists(this, "testdata/nano_19.root");
         String testTree = "Events";
         File f = new File(testPath);
         assumeTrue(f.isFile());
