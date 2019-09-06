@@ -9,32 +9,40 @@ Consists of the following three components:
 
 The scope of this project is only to perform vectorized (i.e. column-based)
 reads of TTrees consisting of relatively simple branches -- fundamental numeric
-types and both fixed-length/jagged arrays of those types.
+types and both fixed-length/jagged arrays of those types. More complex formats
+like TTrees with branches containing C++ objects are explicitly not supported.
 
 ## Usage example
 
-Note that the most recent version number can be found [here](https://search.maven.org/search?q=a:laurelin%20g:edu.vanderbilt.accre). To use a different version, replace 0.0.15 with your
-desired version
+Laurelin users have a simple interface (developer docs are
+[here](docs/CONTRIBUTING.md)). If you have the following:
+
+* Apache Spark installed
+* A ROOT file named `sample.root`
+* A TTree within that file named `Events` 
+
+Laurelin can load your TTree with the following PySpark snippet, without any
+additional setup on your end:
 
 ```python
 import pyspark.sql
 
 spark = pyspark.sql.SparkSession.builder \
     .master("local[1]") \
-    .config('spark.jars.packages', 'edu.vanderbilt.accre:laurelin:0.0.15') \
+    .config('spark.jars.packages', 'edu.vanderbilt.accre:laurelin:0.3.0') \
     .getOrCreate()
 sc = spark.sparkContext
 df = spark.read.format('root') \
-                .option("tree", "tree") \
-                .load('small-flat-tree.root')
+                .option("tree", "Events") \
+                .load('sample.root')
 df.printSchema()
 ```
 
+Note that the most recent version number can be found
+[here](https://search.maven.org/search?q=a:laurelin%20g:edu.vanderbilt.accre).
+To use a different version, replace 0.3.0 with your desired version
+
 ## Known issues/not yet implemented functionality
 
-* The I/O is currently completely unoptimized -- there is no caching or
-  prefetching. Remote reads will be slow as a consequence.
-* Arrays (both fixed and jagged) of booleans return the wrong result
 * Float16/Doubles32 are currently not supported
 * String types are currently not supported
-* C++ STD types are currently not supported (importantly, std::vector)
