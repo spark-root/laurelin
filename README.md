@@ -38,9 +38,8 @@ df = spark.read.format('root') \
 df.printSchema()
 ```
 
-Note that the most recent version number can be found
-[here](https://search.maven.org/search?q=a:laurelin%20g:edu.vanderbilt.accre).
-To use a different version, replace 0.3.0 with your desired version
+To use a different version, replace 0.3.0 with the desired version. 
+The most recent version number is [![Maven Central](https://img.shields.io/maven-central/v/edu.vanderbilt.accre/laurelin?color=000000&label=%20&style=flat-square)](https://search.maven.org/search?q=g:%22edu.vanderbilt.accre%22%20AND%20a:%22laurelin%22)
 
 ## Known issues/not yet implemented functionality
 
