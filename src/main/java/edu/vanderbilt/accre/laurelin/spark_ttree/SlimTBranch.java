@@ -98,17 +98,16 @@ public class SlimTBranch implements Serializable {
         @Override
         public RawArray dataWithoutKey(int basketid) {
             SlimTBasket basket = branch.getBasket(basketid);
-            try {
+            try (ROOTFile tmpFile = ROOTFile.getInputFile(path)) {
                 // the last event of each basket is guaranteed to be unique and
                 // stable
-                ROOTFile tmpFile = ROOTFile.getInputFile(path);
                 RawArray data = basketCache.get(tmpFile, basket.getLast());
                 if (data == null) {
                     data = new RawArray(basket.getPayload());
                     basketCache.put(tmpFile, basket.getLast(), data);
                 }
                 return data;
-            } catch (IOException e) {
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }

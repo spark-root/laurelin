@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-public class TFile {
+public class TFile implements AutoCloseable {
     ROOTFile fh;
     private String fileName;
 
@@ -148,5 +148,10 @@ public class TFile {
 
     public String getFileName() {
         return fileName;
+    }
+
+    @Override
+    public void close() throws Exception {
+        fh.close();
     }
 }

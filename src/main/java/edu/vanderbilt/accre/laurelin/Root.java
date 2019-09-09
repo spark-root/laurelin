@@ -359,10 +359,9 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                 List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
                 int pid = 0;
                 TTree inputTree;
-                try {
-                    TFile inputFile = TFile.getFromFile(path);
+                try (TFile inputFile = TFile.getFromFile(path)) {
                     inputTree = new TTree(inputFile.getProxy(treeName), inputFile);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
 

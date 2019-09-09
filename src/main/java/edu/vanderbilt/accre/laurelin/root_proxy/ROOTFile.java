@@ -18,7 +18,7 @@ import com.google.common.cache.LoadingCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.FileProfiler;
 
-public class ROOTFile {
+public class ROOTFile implements AutoCloseable {
     private static final Logger logger = LogManager.getLogger();
 
     public static class FileBackedBuf implements BackingBuf {
@@ -201,5 +201,11 @@ public class ROOTFile {
 
     public Cursor getCursor(long off) {
         return new Cursor(new FileBackedBuf(this), off);
+    }
+
+    @Override
+    public void close() throws Exception {
+        fh.close();
+
     }
 }
