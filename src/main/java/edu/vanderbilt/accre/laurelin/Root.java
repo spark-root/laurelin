@@ -55,9 +55,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
     private static final Logger logger = LogManager.getLogger();
 
     /**
-     * Represents a Partition of a TTree, which currently is one per-file.
-     * Future improvements will split this up per-basket. Big files = big mem
-     * usage!
+     * Represents a Partition of a TTree.
      *
      * <p>This is instantiated on the driver, then serialized and transmitted to
      * the executor
