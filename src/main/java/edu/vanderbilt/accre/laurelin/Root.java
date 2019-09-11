@@ -204,6 +204,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         private IOProfile profiler;
         private static CollectionAccumulator<Storage> profileData;
         private SparkContext sparkContext;
+        private static ROOTFileCache fileCache = new ROOTFileCache();
 
         public TTreeDataSourceV2Reader(DataSourceOptions options, CacheFactory basketCacheFactory, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
             logger.trace("construct ttreedatasourcev2reader");
@@ -214,7 +215,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                     this.paths.addAll(IOFactory.expandPathToList(path));
                 }
                 // FIXME - More than one file, please
-                currFile = TFile.getFromFile(this.paths.get(0));
+                currFile = TFile.getFromFile(fileCache.getROOTFile(this.paths.get(0)));
                 treeName = options.get("tree").orElse("Events");
                 currTree = new TTree(currFile.getProxy(treeName), currFile);
                 this.basketCacheFactory = basketCacheFactory;
