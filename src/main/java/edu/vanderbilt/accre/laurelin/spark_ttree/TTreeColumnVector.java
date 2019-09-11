@@ -19,6 +19,7 @@ import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
+import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 
@@ -28,12 +29,12 @@ public class TTreeColumnVector extends ColumnVector {
     private ArrayBuilder.GetBasket getbasket;
     private ArrayBuilder builder;
 
-    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch, ThreadPoolExecutor executor) {
+    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch, ThreadPoolExecutor executor, ROOTFileCache fileCache) {
         super(type);
         logger.trace("new column vec of type: " + type);
 
         this.basketEntryOffsets = slimBranch.getBasketEntryOffsets();
-        this.getbasket = slimBranch.getArrayBranchCallback(basketCache);
+        this.getbasket = slimBranch.getArrayBranchCallback(basketCache, fileCache);
 
         TBranch.ArrayDescriptor desc = slimBranch.getArrayDesc();
         if (desc == null) {
@@ -50,6 +51,10 @@ public class TTreeColumnVector extends ColumnVector {
             Interpretation interpretation = new AsJagged(new AsDtype(dtype), desc.getSkipBytes());
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         }
+    }
+
+    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch, ThreadPoolExecutor executor) {
+        this(type, rootType, dtype, basketCache, entrystart, entrystop, slimBranch, executor, (ROOTFileCache) null);
     }
 
     @Override

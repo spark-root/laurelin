@@ -14,6 +14,7 @@ import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.root_proxy.Cursor;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
+import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 
@@ -74,19 +75,35 @@ public class SlimTBranch implements Serializable {
     /**
      * Glue callback to integrate with edu.vanderbilt.accre.laurelin.array
      * @param basketCache the cache we should be using
+     * @param fileCache
+     * @return GetBasket object used by array
+     */
+    public ArrayBuilder.GetBasket getArrayBranchCallback(Cache basketCache, ROOTFileCache fileCache) {
+        return new BranchCallback(basketCache, this, fileCache);
+    }
+
+    /**
+     * Glue callback to integrate with edu.vanderbilt.accre.laurelin.array
+     * @param basketCache the cache we should be using
      * @return GetBasket object used by array
      */
     public ArrayBuilder.GetBasket getArrayBranchCallback(Cache basketCache) {
-        return new BranchCallback(basketCache, this);
+        return new BranchCallback(basketCache, this, null);
     }
 
     class BranchCallback implements ArrayBuilder.GetBasket {
         Cache basketCache;
         SlimTBranch branch;
+        ROOTFileCache fileCache;
 
         public BranchCallback(Cache basketCache, SlimTBranch branch) {
+            this(basketCache, branch, null);
+        }
+
+        public BranchCallback(Cache basketCache, SlimTBranch branch, ROOTFileCache fileCache) {
             this.basketCache = basketCache;
             this.branch = branch;
+            this.fileCache = fileCache;
         }
 
         @Override
@@ -98,7 +115,13 @@ public class SlimTBranch implements Serializable {
         @Override
         public RawArray dataWithoutKey(int basketid) {
             SlimTBasket basket = branch.getBasket(basketid);
-            try (ROOTFile tmpFile = ROOTFile.getInputFile(path)) {
+            ROOTFile tmpFile;
+            try {
+                if (fileCache == null) {
+                    tmpFile = ROOTFile.getInputFile(path);
+                } else {
+                    tmpFile = fileCache.getROOTFile(path);
+                }
                 // the last event of each basket is guaranteed to be unique and
                 // stable
                 RawArray data = basketCache.get(tmpFile, basket.getLast());
@@ -107,7 +130,7 @@ public class SlimTBranch implements Serializable {
                     basketCache.put(tmpFile, basket.getLast(), data);
                 }
                 return data;
-            } catch (Exception e) {
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }

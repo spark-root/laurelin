@@ -43,6 +43,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTException.UnsupportedBranchTypeException;
+import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
@@ -104,6 +105,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         private static ThreadPoolExecutor executor;
         private CollectionAccumulator<Storage> profileData;
         private int pid;
+        private static ROOTFileCache fileCache = new ROOTFileCache();
 
         public TTreeDataSourceV2PartitionReader(CacheFactory basketCacheFactory, StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount, CollectionAccumulator<Storage> profileData, int pid) {
             this.basketCache = basketCacheFactory.getCache();
@@ -183,7 +185,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                 rootType = SimpleType.fromString(field.metadata().getString("rootType"));
 
                 Dtype dtype = SimpleType.dtypeFromString(field.metadata().getString("rootType"));
-                vecs.add(new TTreeColumnVector(field.dataType(), rootType, dtype, basketCache, entryStart, entryEnd, slimBranch, executor));
+                vecs.add(new TTreeColumnVector(field.dataType(), rootType, dtype, basketCache, entryStart, entryEnd, slimBranch, executor, fileCache));
             }
             return vecs;
         }
