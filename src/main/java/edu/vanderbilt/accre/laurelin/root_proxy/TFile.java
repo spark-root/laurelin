@@ -51,9 +51,23 @@ public class TFile implements AutoCloseable {
         return ret;
     }
 
+    public static TFile getFromFile(ROOTFile file) throws IOException {
+        TFile ret = new TFile();
+        ret.openForRead(file);
+        return ret;
+    }
+
     public void openForRead(String path) throws IOException {
-        fileName = path;
-        fh = ROOTFile.getInputFile(path);
+        openForRead(path, ROOTFile.getInputFile(path));
+    }
+
+    public void openForRead(ROOTFile fh) throws IOException {
+        openForRead(fh.getPath(), fh);
+    }
+
+    public void openForRead(String path, ROOTFile fh) throws IOException {
+        this.fileName = path;
+        this.fh = fh;
         Cursor c = fh.getCursor(0);
         parseHeaderImpl(false);
         if (fVersion > 1000000) {
