@@ -147,24 +147,6 @@ public class ROOTFileCache {
     }
 
     /**
-     * Forcibly say the ROOTFile went out of scope for testing.
-     * It's difficult to unittest this class because much of its behavior
-     * depends on the GC implementation (which can vary based on platform). This
-     * function triggers the same callbacks that the JVM would call to let us
-     * reliably test that functionality.
-     * @param path Path of the ROOTFile to invalidate
-     */
-    public void forciblyInvalidateOpenFile(String path) {
-        try {
-            lock.lock();
-            fileCache.invalidate(path);
-            phantomMap.get(path).enqueue();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
      * Gets a ROOTFile pointing to the given URI, ensuring that they're unique
      * within the cache object and with a timeout to prevent immediately
      * closing the file when it could be opened shortly afterwards.
