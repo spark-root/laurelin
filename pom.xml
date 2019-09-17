@@ -17,24 +17,24 @@
     </licenses>
 
     <scm>
-        <developerConnection>scm:git:git@github.com:perilousapricot/spark-ttree.git</developerConnection>
-        <url>https://github.com/perilousapricot/spark-ttree</url>
+        <developerConnection>scm:git:git@github.com:spark-root/laurelin.git</developerConnection>
+        <url>https://github.com/spark-root/laurelin</url>
         <tag>laurelin-0.0.1</tag>
     </scm>
     <description>Spark datasource for ROOT (http://root.cern) files</description>
-    <url>https://github.com/perilousapricot/spark-ttree</url>
+    <url>https://github.com/spark-root/laurelin</url>
     <developers>
         <developer>
             <name>Andrew Melo</name>
             <email>andrew.m.melo@vanderbilt.edu</email>
             <organization>Vanderbilt University</organization>
-            <organizationUrl>https://github.com/PerilousApricot/spark-ttree</organizationUrl>
+            <organizationUrl>https://github.com/spark-root/laurelin</organizationUrl>
         </developer>
         <developer>
             <name>Jim Pivarski</name>
             <email>pivarski@princeton.edu</email>
             <organization>Princeton University</organization>
-            <organizationUrl>https://github.com/PerilousApricot/spark-ttree</organizationUrl>
+            <organizationUrl>https://github.com/spark-root/laurelin</organizationUrl>
         </developer>
     </developers>
 
