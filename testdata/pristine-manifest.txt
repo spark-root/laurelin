@@ -1,0 +1,3 @@
+testdata/pristine/A2C66680-E3AA-E811-A854-1CC1DE192766.root 80889391
+testdata/pristine/nano_19.root 104539279
+testdata/pristine/uproot-cases/sample-6.18.00-uncompressed.root 80638
