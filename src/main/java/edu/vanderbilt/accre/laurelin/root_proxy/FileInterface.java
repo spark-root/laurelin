@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Future;
 
-public interface FileInterface {
+public interface FileInterface extends AutoCloseable {
     public ByteBuffer read(long offset, long len) throws IOException;
 
     public ByteBuffer[] readv(int[] offsets, int[] lens) throws IOException;
@@ -13,6 +13,7 @@ public interface FileInterface {
 
     public Future<ByteBuffer>[] readvAsync(int[] offsets, int[] lens) throws IOException;
 
+    @Override
     public void close() throws IOException;
 
     public long getLimit() throws IOException;

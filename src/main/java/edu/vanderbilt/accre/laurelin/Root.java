@@ -43,6 +43,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTException.UnsupportedBranchTypeException;
+import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
@@ -55,9 +56,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
     private static final Logger logger = LogManager.getLogger();
 
     /**
-     * Represents a Partition of a TTree, which currently is one per-file.
-     * Future improvements will split this up per-basket. Big files = big mem
-     * usage!
+     * Represents a Partition of a TTree.
      *
      * <p>This is instantiated on the driver, then serialized and transmitted to
      * the executor
@@ -106,6 +105,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         private static ThreadPoolExecutor executor;
         private CollectionAccumulator<Storage> profileData;
         private int pid;
+        private static ROOTFileCache fileCache = new ROOTFileCache();
 
         public TTreeDataSourceV2PartitionReader(CacheFactory basketCacheFactory, StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount, CollectionAccumulator<Storage> profileData, int pid) {
             this.basketCache = basketCacheFactory.getCache();
@@ -185,7 +185,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                 rootType = SimpleType.fromString(field.metadata().getString("rootType"));
 
                 Dtype dtype = SimpleType.dtypeFromString(field.metadata().getString("rootType"));
-                vecs.add(new TTreeColumnVector(field.dataType(), rootType, dtype, basketCache, entryStart, entryEnd, slimBranch, executor));
+                vecs.add(new TTreeColumnVector(field.dataType(), rootType, dtype, basketCache, entryStart, entryEnd, slimBranch, executor, fileCache));
             }
             return vecs;
         }
@@ -204,6 +204,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         private IOProfile profiler;
         private static CollectionAccumulator<Storage> profileData;
         private SparkContext sparkContext;
+        private static ROOTFileCache fileCache = new ROOTFileCache();
 
         public TTreeDataSourceV2Reader(DataSourceOptions options, CacheFactory basketCacheFactory, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
             logger.trace("construct ttreedatasourcev2reader");
@@ -214,7 +215,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                     this.paths.addAll(IOFactory.expandPathToList(path));
                 }
                 // FIXME - More than one file, please
-                currFile = TFile.getFromFile(this.paths.get(0));
+                currFile = TFile.getFromFile(fileCache.getROOTFile(this.paths.get(0)));
                 treeName = options.get("tree").orElse("Events");
                 currTree = new TTree(currFile.getProxy(treeName), currFile);
                 this.basketCacheFactory = basketCacheFactory;
@@ -359,10 +360,9 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                 List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
                 int pid = 0;
                 TTree inputTree;
-                try {
-                    TFile inputFile = TFile.getFromFile(path);
+                try (TFile inputFile = TFile.getFromFile(path)) {
                     inputTree = new TTree(inputFile.getProxy(treeName), inputFile);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
 

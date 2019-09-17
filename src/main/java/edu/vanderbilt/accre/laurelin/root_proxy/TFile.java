@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-public class TFile {
+public class TFile implements AutoCloseable {
     ROOTFile fh;
     private String fileName;
 
@@ -51,9 +51,23 @@ public class TFile {
         return ret;
     }
 
+    public static TFile getFromFile(ROOTFile file) throws IOException {
+        TFile ret = new TFile();
+        ret.openForRead(file);
+        return ret;
+    }
+
     public void openForRead(String path) throws IOException {
-        fileName = path;
-        fh = ROOTFile.getInputFile(path);
+        openForRead(path, ROOTFile.getInputFile(path));
+    }
+
+    public void openForRead(ROOTFile fh) throws IOException {
+        openForRead(fh.getPath(), fh);
+    }
+
+    public void openForRead(String path, ROOTFile fh) throws IOException {
+        this.fileName = path;
+        this.fh = fh;
         Cursor c = fh.getCursor(0);
         parseHeaderImpl(false);
         if (fVersion > 1000000) {
@@ -148,5 +162,10 @@ public class TFile {
 
     public String getFileName() {
         return fileName;
+    }
+
+    @Override
+    public void close() throws Exception {
+        fh.close();
     }
 }

@@ -18,7 +18,7 @@ import com.google.common.cache.LoadingCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.FileProfiler;
 
-public class ROOTFile {
+public class ROOTFile implements AutoCloseable {
     private static final Logger logger = LogManager.getLogger();
 
     public static class FileBackedBuf implements BackingBuf {
@@ -151,16 +151,23 @@ public class ROOTFile {
     }
 
     private FileInterface fh;
+    private String path;
     protected FileProfiler profile;
 
     /* Hide constructor */
     private ROOTFile(String path) {
         profile = IOProfile.getInstance().beginProfile(path);
+        this.path = path;
     }
 
     public static ROOTFile getInputFile(String path) throws IOException {
+        FileInterface fh = IOFactory.openForRead(path);
+        return ROOTFile.getInputFile(path, fh);
+    }
+
+    public static ROOTFile getInputFile(String path, FileInterface fh) throws IOException {
         ROOTFile rf = new ROOTFile(path);
-        rf.fh = IOFactory.openForRead(path);
+        rf.fh = fh;
         return rf;
     }
 
@@ -201,5 +208,19 @@ public class ROOTFile {
 
     public Cursor getCursor(long off) {
         return new Cursor(new FileBackedBuf(this), off);
+    }
+
+    @Override
+    public void close() throws Exception {
+        fh.close();
+
+    }
+
+    public FileInterface getFileInterface() {
+        return fh;
+    }
+
+    public String getPath() {
+        return path;
     }
 }
