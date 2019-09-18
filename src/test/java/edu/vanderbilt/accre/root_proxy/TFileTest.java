@@ -13,7 +13,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.vanderbilt.accre.LaurelinTest;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
@@ -21,7 +20,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.Proxy;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 
-public class TFileTest extends LaurelinTest {
+public class TFileTest {
     List<Storage> accum;
     private static final Logger logger = LogManager.getLogger();
 
@@ -58,7 +57,7 @@ public class TFileTest extends LaurelinTest {
 
     @Test
     public void testOpenUncompressed() throws IOException {
-        TFile testfile = TFile.getFromFile(getBigTestDataIfExists(this, "testdata/uproot-cases/sample-6.18.00-uncompressed.root"));
+        TFile testfile = TFile.getFromFile(getBigTestDataIfExists("testdata/uproot-cases/sample-6.18.00-uncompressed.root"));
     }
 
     @Test(expected = NoSuchElementException.class)

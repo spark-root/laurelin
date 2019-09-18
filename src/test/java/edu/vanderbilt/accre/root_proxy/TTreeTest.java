@@ -11,7 +11,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import org.junit.Test;
 
-import edu.vanderbilt.accre.LaurelinTest;
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
@@ -24,7 +23,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TLeaf;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 
-public class TTreeTest extends LaurelinTest {
+public class TTreeTest {
     private TTree getTestTree() throws IOException {
         String testPath = "testdata/uproot-small-flat-tree.root";
         String testTree = "tree";
@@ -33,7 +32,7 @@ public class TTreeTest extends LaurelinTest {
     }
 
     private TTree getBigTestTree() throws IOException {
-        String testPath = getBigTestDataIfExists(this, "testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root");
+        String testPath = getBigTestDataIfExists("testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root");
         String testTree = "Events";
         TFile currFile = TFile.getFromFile(testPath);
         return new TTree(currFile.getProxy(testTree), currFile);

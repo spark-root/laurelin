@@ -132,13 +132,14 @@ public class Helpers {
      * @param path File name of the desired test data
      * @return The relative path of the data
      */
-    public static String getBigTestDataIfExists(LaurelinTest testClass, String path) {
+    public static String getBigTestDataIfExists(String path) {
         Function<Event, Integer> cb = null;
         cb = e -> {
             profileStorage.add(e.getStorage());
             return 0;
         };
         IOProfile.getInstance(1, cb);
+        initializeShutdownHook();
         String pristinePath = path.replace("testdata/", "testdata/pristine/");
         File p = new File(pristinePath);
         boolean pristineExists = p.isFile();
@@ -166,6 +167,26 @@ public class Helpers {
     }
 
     /**
+     * JUnit itself doesn't provide for a global teardown after all tests are
+     * run, so we (ab)use the JVM's shutdown behavior to let us perform some
+     * cleanup tasks once every task in the test suite is complete
+     */
+    private static synchronized void initializeShutdownHook() {
+        if (hookInitialized == false) {
+            Thread hook = new Thread(() -> {
+                checkpointIO();
+            });
+            Runtime.getRuntime().addShutdownHook(hook);
+            hookInitialized = true;
+        }
+    }
+
+    /**
+     * Tracks if the shutdown hook was initialized.
+     */
+    private static boolean hookInitialized = false;
+
+    /**
      * Stores all the I/O for all test cases globally. We use this information
      * to allow us to minify large test cases into smaller ones. Obnoxiously,
      * neither junit nor java have the right support to perform an action right
@@ -175,7 +196,7 @@ public class Helpers {
     public static List<Storage> profileStorage = Collections.synchronizedList(new LinkedList<IOProfile.Event.Storage>());
     public static String profilePath = Paths.get("").toAbsolutePath().toString() + "/unittest_ioprofile.txt";
 
-    public static void checkpointIO() {
+    private static void checkpointIO() {
         logger.info("Checkpointing IOProfile data to " + profilePath);
         HashMap<Integer, String> fidMap = new HashMap<Integer, String>();
         HashMap<Integer, RangeSet<Long>> rangeMap = new HashMap<Integer, RangeSet<Long>>();
