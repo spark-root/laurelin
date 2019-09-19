@@ -32,7 +32,6 @@ import org.apache.spark.sql.vectorized.ColumnarArray;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.junit.Test;
 
-import edu.vanderbilt.accre.LaurelinTest;
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.Root;
 import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
@@ -43,7 +42,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
-public class TTreeDataSourceUnitTest extends LaurelinTest {
+public class TTreeDataSourceUnitTest {
     @Test
     public void testMultipleBasketsForiter() throws IOException {
         Map<String, String> optmap = new HashMap<String, String>();
@@ -72,7 +71,7 @@ public class TTreeDataSourceUnitTest extends LaurelinTest {
 
     @Test
     public void testMultipleBasketsForBigNano() throws IOException {
-        String testPath = getBigTestDataIfExists(this, "testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root");
+        String testPath = getBigTestDataIfExists("testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root");
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", testPath);
         optmap.put("tree",  "Events");

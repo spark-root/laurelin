@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+
+import os
+import os.path
+import urllib.request
+import shutil
+
+for line in open('testdata/pristine-manifest.txt', 'r'):
+    try:
+        split = line.strip().split()
+        name = split[0]
+        dirname = os.path.dirname(name)
+        basename = os.path.basename(name)
+        size = int(split[1])
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        if not os.path.exists(name):
+            print("Missing %s, downloading from mirror" % name)
+            mirror_base = "http://mirror.accre.vanderbilt.edu/spark/pristine/"
+            remote_path = mirror_base + name.replace("testdata/pristine/", "")
+            print("Remote path: %s" % remote_path)
+            local_path, headers = response = urllib.request.urlretrieve(remote_path)
+            local_size = os.stat(local_path).st_size
+            if local_size == size:
+                shutil.move(local_path, name)
+            else:
+                print("Manifest size (%d) and remote size (%d) don't match" %
+                            (size, local_size))
+    except Exception as e:
+        print("Could not download %s: %s" % (line.strip(), e))

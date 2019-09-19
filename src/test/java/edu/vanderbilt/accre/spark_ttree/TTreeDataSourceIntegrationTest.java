@@ -9,8 +9,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import edu.vanderbilt.accre.Helpers;
-
 public class TTreeDataSourceIntegrationTest {
     private static SparkSession spark;
 
@@ -88,7 +86,6 @@ public class TTreeDataSourceIntegrationTest {
         if (spark != null) {
             spark.stop();
         }
-        Helpers.checkpointIO();
     }
 
 }
