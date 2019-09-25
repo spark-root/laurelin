@@ -122,12 +122,13 @@ public class SlimTBranch implements Serializable {
                 } else {
                     tmpFile = fileCache.getROOTFile(path);
                 }
-                // the last event of each basket is guaranteed to be unique and
+                // the offset of each basket is guaranteed to be unique and
                 // stable
-                RawArray data = basketCache.get(tmpFile, basket.getLast());
+                RawArray data = null;
+                data = basketCache.get(tmpFile, basket.getOffset());
                 if (data == null) {
                     data = new RawArray(basket.getPayload());
-                    basketCache.put(tmpFile, basket.getLast(), data);
+                    basketCache.put(tmpFile, basket.getOffset(), data);
                 }
                 return data;
             } catch (IOException e) {
@@ -168,7 +169,13 @@ public class SlimTBranch implements Serializable {
         public int getLast() {
             return last;
         }
-        private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
+
+        public long getOffset() {
+            return offset;
+        }
+
+        private static final char[] hexArray = "0123456789ABCDEF".toCharArray();
+
         public static String bytesToHex(byte[] bytes) {
             char[] hexChars = new char[bytes.length * 2];
             for ( int j = 0; j < bytes.length; j++ ) {
