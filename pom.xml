@@ -191,23 +191,27 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                <!-- Generates code coverage report from website. -->
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>0.8.4</version>
                     <executions>
                         <execution>
+                            <id>prepare-agent</id>
                             <goals>
                                 <goal>prepare-agent</goal>
                             </goals>
                         </execution>
-                        <execution>
-                            <id>report</id>
-                            <phase>test</phase>
-                            <goals>
-                                <goal>report</goal>
-                            </goals>
-                        </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                <!-- Submit code coverage report to Coveralls.io. -->
+                    <groupId>org.eluder.coveralls</groupId>
+                    <artifactId>coveralls-maven-plugin</artifactId>
+                    <version>4.3.0</version>
+                    <configuration>
+                    <!-- Since we use Travis CI we do not have to put a Coveralls token here. -->
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
