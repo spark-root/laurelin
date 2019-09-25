@@ -197,16 +197,11 @@
                     <version>0.8.4</version>
                     <executions>
                         <execution>
-                            <id>prepare-agent</id>
+                            <id>default</id>
                             <goals>
                                 <goal>prepare-agent</goal>
+                                <goal>report</goal>
                             </goals>
-                            <configuration>
-                                <!-- Sets the path to the file which contains the execution data. -->
-                                <dataFile>target/jacoco.exec</dataFile>
-                                <!-- Sets the output directory for the code coverage report. -->
-                                <outputDirectory>target/jacoco</outputDirectory>
-                            </configuration>
                         </execution>
                     </executions>
                 </plugin>

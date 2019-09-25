@@ -9,7 +9,7 @@ before_script:
 install:
   - mvn test-compile -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 script:
-  - mvn test jacoco:report
+  - mvn clean jacoco:prepare-agent install jacoco:report
 after_script:
   - JACOCO_SOURCE_PATH=src/main/java ./cc-test-reporter format-coverage target/site/jacoco/jacoco.xml --input-type jacoco
   - ./cc-test-reporter upload-coverage
