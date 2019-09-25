@@ -23,7 +23,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
  * without needing to deserialize the ROOT metadata -- i.e. this contains paths
  * and byte offsets to each basket
  */
-public class SlimTBranch implements Serializable {
+public class SlimTBranch implements Serializable, SlimTBranchInterface {
     private static final long serialVersionUID = 1L;
     private String path;
     private long []basketEntryOffsets;
@@ -52,22 +52,27 @@ public class SlimTBranch implements Serializable {
         return slimBranch;
     }
 
+    @Override
     public long [] getBasketEntryOffsets() {
         return basketEntryOffsets;
     }
 
+    @Override
     public SlimTBasket getBasket(int basketid) {
         return baskets.get(basketid);
     }
 
+    @Override
     public void addBasket(SlimTBasket basket) {
         baskets.add(basket);
     }
 
+    @Override
     public String getPath() {
         return path;
     }
 
+    @Override
     public TBranch.ArrayDescriptor getArrayDesc() {
         return arrayDesc;
     }
@@ -78,29 +83,17 @@ public class SlimTBranch implements Serializable {
      * @param fileCache
      * @return GetBasket object used by array
      */
+    @Override
     public ArrayBuilder.GetBasket getArrayBranchCallback(Cache basketCache, ROOTFileCache fileCache) {
         return new BranchCallback(basketCache, this, fileCache);
     }
 
-    /**
-     * Glue callback to integrate with edu.vanderbilt.accre.laurelin.array
-     * @param basketCache the cache we should be using
-     * @return GetBasket object used by array
-     */
-    public ArrayBuilder.GetBasket getArrayBranchCallback(Cache basketCache) {
-        return new BranchCallback(basketCache, this, null);
-    }
-
     class BranchCallback implements ArrayBuilder.GetBasket {
         Cache basketCache;
-        SlimTBranch branch;
+        SlimTBranchInterface branch;
         ROOTFileCache fileCache;
 
-        public BranchCallback(Cache basketCache, SlimTBranch branch) {
-            this(basketCache, branch, null);
-        }
-
-        public BranchCallback(Cache basketCache, SlimTBranch branch, ROOTFileCache fileCache) {
+        public BranchCallback(Cache basketCache, SlimTBranchInterface branch, ROOTFileCache fileCache) {
             this.basketCache = basketCache;
             this.branch = branch;
             this.fileCache = fileCache;
@@ -141,7 +134,7 @@ public class SlimTBranch implements Serializable {
         private static final Logger logger = LogManager.getLogger();
 
         private static final long serialVersionUID = 1L;
-        private SlimTBranch branch;
+        private SlimTBranchInterface branch;
         private long offset;
         private int compressedLen;
         private int uncompressedLen;
@@ -149,7 +142,7 @@ public class SlimTBranch implements Serializable {
         private int last;
         private Cursor payload;
 
-        public SlimTBasket(SlimTBranch branch, long offset, int compressedLen, int uncompressedLen, int keyLen, int last) {
+        public SlimTBasket(SlimTBranchInterface branch, long offset, int compressedLen, int uncompressedLen, int keyLen, int last) {
             this.branch = branch;
             this.offset = offset;
             this.compressedLen = compressedLen;

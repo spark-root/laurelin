@@ -49,6 +49,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
+import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranchInterface;
 import edu.vanderbilt.accre.laurelin.spark_ttree.StructColumnVector;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
@@ -180,7 +181,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                     vecs.add(new StructColumnVector(field.dataType(), nestedVecs));
                     continue;
                 }
-                SlimTBranch slimBranch = slimBranches.get(field.name());
+                SlimTBranchInterface slimBranch = slimBranches.get(field.name());
                 SimpleType rootType;
                 rootType = SimpleType.fromString(field.metadata().getString("rootType"));
 
