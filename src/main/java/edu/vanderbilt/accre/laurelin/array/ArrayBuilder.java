@@ -1,14 +1,23 @@
 package edu.vanderbilt.accre.laurelin.array;
 
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
+import java.util.Arrays;
+import java.util.Map.Entry;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.google.common.collect.ImmutableRangeMap;
+import com.google.common.collect.ImmutableRangeMap.Builder;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Range;
 
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 
 public class ArrayBuilder {
+    private static final Logger logger = LogManager.getLogger();
 
     /**
      * Subset of only the values in TKey which describes the basket on-disk.
@@ -53,204 +62,152 @@ public class ArrayBuilder {
     Interpretation interpretation;
     int[] basket_itemoffset;
     int[] basket_entryoffset;
-    Array array;
+    BasketKey[] basketkeys;
+    private Array array;
+    Array output_relative;
+    Array output_whole;
     ArrayList<FutureTask<Boolean>> tasks;
+    private long[] basketEntryOffsets;
+    int global_offset_whole;
+
+    private Array processBasket(long entryOffset, long itemOffset, Range<Long> entryRange, int basketId, GetBasket basketCallback, Array output) {
+        // Put entryRange from the given basketId into output, starting at entry/itemoffset in the destination
+        int entryStart = Math.toIntExact(entryRange.lowerEndpoint());
+        int entryStop = Math.toIntExact(entryRange.upperEndpoint());
+        int entries = entryStop - entryStart;
+        BasketKey basketKey = basketCallback.basketkey(basketId);;
+        int bytes = basketKey.fLast - basketKey.fKeylen;
+        int items = interpretation.numitems(bytes, entries);
+        logger.trace("e0: {} e1: {} i0: {} i1: {} estart: {} estop: {} b: {}", entryOffset, entries, itemOffset, items, entryStart, entryStop);
+
+        RawArray basketdata = basketCallback.dataWithoutKey(basketId);
+        Array source = null;
+
+
+        int border = basketKey.fLast - basketKey.fKeylen;
+        if (basketKey.fObjlen == border) {
+            basketdata = interpretation.convertBufferDiskToMemory(basketdata);
+            source = interpretation.fromroot(basketdata, null, 0, entryStop - entryStart);
+        } else {
+            RawArray content = basketdata.slice(0, border);
+            RawArray offsets = basketdata.slice(border + 4, basketKey.fObjlen);
+            PrimitiveArray.Int4 testcontent = new PrimitiveArray.Int4(content);
+            PrimitiveArray.Int4 testoffsets = new PrimitiveArray.Int4(offsets);
+            PrimitiveArray.Int4 byteoffsets = new PrimitiveArray.Int4(offsets).add(true, -basketKey.fKeylen);
+            byteoffsets.put(byteoffsets.length() - 1, border);
+            content = interpretation.subarray().convertBufferDiskToMemory(content);
+            byteoffsets = interpretation.subarray().convertOffsetDiskToMemory(byteoffsets);
+            int start = (0);
+            int stop = (entryStop - entryStart);
+            //System.out.println(String.format("pp1 start: %d stop: %d content: %s byteoffsets: %s", start, stop, testcontent, byteoffsets));
+            source = interpretation.fromroot(content, byteoffsets, start, stop);
+        }
+
+        interpretation.fill(source,
+                output,
+                (int) itemOffset,
+                (int) (itemOffset + items),
+                (int) entryOffset,
+                (int) (entryOffset + entries));
+        return output;
+    }
 
     public ArrayBuilder(GetBasket getbasket, Interpretation interpretation, long[] basketEntryOffsets, Executor executor, long entrystart, long entrystop) {
+        this.basketEntryOffsets = basketEntryOffsets;
         this.interpretation = interpretation;
+        this.global_offset_whole = -1;
 
         if (basketEntryOffsets.length == 0  ||  basketEntryOffsets[0] != 0) {
             throw new IllegalArgumentException("basketEntryOffsets must start with zero");
         }
         for (int i = 1;  i < basketEntryOffsets.length;  i++) {
             if (basketEntryOffsets[i] < basketEntryOffsets[i - 1]) {
-                throw new IllegalArgumentException("basketEntryOffsets must be monotonically increasing");
+                throw new IllegalArgumentException("basketEntryOffsets must be monotonically increasing "
+                                + Integer.toString(i) + " / " + Integer.toString(basketEntryOffsets.length)
+                                + ": "  + Long.toString(basketEntryOffsets[i])
+                                + " ?>? " + Long.toString(basketEntryOffsets[i - 1])
+                                + " offsets: " + Arrays.toString(basketEntryOffsets));
             }
         }
-
-        int basketstart = -1;
-        int basketstop = -1;
-
-        for (int i = 0;  i < basketEntryOffsets.length - 1;  i++) {
-            if (basketstart == -1) {
-                if (entrystart < basketEntryOffsets[i + 1]  &&  basketEntryOffsets[i] < entrystop) {
-                    basketstart = i;
-                    basketstop = i;
-                }
-            } else {
-                if (basketEntryOffsets[i] < entrystop) {
-                    basketstop = i;
-                }
-            }
+        Builder<Long, Integer> rangeBuilder = ImmutableRangeMap.builder();
+        for (int i = 1; i < basketEntryOffsets.length; i += 1) {
+            rangeBuilder = rangeBuilder.put(Range.closedOpen(basketEntryOffsets[i - 1], basketEntryOffsets[i]), i - 1);
         }
+        rangeBuilder = rangeBuilder.put(Range.atLeast(basketEntryOffsets[basketEntryOffsets.length - 1]), basketEntryOffsets.length - 1);
+        ImmutableRangeMap<Long, Integer> entryRangeMap = rangeBuilder.build();
 
-        if (basketstop != -1) {
-            basketstop += 1;
+        ImmutableRangeMap<Long, Integer> intersection = entryRangeMap.subRangeMap(Range.closedOpen(entrystart, entrystop));
+        // This emits the entryRange and associated basketid we need to process
+        ImmutableSet<Entry<Range<Long>, Integer>> intersectionEntries = intersection.asMapOfRanges().entrySet();
+        long entryOffset_whole = 0;
+        long itemOffset_whole = 0;
+
+        // Loop once to calculate the length of the output buffer
+        for (Entry<Range<Long>, Integer> entry: intersectionEntries) {
+            Range<Long> entryRange = entry.getKey();
+            Integer basketId = entry.getValue();
+            BasketKey key = getbasket.basketkey(basketId);
+            int bytes = key.fLast - key.fKeylen;
+
+            // whole basket
+            long entries_whole = basketEntryOffsets[basketId + 1] - basketEntryOffsets[basketId];
+            Range<Long> entryRange_whole = Range.closedOpen(basketEntryOffsets[basketId], basketEntryOffsets[basketId + 1]);
+            long items_whole = interpretation.numitems(bytes, (int)entries_whole);
+
+            // postlogue
+            entryOffset_whole += entries_whole;
+            itemOffset_whole += items_whole;
         }
+        //System.out.println("making dest " + itemOffset_whole + " " + entryOffset_whole);
+        output_whole = interpretation.destination((int)itemOffset_whole, (int)entryOffset_whole);
+        entryOffset_whole = 0;
+        itemOffset_whole = 0;
+        // Now loop again to do the actual filling
+        for (Entry<Range<Long>, Integer> entry: intersectionEntries) {
+            Range<Long> entryRange = entry.getKey();
+            Integer basketId = entry.getValue();
+            BasketKey key = getbasket.basketkey(basketId);
+            int bytes = key.fLast - key.fKeylen;
 
-        if (basketstart == -1) {
-            basket_itemoffset = null;
-            basket_entryoffset = null;
-            array = interpretation.empty();
-        } else {
-            BasketKey[] basketkeys = new BasketKey[basketstop - basketstart];
-            for (int j = 0;  j < basketstop - basketstart;  j++) {
-                basketkeys[j] = getbasket.basketkey(basketstart + j);
+
+            // whole basket
+            long entries_whole = basketEntryOffsets[basketId + 1] - basketEntryOffsets[basketId];
+            Range<Long> entryRange_whole = Range.closedOpen(basketEntryOffsets[basketId], basketEntryOffsets[basketId + 1]);
+            long items_whole = interpretation.numitems(bytes, (int)entries_whole);
+
+            if (global_offset_whole == -1) {
+                global_offset_whole = (int) (entrystart - basketEntryOffsets[basketId]);
+                //System.out.println("Offset whole is " + global_offset_whole);
             }
+            processBasket(entryOffset_whole, itemOffset_whole, entryRange_whole, basketId, getbasket, output_whole);
 
-            long totalitems = 0;
-            long totalentries = 0;
-            basket_itemoffset = new int[1 + basketstop - basketstart];
-            basket_entryoffset = new int[1 + basketstop - basketstart];
-
-            basket_itemoffset[0] = 0;
-            basket_entryoffset[0] = 0;
-            for (int j = 1;  j < 1 + basketstop - basketstart;  j++) {
-                long numentries = basketEntryOffsets[j + basketstart] - basketEntryOffsets[j + basketstart - 1];
-                totalentries += numentries;
-                if (totalentries != (int)totalentries) {
-                    throw new IllegalArgumentException("number of entries requested of ArrayBuilder.build must fit into a 32-bit integer");
-                }
-
-                int numbytes = basketkeys[j - 1].fLast - basketkeys[j - 1].fKeylen;
-                long numitems = interpretation.numitems(numbytes, (int)numentries);
-
-                totalitems += numitems;
-                if (totalitems != (int)totalitems) {
-                    throw new IllegalArgumentException("number of items requested of ArrayBuilder.build must fit into a 32-bit integer");
-                }
-
-                basket_itemoffset[j] = basket_itemoffset[j - 1] + (int)numitems;
-                basket_entryoffset[j] = basket_entryoffset[j - 1] + (int)numentries;
-            }
-
-            array = interpretation.destination((int)totalitems, (int)totalentries);
-
-            tasks = new ArrayList<FutureTask<Boolean>>(basketstop - basketstart);
-
-            for (int j = 0;  j < basketstop - basketstart;  j++) {
-                CallableFill fill = new CallableFill(interpretation, getbasket, j, basketkeys, array, entrystart, entrystop, basketstart, basketstop, basket_itemoffset, basket_entryoffset, basketEntryOffsets);
-
-                if (executor == null) {
-                    fill.call();
-                }
-                else {
-                    FutureTask<Boolean> task = new FutureTask<Boolean>(fill);
-                    tasks.add(task);
-                    executor.execute(task);
-                }
-            }
+            // postlogue
+            entryOffset_whole += entries_whole;
+            itemOffset_whole += items_whole;
         }
+//      tasks = new ArrayList<FutureTask<Boolean>>(basketstop - basketstart);
+//      if (executor == null) {
+//      //fill.call();
+//  }
+//  else {
+//      FutureTask<Boolean> task = new FutureTask<Boolean>(fill);
+//      tasks.add(task);
+//      executor.execute(task);
+//  }
     }
 
     public Array getArray(int rowId, int count) {
-        for (FutureTask<Boolean> task : tasks) {
-            try {
-                task.get();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e.toString());
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e.toString());
-            }
-        }
-        return array.clip(basket_entryoffset[0] + rowId, basket_entryoffset[0] + rowId + count);
-    }
-
-    private static class CallableFill implements Callable<Boolean> {
-        Interpretation interpretation;
-        GetBasket getbasket;
-        int j;
-        BasketKey[] basketkeys;
-        Array destination;
-        long entrystart;
-        long entrystop;
-        int basketstart;
-        int basketstop;
-        int[] basket_itemoffset;
-        int[] basket_entryoffset;
-        long[] basketEntryOffsets;
-
-        CallableFill(Interpretation interpretation, GetBasket getbasket, int j, BasketKey[] basketkeys, Array destination, long entrystart, long entrystop, int basketstart, int basketstop, int[] basket_itemoffset, int[] basket_entryoffset, long[] basketEntryOffsets) {
-            this.interpretation = interpretation;
-            this.getbasket = getbasket;
-            this.j = j;
-            this.basketkeys = basketkeys;
-            this.destination = destination;
-            this.entrystart = entrystart;
-            this.entrystop = entrystop;
-            this.basketstart = basketstart;
-            this.basketstop = basketstop;
-            this.basket_itemoffset = basket_itemoffset;
-            this.basket_entryoffset = basket_entryoffset;
-            this.basketEntryOffsets = basketEntryOffsets;
-        }
-
-        @Override
-        public Boolean call() {
-            // https://github.com/scikit-hep/uproot/blob/3.8.0/uproot/tree.py#L1361
-            // https://github.com/scikit-hep/uproot/blob/3.8.0/uproot/tree.py#L1132
-
-            int i = j + basketstart;
-
-            int local_entrystart = (int)(entrystart - basketEntryOffsets[i]);
-            if (local_entrystart < 0) {
-                local_entrystart = 0;
-            }
-            int local_entrystop = (int)(entrystop - basketEntryOffsets[i]);
-            if (local_entrystop > (int)(basketEntryOffsets[i + 1] - basketEntryOffsets[i])) {
-                local_entrystop = (int)(basketEntryOffsets[i + 1] - basketEntryOffsets[i]);
-            }
-            if (local_entrystop < 0) {
-                local_entrystop = 0;
-            }
-
-            RawArray basketdata = getbasket.dataWithoutKey(i);
-
-            Array source = null;
-            int border = basketkeys[j].fLast - basketkeys[j].fKeylen;
-
-            if (basketkeys[j].fObjlen == border) {
-                basketdata = interpretation.convertBufferDiskToMemory(basketdata);
-                source = interpretation.fromroot(basketdata, null, local_entrystart, local_entrystop);
-            } else {
-                RawArray content = basketdata.slice(0, border);
-                PrimitiveArray.Int4 byteoffsets = new PrimitiveArray.Int4(basketdata.slice(border + 4, basketkeys[j].fObjlen)).add(true, -basketkeys[j].fKeylen);
-                byteoffsets.put(byteoffsets.length() - 1, border);
-                content = interpretation.subarray().convertBufferDiskToMemory(content);
-                byteoffsets = interpretation.subarray().convertOffsetDiskToMemory(byteoffsets);
-                source = interpretation.fromroot(content, byteoffsets, local_entrystart, local_entrystop);
-            }
-
-            int expecteditems = basket_itemoffset[j + 1] - basket_itemoffset[j];
-            int source_numitems = interpretation.source_numitems(source);
-
-            int expectedentries = basket_entryoffset[j + 1] - basket_entryoffset[j];
-            int source_numentries = local_entrystop - local_entrystart;
-
-            if (j + 1 == basketstop - basketstart) {
-                if (expecteditems > source_numitems) {
-                    basket_itemoffset[j + 1] -= expecteditems - source_numitems;
-                }
-                if (expectedentries > source_numentries) {
-                    basket_entryoffset[j + 1] -= expectedentries - source_numentries;
-                }
-            } else if (j == 0) {
-                if (expecteditems > source_numitems) {
-                    basket_itemoffset[j] += expecteditems - source_numitems;
-                }
-                if (expectedentries > source_numentries) {
-                    basket_entryoffset[j] += expectedentries - source_numentries;
-                }
-            }
-
-            interpretation.fill(source,
-                                destination,
-                                basket_itemoffset[j],
-                                basket_itemoffset[j + 1],
-                                basket_entryoffset[j],
-                                basket_entryoffset[j + 1]);
-
-            return true;
-        }
+//        for (FutureTask<Boolean> task : tasks) {
+//            try {
+//                task.get();
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e.toString());
+//            } catch (ExecutionException e) {
+//                throw new RuntimeException(e.toString());
+//            }
+//        }
+        Array x = output_whole.clip(global_offset_whole + rowId, global_offset_whole + rowId + count);
+        // Array y = array.clip(basket_entryoffset[0] + rowId, basket_entryoffset[0] + rowId + count);
+        return x;
     }
 }
