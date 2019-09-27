@@ -185,7 +185,7 @@ public class AsDtype implements Interpretation {
             case UINT4:
                 return new PrimitiveArray.Int8(this, sliced);
             case UINT8:
-                return new PrimitiveArray.Float8(this, sliced);
+                return new PrimitiveArray.Int8(this, sliced);
             case FLOAT4:
                 return new PrimitiveArray.Float4(this, sliced);
             case FLOAT8:
@@ -220,7 +220,7 @@ public class AsDtype implements Interpretation {
             case UINT4:
                 return new PrimitiveArray.Int8(this, length);
             case UINT8:
-                return new PrimitiveArray.Float8(this, length);
+                return new PrimitiveArray.Int8(this, length);
             case FLOAT4:
                 return new PrimitiveArray.Float4(this, length);
             case FLOAT8:
@@ -280,18 +280,12 @@ public class AsDtype implements Interpretation {
             case UINT8:
                 /*
                  * There is no type in Spark that can represent the full range
-                 * of 8-byte unnsigned integers, so we need to cast it to a
-                 * double
+                 * of 8-byte unsigned integers, so we need to cast it to a
+                 * long
                  */
                 converted = ByteBuffer.allocate(source.length());
-                for (int i = 0; i < source.length(); i += 8) {
-                    long tmp = source.getLong(i);
-                    if (tmp >= 0) {
-                        converted.putDouble(i, tmp);
-                    } else {
-                        double ret = tmp + 1.8446744073709552E19;
-                        converted.putDouble(i, ret);
-                    }
+                for (int i = 0; i < source.length(); i += 1) {
+                    converted.put(source.getByte(i));
                 }
                 return new RawArray(converted);
             default:
