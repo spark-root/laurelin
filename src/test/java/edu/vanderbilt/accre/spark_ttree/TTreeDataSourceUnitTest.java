@@ -34,13 +34,13 @@ import org.junit.Test;
 
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.Root;
-import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
+import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeDataSourceV2Reader;
 
 public class TTreeDataSourceUnitTest {
     @Test

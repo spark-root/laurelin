@@ -12,7 +12,7 @@ import org.apache.spark.sql.types.StructType;
 import org.junit.Test;
 
 import edu.vanderbilt.accre.laurelin.Root;
-import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
+import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeDataSourceV2Reader;
 
 public class ParseSchemaTest {
     @Test
