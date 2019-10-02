@@ -31,7 +31,6 @@ public class TTreeColumnVector extends ColumnVector {
 
     public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, Cache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor, ROOTFileCache fileCache) {
         super(type);
-        logger.trace("new column vec of type: " + type);
 
         this.basketEntryOffsets = slimBranch.getBasketEntryOffsets();
         this.getbasket = slimBranch.getArrayBranchCallback(basketCache, fileCache);

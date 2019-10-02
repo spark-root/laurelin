@@ -78,7 +78,6 @@ public class ArrayBuilder {
         BasketKey basketKey = basketCallback.basketkey(basketId);;
         int bytes = basketKey.fLast - basketKey.fKeylen;
         int items = interpretation.numitems(bytes, entries);
-        logger.trace("e0: {} e1: {} i0: {} i1: {} estart: {} estop: {} b: {}", entryOffset, entries, itemOffset, items, entryStart, entryStop);
 
         RawArray basketdata = basketCallback.dataWithoutKey(basketId);
         Array source = null;
