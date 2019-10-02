@@ -1,5 +1,6 @@
 package edu.vanderbilt.accre.spark_ttree;
 
+import static edu.vanderbilt.accre.Helpers.getBigTestDataIfExists;
 import static org.junit.Assert.assertArrayEquals;
 
 import java.io.BufferedReader;
@@ -284,9 +285,10 @@ public class TTreeColumnVectorTest {
 
     @Test
     public void testThing() throws FileNotFoundException, IOException {
+        String path = getBigTestDataIfExists("testdata/pristine/dump-nano-4-muon-pt.txt");
         ArrayList<float []> good = new ArrayList<float []>();
         good.ensureCapacity(50000);
-        try (BufferedReader br = new BufferedReader(new FileReader("testdata/pristine/dump-nano-4-muon-pt.txt"))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
             String line;
             while ((line = br.readLine()) != null) {
                 if (line.equals("")) {
