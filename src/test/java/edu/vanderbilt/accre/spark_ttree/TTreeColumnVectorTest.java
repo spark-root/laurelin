@@ -112,7 +112,7 @@ public class TTreeColumnVectorTest {
         @Override
         public SlimTBasket getBasket(int basketid) {
             int len = payload.get(basketid).limit();
-            return new SlimTBasket(this, 0, fObjLen.get(basketid), fObjLen.get(basketid), keyLen, fLast.get(basketid));
+            return SlimTBasket.makeEagerBasket(this, 0L, (int)fObjLen.get(basketid), (int)fObjLen.get(basketid),(int) keyLen, (int)fLast.get(basketid));
         }
 
         @Override

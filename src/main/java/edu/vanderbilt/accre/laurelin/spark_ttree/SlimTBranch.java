@@ -15,8 +15,8 @@ import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.root_proxy.Cursor;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
-import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
+import edu.vanderbilt.accre.laurelin.root_proxy.TKey;
 
 /**
  * Contains all the info needed to read a TBranch and its constituent TBaskets
@@ -39,14 +39,9 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
 
     public static SlimTBranch getFromTBranch(TBranch fatBranch) {
         SlimTBranch slimBranch = new SlimTBranch(fatBranch.getTree().getBackingFile().getFileName(), fatBranch.getBasketEntryOffsets(), fatBranch.getArrayDescriptor());
-        for (TBasket basket: fatBranch.getBaskets()) {
-            SlimTBasket slimBasket = new SlimTBasket(slimBranch,
-                                                        basket.getAbsoluteOffset(),
-                                                        basket.getBasketBytes() - basket.getKeyLen(),
-                                                        basket.getObjLen(),
-                                                        basket.getKeyLen(),
-                                                        basket.getLast()
-                                                        );
+        for (int i = 0; i < fatBranch.getBasketCount(); i += 1) {
+            SlimTBasket slimBasket = SlimTBasket.makeLazyBasket(slimBranch,
+                                                        fatBranch.getBasketSeek()[i]);
             slimBranch.addBasket(slimBasket);
         }
         return slimBranch;
@@ -80,7 +75,7 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
     /**
      * Glue callback to integrate with edu.vanderbilt.accre.laurelin.array
      * @param basketCache the cache we should be using
-     * @param fileCache
+     * @param fileCache storage for filehandles
      * @return GetBasket object used by array
      */
     @Override
@@ -99,28 +94,39 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
             this.fileCache = fileCache;
         }
 
+        private ROOTFile getBackingFile() throws IOException {
+            ROOTFile tmpFile;
+            if (fileCache == null) {
+                tmpFile = ROOTFile.getInputFile(path);
+            } else {
+                tmpFile = fileCache.getROOTFile(path);
+            }
+            return tmpFile;
+        }
+
         @Override
         public ArrayBuilder.BasketKey basketkey(int basketid) {
             SlimTBasket basket = branch.getBasket(basketid);
-            return new ArrayBuilder.BasketKey(basket.getKeyLen(), basket.getLast(), basket.getObjLen());
+            try {
+                ROOTFile tmpFile = getBackingFile();
+                basket.initializeMetadata(tmpFile);
+                return new ArrayBuilder.BasketKey(basket.getKeyLen(), basket.getLast(), basket.getObjLen());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         @Override
         public RawArray dataWithoutKey(int basketid) {
             SlimTBasket basket = branch.getBasket(basketid);
-            ROOTFile tmpFile;
             try {
-                if (fileCache == null) {
-                    tmpFile = ROOTFile.getInputFile(path);
-                } else {
-                    tmpFile = fileCache.getROOTFile(path);
-                }
+                ROOTFile tmpFile = getBackingFile();
                 // the offset of each basket is guaranteed to be unique and
                 // stable
                 RawArray data = null;
                 data = basketCache.get(tmpFile, basket.getOffset());
                 if (data == null) {
-                    data = new RawArray(basket.getPayload());
+                    data = new RawArray(basket.getPayload(tmpFile));
                     basketCache.put(tmpFile, basket.getOffset(), data);
                 }
                 return data;
@@ -136,30 +142,86 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
         private static final long serialVersionUID = 1L;
         private SlimTBranchInterface branch;
         private long offset;
+        private Cursor payload;
+
+
+        private boolean isPopulated = false;
         private int compressedLen;
         private int uncompressedLen;
         private int keyLen;
         private int last;
-        private Cursor payload;
+        private TKey key;
 
-        public SlimTBasket(SlimTBranchInterface branch, long offset, int compressedLen, int uncompressedLen, int keyLen, int last) {
-            this.branch = branch;
+        private short vers;
+        private int fBufferSize;
+        private int fNevBufSize;
+        private int fNevBuf;
+        private byte fHeaderOnly;
+        private Cursor headerEnd;
+
+        private SlimTBasket(SlimTBranchInterface slimBranch, long offset) {
+            branch = slimBranch;
             this.offset = offset;
-            this.compressedLen = compressedLen;
-            this.uncompressedLen = uncompressedLen;
-            this.keyLen = keyLen;
-            this.last = last;
+        }
+
+        public static SlimTBasket makeEagerBasket(SlimTBranchInterface branch, long offset, int compressedLen, int uncompressedLen, int keyLen, int last) {
+            SlimTBasket ret = new SlimTBasket(branch, offset);
+            ret.isPopulated = true;
+            ret.compressedLen = compressedLen;
+            ret.uncompressedLen = uncompressedLen;
+            ret.keyLen = keyLen;
+            ret.last = last;
+            return ret;
+        }
+
+        public static SlimTBasket makeLazyBasket(SlimTBranchInterface branch, long offset) {
+            SlimTBasket ret = new SlimTBasket(branch, offset);
+            ret.isPopulated = false;
+            return ret;
+        }
+
+        public synchronized void initializeMetadata(ROOTFile tmpFile) {
+            if (isPopulated == false) {
+                try {
+                    Cursor cursor = tmpFile.getCursor(offset);
+                    key = new TKey();
+                    key.getFromFile(cursor);
+                    keyLen = key.getKeyLen();
+                    compressedLen = key.getNBytes() - key.getKeyLen();
+                    uncompressedLen = key.getObjLen();
+                    Cursor c = key.getEndCursor().duplicate();
+                    vers = c.readShort();
+                    fBufferSize = c.readInt();
+                    fNevBufSize = c.readInt();
+                    fNevBuf = c.readInt();
+                    last = c.readInt();
+                    fHeaderOnly = c.readChar();
+                    headerEnd = c;
+                    isPopulated = true;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
 
         public int getKeyLen() {
+            if (isPopulated == false) {
+                throw new RuntimeException("Slim basket not initialized");
+            }
             return keyLen;
         }
 
         public int getObjLen() {
+            if (isPopulated == false) {
+                throw new RuntimeException("Slim basket not initialized");
+            }
             return uncompressedLen;
         }
 
         public int getLast() {
+            if (isPopulated == false) {
+                throw new RuntimeException("Slim basket not initialized");
+            }
             return last;
         }
 
@@ -167,41 +229,23 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
             return offset;
         }
 
-        private static final char[] hexArray = "0123456789ABCDEF".toCharArray();
-
-        public static String bytesToHex(byte[] bytes) {
-            char[] hexChars = new char[bytes.length * 2];
-            for ( int j = 0; j < bytes.length; j++ ) {
-                int v = bytes[j] & 0xFF;
-                hexChars[j * 2] = hexArray[v >>> 4];
-                hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-            }
-            return new String(hexChars);
-        }
-        private void initializePayload() throws IOException {
-            ROOTFile tmpFile = ROOTFile.getInputFile(branch.getPath());
-            Cursor fileCursor = tmpFile.getCursor(offset);
-            this.payload = fileCursor.getPossiblyCompressedSubcursor(0,
-                    compressedLen,
-                    uncompressedLen,
-                    0);
-        }
-
-        public ByteBuffer getPayload(long offset, int len) throws IOException {
+        public ByteBuffer getPayload(ROOTFile tmpFile) throws IOException {
+            initializeMetadata(tmpFile);
             if (this.payload == null) {
-                initializePayload();
+                initializePayload(tmpFile);
             }
-            return this.payload.readBuffer(offset, len);
-        }
-
-        public ByteBuffer getPayload() throws IOException {
-            if (this.payload == null) {
-                initializePayload();
-            }
-            long len = payload.getLimit();
             return this.payload.readBuffer(0, uncompressedLen);
         }
 
+        private void initializePayload(ROOTFile tmpFile) throws IOException {
+            Cursor fileCursor = tmpFile.getCursor(offset);
+            if (isPopulated == false) {
+                throw new RuntimeException("Slim basket not initialized");
+            }
+            this.payload = fileCursor.getPossiblyCompressedSubcursor(keyLen,
+                    compressedLen,
+                    uncompressedLen,
+                    keyLen);
+        }
     }
-
 }

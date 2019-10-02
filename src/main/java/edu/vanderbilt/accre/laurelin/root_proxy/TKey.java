@@ -64,4 +64,16 @@ public class TKey {
     public Cursor getEndCursor() {
         return endCursor.duplicate();
     }
+
+    public int getKeyLen() {
+        return KeyLen;
+    }
+
+    public int getNBytes() {
+        return Nbytes;
+    }
+
+    public int getObjLen() {
+        return ObjLen;
+    }
 }
