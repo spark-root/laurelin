@@ -17,26 +17,25 @@ public class TBasket {
     private int fNevBuf;
     private int fLast;
     private byte fHeaderOnly;
-    private Cursor headerEnd;
     private int fBasketBytes;
     private long fBasketEntry;
     private long fBasketSeek;
+    private Cursor startCursor;
     private Cursor payload;
 
     public TBasket(Cursor cursor, int fBasketBytes, long fBasketEntry, long fBasketSeek) throws IOException {
         this.fBasketBytes = fBasketBytes;
         this.fBasketEntry = fBasketEntry;
         this.fBasketSeek = fBasketSeek;
+        startCursor = cursor.duplicate();
         key = new TKey();
-        key.getFromFile(cursor);
-        Cursor c = key.getEndCursor().duplicate();
+        Cursor c = key.getFromFile(cursor);
         vers = c.readShort();
         fBufferSize = c.readInt();
         fNevBufSize = c.readInt();
         fNevBuf = c.readInt();
         fLast = c.readInt();
         fHeaderOnly = c.readChar();
-        headerEnd = c;
     }
 
     public static TBasket getFromFile(Cursor cursor, int fBasketBytes, long fBasketEntry, long fBasketSeek) throws IOException {
@@ -46,7 +45,7 @@ public class TBasket {
 
     private void initializePayload() {
         // FIXME mutex this eventually
-        this.payload = key.getStartCursor().getPossiblyCompressedSubcursor(key.KeyLen,
+        this.payload = startCursor.getPossiblyCompressedSubcursor(key.KeyLen,
                 key.Nbytes - key.KeyLen,
                 key.ObjLen,
                 key.KeyLen);
@@ -98,14 +97,5 @@ public class TBasket {
 
     public long getBasketEntry() {
         return fBasketEntry;
-    }
-
-    /*
-     * returns the absolute offset from the beginning of the file to the first
-     * byte of the payload
-     */
-    public long getAbsoluteOffset() {
-        Cursor start = key.getStartCursor();
-        return start.getBase() + start.getOffset() + getKeyLen();
     }
 }

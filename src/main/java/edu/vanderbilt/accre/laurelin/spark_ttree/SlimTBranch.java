@@ -150,7 +150,6 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
         private int uncompressedLen;
         private int keyLen;
         private int last;
-        private TKey key;
 
         private short vers;
         private int fBufferSize;
@@ -184,12 +183,11 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
             if (isPopulated == false) {
                 try {
                     Cursor cursor = tmpFile.getCursor(offset);
-                    key = new TKey();
-                    key.getFromFile(cursor);
+                    TKey key = new TKey();
+                    Cursor c = key.getFromFile(cursor);
                     keyLen = key.getKeyLen();
                     compressedLen = key.getNBytes() - key.getKeyLen();
                     uncompressedLen = key.getObjLen();
-                    Cursor c = key.getEndCursor().duplicate();
                     vers = c.readShort();
                     fBufferSize = c.readInt();
                     fNevBufSize = c.readInt();
