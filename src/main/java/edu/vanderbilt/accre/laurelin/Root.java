@@ -445,7 +445,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
 
     @Override
     public DataSourceReader createReader(DataSourceOptions options) {
-        return createReader(options, SparkContext.getOrCreate());
+        return createReader(options, SparkContext.getOrCreate(), false);
     }
 
     /**
@@ -455,11 +455,11 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
      * @return new reader
      */
 
-    public DataSourceReader createReader(DataSourceOptions options, SparkContext context) {
+    public DataSourceReader createReader(DataSourceOptions options, SparkContext context, boolean traceIO) {
         logger.trace("make new reader");
         CacheFactory basketCacheFactory = new CacheFactory();
         CollectionAccumulator<Event.Storage> ioAccum = null;
-        if (context != null) {
+        if ((traceIO) && (context != null)) {
             ioAccum = new CollectionAccumulator<Event.Storage>();
             context.register(ioAccum, "edu.vanderbilt.accre.laurelin.ioprofile");
         }
