@@ -37,16 +37,12 @@ public class TTreeColumnVector extends ColumnVector {
 
         TBranch.ArrayDescriptor desc = slimBranch.getArrayDesc();
         if (desc == null) {
-            logger.trace("  scalar vec");
             Interpretation interpretation = new AsDtype(dtype);
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
-        }
-        else if (desc.isFixed()) {
-            logger.trace("  fixed vec");
+        } else if (desc.isFixed()) {
             Interpretation interpretation = new AsDtype(dtype, Arrays.asList(desc.getFixedLength()));
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         } else {
-            logger.trace("  slice vec");
             Interpretation interpretation = new AsJagged(new AsDtype(dtype), desc.getSkipBytes());
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         }
