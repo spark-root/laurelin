@@ -1342,4 +1342,42 @@ public class TTreeDataSourceUnitTest {
         result.close();
     }
 
+    /*
+     *  +----------------------------------------+
+        |long                                    |
+        +----------------------------------------+
+        |[0]                                     |
+        |[10, 11]                                |
+        |[20, 21, 22]                            |
+        |[30, 31, 32, 33]                        |
+        |[40, 41, 42, 43, 44]                    |
+        |[50, 51, 52, 53, 54, 55]                |
+        |[60, 61, 62, 63, 64, 65, 66]            |
+        |[70, 71, 72, 73, 74, 75, 76, 77]        |
+        |[80, 81, 82, 83, 84, 85, 86, 87, 88]    |
+        |[90, 91, 92, 93, 94, 95, 96, 97, 98, 99]|
+        +----------------------------------------+
+     */
+    @Test
+    public void testBasketingAroundVector() throws IOException {
+        TFile file = TFile.getFromFile("testdata/stdvector.root");
+        TTree tree = new TTree(file.getProxy("tvec"), file);
+        TBranch branch = tree.getBranches("long").get(0);
+        Cache cache = new Cache();
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
+
+        for (int start = 0; start < 10; start += 1) {
+            for (int end = start + 1; end <= 10; end += 1) {
+                TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, start, end, slim, null);
+                for (int i = start; i < end; i += 1) {
+                    ColumnarArray event = result.getArray(i - start);
+                    assertEquals(i + 1, event.numElements());
+                    for (int j = 0; j <= i; j += 1) {
+                        assertEquals(i * 10 + j, event.getLong(j));
+                    }
+                }
+                result.close();
+            }
+        }
+    }
 }
