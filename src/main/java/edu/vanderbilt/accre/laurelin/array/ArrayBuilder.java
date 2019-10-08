@@ -3,6 +3,7 @@ package edu.vanderbilt.accre.laurelin.array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
 
@@ -66,7 +67,7 @@ public class ArrayBuilder {
     private Array array;
     Array output_relative;
     Array output_whole;
-    ArrayList<FutureTask<Boolean>> tasks;
+    ArrayList<FutureTask<Array>> tasks = new ArrayList<FutureTask<Array>>();
     private long[] basketEntryOffsets;
     int global_offset_whole;
 
@@ -98,7 +99,6 @@ public class ArrayBuilder {
             byteoffsets = interpretation.subarray().convertOffsetDiskToMemory(byteoffsets);
             int start = (0);
             int stop = (entryStop - entryStart);
-            //System.out.println(String.format("pp1 start: %d stop: %d content: %s byteoffsets: %s", start, stop, testcontent, byteoffsets));
             source = interpretation.fromroot(content, byteoffsets, start, stop);
         }
 
@@ -157,7 +157,6 @@ public class ArrayBuilder {
             entryOffset_whole += entries_whole;
             itemOffset_whole += items_whole;
         }
-        //System.out.println("making dest " + itemOffset_whole + " " + entryOffset_whole);
         output_whole = interpretation.destination((int)itemOffset_whole, (int)entryOffset_whole);
         entryOffset_whole = 0;
         itemOffset_whole = 0;
@@ -176,37 +175,34 @@ public class ArrayBuilder {
 
             if (global_offset_whole == -1) {
                 global_offset_whole = (int) (entrystart - basketEntryOffsets[basketId]);
-                //System.out.println("Offset whole is " + global_offset_whole);
             }
-            processBasket(entryOffset_whole, itemOffset_whole, entryRange_whole, basketId, getbasket, output_whole);
-
+            if (executor == null) {
+                processBasket(entryOffset_whole, itemOffset_whole, entryRange_whole, basketId, getbasket, output_whole);
+            } else {
+                final long entryOffset_tmp = entryOffset_whole;
+                final long itemOffset_tmp = itemOffset_whole;
+                FutureTask<Array> task = new FutureTask<Array>(() ->
+                    processBasket(entryOffset_tmp, itemOffset_tmp, entryRange_whole, basketId, getbasket, output_whole));
+                executor.execute(task);
+                tasks.add(task);
+            }
             // postlogue
             entryOffset_whole += entries_whole;
             itemOffset_whole += items_whole;
         }
-//      tasks = new ArrayList<FutureTask<Boolean>>(basketstop - basketstart);
-//      if (executor == null) {
-//      //fill.call();
-//  }
-//  else {
-//      FutureTask<Boolean> task = new FutureTask<Boolean>(fill);
-//      tasks.add(task);
-//      executor.execute(task);
-//  }
     }
 
     public Array getArray(int rowId, int count) {
-//        for (FutureTask<Boolean> task : tasks) {
-//            try {
-//                task.get();
-//            } catch (InterruptedException e) {
-//                throw new RuntimeException(e.toString());
-//            } catch (ExecutionException e) {
-//                throw new RuntimeException(e.toString());
-//            }
-//        }
+        for (FutureTask<Array> task : tasks) {
+            try {
+                task.get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }
         Array x = output_whole.clip(global_offset_whole + rowId, global_offset_whole + rowId + count);
-        // Array y = array.clip(basket_entryoffset[0] + rowId, basket_entryoffset[0] + rowId + count);
         return x;
     }
 }
