@@ -61,20 +61,24 @@ public class AsJagged implements Interpretation {
 
         int innersize_memory = ((AsDtype)this.content).memory_itemsize() * ((AsDtype)this.content).multiplicity();
         ByteBuffer countsbuf = ByteBuffer.allocate((local_entrystop - local_entrystart) * 4);
-        int total = 0;
-        for (int i = local_entrystart;  i < local_entrystop;  i++) {
-            /*
-             * I modified the following code to take into account the skipbytes
-             * ... unsure if that's 100% correct..
-             */
+
+        int start = (byteoffsets.get(local_entrystart) - local_entrystart * this.skipbytes) / innersize_memory;
+        int stop = (byteoffsets.get(local_entrystop) - local_entrystop * this.skipbytes) / innersize_memory;
+
+        for (int i = local_entrystart;  i < local_entrystop;  ++i) {
             int count = ((byteoffsets.get(i + 1) - byteoffsets.get(i)) - this.skipbytes) / innersize_memory;
             countsbuf.putInt(count);
-            total += count;
         }
         countsbuf.position(0);
         PrimitiveArray.Int4 counts = new PrimitiveArray.Int4(new RawArray(countsbuf));
 
-        Array content = this.content.fromroot(compact, null, 0, total);
+        Array content;
+        // Array content = this.content.fromroot(compact, null, start, stop);
+        if (this.skipbytes > 0) {
+            content = this.content.fromroot(compact, null, 0, stop - start);
+        } else {
+            content = this.content.fromroot(compact, null, start, stop);
+        }
         return new JaggedArrayPrep(this, local_entrystop - local_entrystart, counts, content);
     }
 

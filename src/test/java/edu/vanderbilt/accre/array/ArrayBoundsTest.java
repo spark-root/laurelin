@@ -23,6 +23,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
+import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranchInterface;
 
 public class ArrayBoundsTest {
 
@@ -64,8 +65,8 @@ public class ArrayBoundsTest {
         TBranch branch = branches.get(0);
         List<TBasket> baskets = branch.getBaskets();
         Cache branchCache = new Cache();
-        SlimTBranch slimBranch = SlimTBranch.getFromTBranch(branch);
-        ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache);
+        SlimTBranchInterface slimBranch = SlimTBranch.getFromTBranch(branch);
+        ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache, null);
         long []basketEntryOffsets = slimBranch.getBasketEntryOffsets();
         Interpretation interp = new AsJagged(new AsDtype(type));
         ArrayBuilder builder = new ArrayBuilder(getbasket, interp, basketEntryOffsets, null, 0, 50069);

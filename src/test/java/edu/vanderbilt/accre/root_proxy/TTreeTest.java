@@ -22,6 +22,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TLeaf;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
+import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranchInterface;
 
 public class TTreeTest {
     private TTree getTestTree() throws IOException {
@@ -76,8 +77,8 @@ public class TTreeTest {
         ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
 
         Cache branchCache = new Cache();
-        SlimTBranch slimBranch = SlimTBranch.getFromTBranch(branch);
-        ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache);
+        SlimTBranchInterface slimBranch = SlimTBranch.getFromTBranch(branch);
+        ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache, null);
         long []basketEntryOffsets = slimBranch.getBasketEntryOffsets();
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT8);
         ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9);
@@ -91,14 +92,14 @@ public class TTreeTest {
         assertEquals(19, branches.size());
         branches = currTree.getBranches("SliceFloat32");
         TBranch branch = branches.get(0);
-        SlimTBranch slimBranch = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slimBranch = SlimTBranch.getFromTBranch(branch);
         List<TBasket> baskets = branch.getBaskets();
         assertEquals(1, baskets.size());
         TBasket basket = baskets.get(0);
         ByteBuffer buf = basket.getPayload();
 
         Cache branchCache = new Cache();
-        ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache);
+        ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache, null);
         long [] basketEntryOffsets = branch.getBasketEntryOffsets(); //{ 0, 100 };
         Interpretation interpretation = new AsJagged(new AsDtype(AsDtype.Dtype.FLOAT4));
         ArrayBuilder builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, null, 0, 100);
@@ -124,8 +125,8 @@ public class TTreeTest {
         ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
 
         Cache branchCache = new Cache();
-        SlimTBranch slimBranch = SlimTBranch.getFromTBranch(branch);
-        ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache);
+        SlimTBranchInterface slimBranch = SlimTBranch.getFromTBranch(branch);
+        ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache, null);
         long [] basketEntryOffsets = slimBranch.getBasketEntryOffsets(); //{ 0, 100 };
         AsDtype asdtype = new AsDtype(AsDtype.Dtype.FLOAT4);
         ArrayBuilder builder = new ArrayBuilder(getbasket, asdtype, basketEntryOffsets, executor, 1, 9);
