@@ -311,11 +311,11 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                     ret = DataTypes.ShortType;
                 } else if ((simpleType == SimpleType.Int32) || (simpleType == SimpleType.UInt16)) {
                     ret = DataTypes.IntegerType;
-                } else if ((simpleType == SimpleType.Int64) || (simpleType == SimpleType.UInt32)) {
+                } else if ((simpleType == SimpleType.UInt64) || (simpleType == SimpleType.Int64) || (simpleType == SimpleType.UInt32)) {
                     ret = DataTypes.LongType;
                 } else if (simpleType == SimpleType.Float32) {
                     ret = DataTypes.FloatType;
-                } else if ((simpleType == SimpleType.Float64) || (simpleType == SimpleType.UInt64)) {
+                } else if (simpleType == SimpleType.Float64) {
                     ret = DataTypes.DoubleType;
                 } else if (simpleType == SimpleType.Pointer) {
                     ret = DataTypes.LongType;
