@@ -8,8 +8,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.reader.InputPartition;
@@ -32,9 +34,16 @@ import org.apache.spark.sql.vectorized.ColumnarArray;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.junit.Test;
 
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
+
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.Root;
 import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
+import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
+import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
+import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
@@ -44,6 +53,52 @@ import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranchInterface;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
 public class TTreeDataSourceUnitTest {
+    /*
+     * @lgray reported that too much data was being deserialised when TTrees
+     * were loaded and partitions made. Make sure that the bytes read don't
+     * balloon accidentally.
+     */
+    @Test
+    public void loadMinimalBytes() throws IOException {
+        LinkedList<Storage> accum = new LinkedList<Storage>();
+        Function<Event, Integer> cb = e -> {
+            accum.add(e.getStorage());
+            return 0;
+        };
+        IOProfile.getInstance().setCB(cb);
+
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", "testdata/uproot-foriter.root");
+        optmap.put("tree",  "foriter");
+        DataSourceOptions opts = new DataSourceOptions(optmap);
+        Root source = new Root();
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        DataType schema = reader.readSchema();
+        StructType schemaCast = (StructType) schema;
+        assertEquals(1, schemaCast.size());
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+
+        // Count all bytes read
+        long sumReads = 0;
+        long uniqReads = 0;
+        RangeSet<Long> readRanges = TreeRangeSet.create();
+        for (Storage s: accum) {
+            sumReads += s.len;
+            Range<Long> r = Range.closedOpen(s.offset, s.offset + s.len);
+            readRanges.add(r);
+        }
+
+        // Count unique bytes read
+        for (Range<Long> r: readRanges.asDescendingSetOfRanges()) {
+            uniqReads += r.upperEndpoint() - r.lowerEndpoint();
+        }
+
+        // Cap the number of bytes we read to load a file and make partitions
+        assertTrue(15794 >= sumReads);
+        // ... and the number of unique bytes we read to do the same
+        assertTrue(5964 >= uniqReads);
+    }
+
     @Test
     public void testMultipleBasketsForiter() throws IOException {
         Map<String, String> optmap = new HashMap<String, String>();
