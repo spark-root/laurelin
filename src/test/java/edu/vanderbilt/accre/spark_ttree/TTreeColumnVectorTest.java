@@ -112,12 +112,7 @@ public class TTreeColumnVectorTest {
         @Override
         public SlimTBasket getBasket(int basketid) {
             int len = payload.get(basketid).limit();
-            return SlimTBasket.makeEagerBasket(this, 0L, (int)fObjLen.get(basketid), (int)fObjLen.get(basketid),(int) keyLen, (int)fLast.get(basketid));
-        }
-
-        @Override
-        public void addBasket(SlimTBasket basket) {
-            throw new UnsupportedOperationException("Not stubbed");
+            return SlimTBasket.makeEagerBasket(this, 0L, fObjLen.get(basketid), fObjLen.get(basketid),keyLen, fLast.get(basketid));
         }
 
         @Override
