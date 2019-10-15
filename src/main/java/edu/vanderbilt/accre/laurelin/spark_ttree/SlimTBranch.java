@@ -63,7 +63,6 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
      */
 
     public SlimTBranch copyAndTrim(long eventStart, long eventEnd) {
-        System.out.println("Getting start " + eventStart + " end " + eventEnd);
         SlimTBranch ret = new SlimTBranch(path, basketEntryOffsets, arrayDesc);;
         ImmutableRangeMap<Long, Integer> overlap = entryOffsetToRangeMap(basketEntryOffsets, eventStart, eventEnd);
         ret.rangeToBasketIDMap = overlap;
@@ -138,6 +137,10 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
             throw new IndexOutOfBoundsException("Tried to get nonexistent basket: " + basketid);
         }
         return baskets.get(basketid);
+    }
+
+    public int getStoredBasketCount() {
+        return baskets.size();
     }
 
     public void addBasket(int idx, SlimTBasket basket) {
