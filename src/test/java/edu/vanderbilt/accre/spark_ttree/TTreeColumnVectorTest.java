@@ -16,6 +16,10 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.IntegerType;
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableRangeMap;
+import com.google.common.collect.ImmutableRangeMap.Builder;
+import com.google.common.collect.Range;
+
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.CacheStash;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
@@ -112,12 +116,7 @@ public class TTreeColumnVectorTest {
         @Override
         public SlimTBasket getBasket(int basketid) {
             int len = payload.get(basketid).limit();
-            return SlimTBasket.makeEagerBasket(this, 0L, (int)fObjLen.get(basketid), (int)fObjLen.get(basketid),(int) keyLen, (int)fLast.get(basketid));
-        }
-
-        @Override
-        public void addBasket(SlimTBasket basket) {
-            throw new UnsupportedOperationException("Not stubbed");
+            return SlimTBasket.makeEagerBasket(this, 0L, fObjLen.get(basketid), fObjLen.get(basketid),keyLen, fLast.get(basketid));
         }
 
         @Override
@@ -128,6 +127,15 @@ public class TTreeColumnVectorTest {
         @Override
         public ArrayDescriptor getArrayDesc() {
             return desc;
+        }
+
+        @Override
+        public ImmutableRangeMap<Long, Integer> getRangeToBasketIDMap() {
+            Builder<Long, Integer> basketBuilder = new ImmutableRangeMap.Builder<Long, Integer>();
+            for (int i = 0; i < basketEntryOffsets.length - 1; i += 1) {
+                basketBuilder = basketBuilder.put(Range.closed(basketEntryOffsets[i], basketEntryOffsets[i + 1] - 1), i);
+            }
+            return basketBuilder.build();
         }
     }
 

@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Function;
@@ -382,8 +383,11 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                         if (i == (entryOffset.length - 1)) {
                             entryEnd = inputTree.getEntries();
                         }
-
-                        ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, slimBranches, threadCount, profileData, pid));
+                        Map<String, SlimTBranch> trimmedSlimBranches = new HashMap<String, SlimTBranch>();
+                        for (Entry<String, SlimTBranch> e: slimBranches.entrySet()) {
+                            trimmedSlimBranches.put(e.getKey(), e.getValue().copyAndTrim(entryStart, entryEnd));
+                        }
+                        ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, trimmedSlimBranches, threadCount, profileData, pid));
                     }
                     if (ret.size() == 0) {
                         // Only one basket?

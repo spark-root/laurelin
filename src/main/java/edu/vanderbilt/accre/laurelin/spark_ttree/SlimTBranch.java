@@ -1,13 +1,22 @@
 package edu.vanderbilt.accre.laurelin.spark_ttree;
 
+import static edu.vanderbilt.accre.laurelin.root_proxy.TBranch.entryOffsetToRangeMap;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableRangeMap;
+import com.google.common.collect.ImmutableRangeMap.Builder;
+import com.google.common.collect.Range;
 
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
@@ -26,40 +35,116 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TKey;
 public class SlimTBranch implements Serializable, SlimTBranchInterface {
     private static final long serialVersionUID = 1L;
     private String path;
-    private long []basketEntryOffsets;
-    private List<SlimTBasket> baskets;
+
+    /**
+     * This value is marked transient to ensure that it is not sent through
+     * the serialization machinery, with the ensuing bloat. Will eventually be
+     * deleted
+     */
+    private transient long []basketEntryOffsets;
+
+    private int basketEntryOffsetsLength;
+
+    /**
+     * This is our representation of the basketEntryOffsets array. This format
+     * is much easier to trim off the unneeded bits.
+     */
+    private ImmutableRangeMap<Long, Integer> rangeToBasketIDMap;
+    private Map<Integer, SlimTBasket> baskets;
     private TBranch.ArrayDescriptor arrayDesc;
+    private int basketStart;
+    private int basketEnd;
+
+    /**
+     *
+     * @param eventStart the zeroth event we want to read
+     * @param eventEnd the event past the last event we want to read
+     * @return slimtbranch with only these events stored
+     */
+
+    public SlimTBranch copyAndTrim(long eventStart, long eventEnd) {
+        SlimTBranch ret = new SlimTBranch(path, basketEntryOffsets, arrayDesc);;
+        ImmutableRangeMap<Long, Integer> overlap = entryOffsetToRangeMap(basketEntryOffsets, eventStart, eventEnd);
+        ret.rangeToBasketIDMap = overlap;
+        for (Entry<Range<Long>, Integer> e: overlap.asMapOfRanges().entrySet()) {
+            ret.addBasket(e.getValue(), baskets.get(e.getValue()));
+        }
+        ret.basketStart = rangeToBasketIDMap.get(eventStart);
+        ret.basketEnd = rangeToBasketIDMap.get(eventEnd - 1);
+        return ret;
+    }
 
     public SlimTBranch(String path, long []basketEntryOffsets, TBranch.ArrayDescriptor desc) {
         this.path = path;
         this.basketEntryOffsets = basketEntryOffsets;
-        this.baskets = new LinkedList<SlimTBasket>();
+        this.basketEntryOffsetsLength = basketEntryOffsets.length;
+        this.baskets = new HashMap<Integer, SlimTBasket>();
         this.arrayDesc = desc;
+        this.basketStart = 0;
+        this.basketEnd = basketEntryOffsets.length;
+
+        Builder<Long, Integer> basketBuilder = new ImmutableRangeMap.Builder<Long, Integer>();
+        for (int i = 0; i < basketEntryOffsets.length - 1; i += 1) {
+            basketBuilder = basketBuilder.put(Range.closed(basketEntryOffsets[i], basketEntryOffsets[i + 1] - 1), i);
+        }
+        rangeToBasketIDMap = basketBuilder.build();
     }
 
     public static SlimTBranch getFromTBranch(TBranch fatBranch) {
         SlimTBranch slimBranch = new SlimTBranch(fatBranch.getTree().getBackingFile().getFileName(), fatBranch.getBasketEntryOffsets(), fatBranch.getArrayDescriptor());
         for (int i = 0; i < fatBranch.getBasketCount(); i += 1) {
             SlimTBasket slimBasket = SlimTBasket.makeLazyBasket(slimBranch,
-                                                        fatBranch.getBasketSeek()[i]);
-            slimBranch.addBasket(slimBasket);
+                    fatBranch.getBasketSeek()[i]);
+            slimBranch.addBasket(i, slimBasket);
         }
         return slimBranch;
     }
 
     @Override
+    public ImmutableRangeMap<Long, Integer> getRangeToBasketIDMap() {
+        return rangeToBasketIDMap;
+    }
+
+    @Override
     public long [] getBasketEntryOffsets() {
-        return basketEntryOffsets;
+        ImmutableMap<Range<Long>, Integer> descMap = rangeToBasketIDMap.asMapOfRanges();
+        long[] tmpBasket = new long[basketEntryOffsetsLength];
+        for (int i = 0; i < basketStart; i += 1) {
+            tmpBasket[i] = i;
+        }
+        long topMost = 0;
+        for (Entry<Range<Long>, Integer> e: descMap.entrySet()) {
+            tmpBasket[e.getValue()] = e.getKey().lowerEndpoint();
+            tmpBasket[e.getValue() + 1] = e.getKey().upperEndpoint() + 1;
+            topMost = e.getKey().upperEndpoint() + 1;
+        }
+        for (int i = basketEnd + 2; i < basketEntryOffsetsLength; i += 1) {
+            tmpBasket[i] = topMost + i;
+        }
+        if ((basketEntryOffsets != null) && (basketStart == 0) && (basketEnd == basketEntryOffsetsLength)) {
+            assert Arrays.equals(tmpBasket, basketEntryOffsets);
+        }
+        if (tmpBasket[0] != 0) {
+            assert tmpBasket[0] == 0;
+        }
+        return tmpBasket;
     }
 
     @Override
     public SlimTBasket getBasket(int basketid) {
+        SlimTBasket ret = baskets.get(basketid);
+        if (ret == null) {
+            throw new IndexOutOfBoundsException("Tried to get nonexistent basket: " + basketid);
+        }
         return baskets.get(basketid);
     }
 
-    @Override
-    public void addBasket(SlimTBasket basket) {
-        baskets.add(basket);
+    public int getStoredBasketCount() {
+        return baskets.size();
+    }
+
+    public void addBasket(int idx, SlimTBasket basket) {
+        baskets.put(idx, basket);
     }
 
     @Override

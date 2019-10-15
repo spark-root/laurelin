@@ -1,5 +1,7 @@
 package edu.vanderbilt.accre.laurelin.spark_ttree;
 
+import com.google.common.collect.ImmutableRangeMap;
+
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
@@ -12,8 +14,6 @@ public interface SlimTBranchInterface {
 
     SlimTBasket getBasket(int basketid);
 
-    void addBasket(SlimTBasket basket);
-
     String getPath();
 
     TBranch.ArrayDescriptor getArrayDesc();
@@ -21,9 +21,11 @@ public interface SlimTBranchInterface {
     /**
      * Glue callback to integrate with edu.vanderbilt.accre.laurelin.array
      * @param basketCache the cache we should be using
-     * @param fileCache
+     * @param fileCache what file handle cache we should be using
      * @return GetBasket object used by array
      */
     ArrayBuilder.GetBasket getArrayBranchCallback(Cache basketCache, ROOTFileCache fileCache);
+
+    ImmutableRangeMap<Long, Integer> getRangeToBasketIDMap();
 
 }

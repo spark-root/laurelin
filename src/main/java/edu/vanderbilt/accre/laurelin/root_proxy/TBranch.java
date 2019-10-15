@@ -4,8 +4,13 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.google.common.collect.ImmutableRangeMap;
+import com.google.common.collect.ImmutableRangeMap.Builder;
+import com.google.common.collect.Range;
 
 public class TBranch {
     protected Proxy data;
@@ -428,5 +433,29 @@ public class TBranch {
 
     public long[] getBasketSeek() {
         return fBasketSeek;
+    }
+
+    /**
+     * Converts a root-style basketEntryOffset into a RangeMap which maps
+     * (long) entries to (int)basketIDs. This is a bit more complicated than
+     * the regular RangeMap intersection function, because when we decode
+     * baskets, we need to process a whole basket at a time, but intersect()
+     * will trim the ranges to line up with our input range
+     *
+     * @param basketEntryOffsets ROOTs value + the cap end to close the last
+     * @param entrystart the beginning entry we want
+     * @param entrystop one past the last entry we want
+     * @return RangeMap of all the baskets containing our range
+     */
+    public static ImmutableRangeMap<Long, Integer> entryOffsetToRangeMap(long[] basketEntryOffsets, long entrystart, long entrystop) {
+        Builder<Long, Integer> basketBuilder = new ImmutableRangeMap.Builder<Long, Integer>();
+        for (int i = 0; i < basketEntryOffsets.length - 1; i += 1) {
+            basketBuilder = basketBuilder.put(Range.closed(basketEntryOffsets[i], basketEntryOffsets[i + 1] - 1), i);
+        }
+        ImmutableRangeMap<Long, Integer> rangeToBasketIDMap = basketBuilder.build();
+        Entry<Range<Long>, Integer> low = rangeToBasketIDMap.getEntry(entrystart);
+        Entry<Range<Long>, Integer> high = rangeToBasketIDMap.getEntry(entrystop - 1);
+        Range<Long> wideRange = Range.closed(low.getKey().lowerEndpoint(), high.getKey().upperEndpoint());
+        return rangeToBasketIDMap.subRangeMap(wideRange);
     }
 }
