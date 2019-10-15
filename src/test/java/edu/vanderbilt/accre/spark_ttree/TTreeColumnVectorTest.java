@@ -16,6 +16,10 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.IntegerType;
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableRangeMap;
+import com.google.common.collect.ImmutableRangeMap.Builder;
+import com.google.common.collect.Range;
+
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.CacheStash;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
@@ -123,6 +127,15 @@ public class TTreeColumnVectorTest {
         @Override
         public ArrayDescriptor getArrayDesc() {
             return desc;
+        }
+
+        @Override
+        public ImmutableRangeMap<Long, Integer> getRangeToBasketIDMap() {
+            Builder<Long, Integer> basketBuilder = new ImmutableRangeMap.Builder<Long, Integer>();
+            for (int i = 0; i < basketEntryOffsets.length - 1; i += 1) {
+                basketBuilder = basketBuilder.put(Range.closed(basketEntryOffsets[i], basketEntryOffsets[i + 1] - 1), i);
+            }
+            return basketBuilder.build();
         }
     }
 
