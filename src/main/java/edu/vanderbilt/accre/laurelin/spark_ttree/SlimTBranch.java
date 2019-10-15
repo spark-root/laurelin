@@ -111,7 +111,7 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
         ImmutableMap<Range<Long>, Integer> descMap = rangeToBasketIDMap.asMapOfRanges();
         long[] tmpBasket = new long[basketEntryOffsetsLength];
         for (int i = 0; i < basketStart; i += 1) {
-            tmpBasket[i] = 0;
+            tmpBasket[i] = i;
         }
         long topMost = 0;
         for (Entry<Range<Long>, Integer> e: descMap.entrySet()) {
@@ -120,7 +120,7 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
             topMost = e.getKey().upperEndpoint() + 1;
         }
         for (int i = basketEnd + 2; i < basketEntryOffsetsLength; i += 1) {
-            tmpBasket[i] = topMost;
+            tmpBasket[i] = topMost + i;
         }
         if ((basketEntryOffsets != null) && (basketStart == 0) && (basketEnd == basketEntryOffsetsLength)) {
             assert Arrays.equals(tmpBasket, basketEntryOffsets);
