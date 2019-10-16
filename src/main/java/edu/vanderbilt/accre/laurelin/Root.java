@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Function;
 
@@ -37,6 +38,8 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.apache.spark.util.CollectionAccumulator;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOFactory;
@@ -104,6 +107,21 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         private long entryEnd;
         private int currBasket = -1;
         private Map<String, SlimTBranch> slimBranches;
+
+        /**
+         * Thread factory for async processing/decompression of baskets
+         */
+        private static ThreadFactory namedThreadFactory =
+                new ThreadFactoryBuilder().setNameFormat("laurelin-arraybuilder-%d").build();
+
+        /**
+         * ThreadPool handling the async decompression tasks
+         */
+        private static ThreadPoolExecutor staticExecutor = (ThreadPoolExecutor)Executors.newCachedThreadPool(namedThreadFactory);
+
+        /**
+         * Holds the async threadpool if enabled, null otherwise
+         */
         private static ThreadPoolExecutor executor;
         private CollectionAccumulator<Storage> profileData;
         private int pid;
@@ -128,7 +146,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
             IOProfile.getInstance(pid, cb);
 
             if (threadCount >= 1) {
-                executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
+                executor = staticExecutor;
                 executor.setCorePoolSize(threadCount);
                 executor.setMaximumPoolSize(threadCount);
             } else {
