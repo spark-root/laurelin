@@ -112,10 +112,10 @@ public class TTreeDataSourceUnitTest {
         assertEquals(1, schemaCast.size());
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
-        assertEquals(8, partitions.size());
+        assertEquals(1, partitions.size());
         InputPartition<ColumnarBatch> partition;
-        long []expectedCounts = {6, 6, 6, 6, 6, 6, 6, 4};
-        for (int i = 0; i < 8; i += 1) {
+        long []expectedCounts = {46};
+        for (int i = 0; i < 1; i += 1) {
             partition = partitions.get(i);
             InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
             assertTrue(partitionReader.next());
@@ -142,23 +142,10 @@ public class TTreeDataSourceUnitTest {
         reader.pruneColumns(prune);
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
-        assertEquals(13, partitions.size());
+        assertEquals(1, partitions.size());
         InputPartition<ColumnarBatch> partition;
-        long []expectedCounts = {1000,
-                                    13519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    1827
-                                 };
-        for (int i = 0; i < 8; i += 1) {
+        long []expectedCounts = {161536};
+        for (int i = 0; i < 1; i += 1) {
             partition = partitions.get(i);
             InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
             assertTrue(partitionReader.next());

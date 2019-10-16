@@ -351,6 +351,10 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
 
         protected static class PartitionHelper implements Serializable {
             private static final long serialVersionUID = 1L;
+            /**
+             * How many events to put in a partition
+             */
+            private static final long PARTITION_SIZE = 200 * 1000;
             String treeName;
             StructType schema;
             int threadCount;
@@ -388,24 +392,20 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                     Map<String, SlimTBranch> slimBranches = new HashMap<String, SlimTBranch>();
                     parseStructFields(inputTree, slimBranches, schema, "");
 
-
-                    // TODO We partition based on the basketing of the first branch
-                    //      which might not be optimal. We should do something
+                    // TODO We partition based on a fixed number of events per
+                    //      partition, which isn't smart. Redo it with something
                     //      smarter later
                     long[] entryOffset = inputTree.getBranches().get(0).getBasketEntryOffsets();
-                    for (int i = 0; i < (entryOffset.length - 1); i += 1) {
+                    long lastEntry = entryOffset[entryOffset.length - 1];
+                    for (int i = 0; i < lastEntry; i += PARTITION_SIZE) {
                         pid += 1;
-                        long entryStart = entryOffset[i];
-                        long entryEnd = entryOffset[i + 1];
-                        // the last basket is dumb and annoying
-                        if (i == (entryOffset.length - 1)) {
-                            entryEnd = inputTree.getEntries();
-                        }
+                        long partitionStart = i;
+                        long partitionEnd = Math.min(lastEntry, partitionStart + PARTITION_SIZE);
                         Map<String, SlimTBranch> trimmedSlimBranches = new HashMap<String, SlimTBranch>();
                         for (Entry<String, SlimTBranch> e: slimBranches.entrySet()) {
-                            trimmedSlimBranches.put(e.getKey(), e.getValue().copyAndTrim(entryStart, entryEnd));
+                            trimmedSlimBranches.put(e.getKey(), e.getValue().copyAndTrim(partitionStart, partitionEnd));
                         }
-                        ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, trimmedSlimBranches, threadCount, profileData, pid));
+                        ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, partitionStart, partitionEnd, slimBranches, threadCount, profileData, pid));
                     }
                     if (ret.size() == 0) {
                         // Only one basket?
