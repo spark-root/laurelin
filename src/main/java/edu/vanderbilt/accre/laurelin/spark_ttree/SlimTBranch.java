@@ -225,7 +225,6 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
         private static final Logger logger = LogManager.getLogger();
 
         private static final long serialVersionUID = 1L;
-        private SlimTBranchInterface branch;
         private long offset;
         private Cursor payload;
 
@@ -243,13 +242,12 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
         private byte fHeaderOnly;
         private Cursor headerEnd;
 
-        private SlimTBasket(SlimTBranchInterface slimBranch, long offset) {
-            branch = slimBranch;
+        private SlimTBasket(long offset) {
             this.offset = offset;
         }
 
         public static SlimTBasket makeEagerBasket(SlimTBranchInterface branch, long offset, int compressedLen, int uncompressedLen, int keyLen, int last) {
-            SlimTBasket ret = new SlimTBasket(branch, offset);
+            SlimTBasket ret = new SlimTBasket(offset);
             ret.isPopulated = true;
             ret.compressedLen = compressedLen;
             ret.uncompressedLen = uncompressedLen;
@@ -259,7 +257,7 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
         }
 
         public static SlimTBasket makeLazyBasket(SlimTBranchInterface branch, long offset) {
-            SlimTBasket ret = new SlimTBasket(branch, offset);
+            SlimTBasket ret = new SlimTBasket(offset);
             ret.isPopulated = false;
             return ret;
         }
