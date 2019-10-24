@@ -229,18 +229,14 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
         private Cursor payload;
 
 
-        private boolean isPopulated = false;
-        private int compressedLen;
-        private int uncompressedLen;
-        private int keyLen;
-        private int last;
-
-        private short vers;
-        private int fBufferSize;
-        private int fNevBufSize;
-        private int fNevBuf;
-        private byte fHeaderOnly;
-        private Cursor headerEnd;
+        /*
+         * Lazily evaluated ... values
+         */
+        private transient boolean isPopulated = false;
+        private transient int compressedLen;
+        private transient int uncompressedLen;
+        private transient int keyLen;
+        private transient int last;
 
         private SlimTBasket(SlimTBranchInterface slimBranch, long offset) {
             this.offset = offset;
@@ -265,6 +261,17 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
         public synchronized void initializeMetadata(ROOTFile tmpFile) {
             if (isPopulated == false) {
                 try {
+                    /*
+                     * These values are stored in the basket info but
+                     * explicitly unused
+                     */
+                    short vers;
+                    int fBufferSize;
+                    int fNevBufSize;
+                    int fNevBuf;
+                    byte fHeaderOnly;
+                    Cursor headerEnd;
+
                     Cursor cursor = tmpFile.getCursor(offset);
                     TKey key = new TKey();
                     Cursor c = key.getFromFile(cursor);
