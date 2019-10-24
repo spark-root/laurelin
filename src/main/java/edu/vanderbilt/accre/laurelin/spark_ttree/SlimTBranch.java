@@ -225,7 +225,6 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
         private static final Logger logger = LogManager.getLogger();
 
         private static final long serialVersionUID = 1L;
-        private SlimTBranchInterface branch;
         private long offset;
         private Cursor payload;
 
@@ -244,7 +243,6 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
         private Cursor headerEnd;
 
         private SlimTBasket(SlimTBranchInterface slimBranch, long offset) {
-            branch = slimBranch;
             this.offset = offset;
         }
 
