@@ -9,9 +9,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
@@ -117,7 +118,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         /**
          * ThreadPool handling the async decompression tasks
          */
-        private static ThreadPoolExecutor staticExecutor = (ThreadPoolExecutor)Executors.newCachedThreadPool(namedThreadFactory);
+        private static ThreadPoolExecutor staticExecutor = new ThreadPoolExecutor(1,1,60L, TimeUnit.SECONDS,new LinkedBlockingQueue<Runnable>());
 
         /**
          * Holds the async threadpool if enabled, null otherwise

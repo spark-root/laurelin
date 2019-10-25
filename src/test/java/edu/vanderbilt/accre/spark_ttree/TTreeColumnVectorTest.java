@@ -197,7 +197,6 @@ public class TTreeColumnVectorTest {
                     Object[] event = result.getArray(i).array();
                     Integer[] truth = getDummyJaggedArrayTruth(i + entrystart);
                     String vals = "no match start/stop/i " + entrystart + "/" + entrystop + "/" + i + " truth: " + Arrays.toString(truth) + " event: " + Arrays.toString(event);
-                    System.out.println(vals);
                     assertArrayEquals(vals, truth, event);
                     result.close();
                 }
@@ -278,7 +277,6 @@ public class TTreeColumnVectorTest {
     public void scalar_integer_should_parse() {
         Integer[] testInt = new Integer[] {1,2,3};
         byte[] testByte = intToBytes(testInt);
-        System.out.println(testInt);
     }
 
     // There's gotta be a better way to do this with generics but...
@@ -311,6 +309,5 @@ public class TTreeColumnVectorTest {
                 }
             }
         }
-        System.out.println(good.get(2));
     }
 }
