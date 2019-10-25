@@ -5,7 +5,7 @@
 
     <groupId>edu.vanderbilt.accre</groupId>
     <artifactId>laurelin</artifactId>
-    <version>0.5.1-SNAPSHOT</version>
+    <version>0.5.1</version>
 
     <name>laurelin</name>
 
@@ -19,7 +19,7 @@
     <scm>
         <developerConnection>scm:git:git@github.com:spark-root/laurelin.git</developerConnection>
         <url>https://github.com/spark-root/laurelin</url>
-        <tag>laurelin-0.0.1</tag>
+        <tag>laurelin-0.5.1</tag>
     </scm>
     <description>Spark datasource for ROOT (http://root.cern) files</description>
     <url>https://github.com/spark-root/laurelin</url>
