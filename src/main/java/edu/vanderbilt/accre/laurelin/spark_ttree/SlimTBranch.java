@@ -147,7 +147,6 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
         baskets.put(idx, basket);
     }
 
-    @Override
     public String getPath() {
         return path;
     }

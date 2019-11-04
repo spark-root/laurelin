@@ -120,11 +120,6 @@ public class TTreeColumnVectorTest {
         }
 
         @Override
-        public String getPath() {
-            throw new UnsupportedOperationException("Not stubbed");
-        }
-
-        @Override
         public ArrayDescriptor getArrayDesc() {
             return desc;
         }
