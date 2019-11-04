@@ -17,7 +17,7 @@ public class SlimTBranchTest {
 
         SlimTBranch full = new SlimTBranch("none", basketEntryOffsetFull, null);
         for (int i = 0; i < basketEntrySeekFull.length; i += 1) {
-            full.addBasket(i, SlimTBasket.makeLazyBasket(full, basketEntrySeekFull[i]));
+            full.addBasket(i, SlimTBasket.makeLazyBasket(basketEntrySeekFull[i]));
         }
         assertArrayEquals(basketEntryOffsetFull, full.getBasketEntryOffsets());
         assertEquals(4, full.getStoredBasketCount());

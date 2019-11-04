@@ -93,8 +93,7 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
     public static SlimTBranch getFromTBranch(TBranch fatBranch) {
         SlimTBranch slimBranch = new SlimTBranch(fatBranch.getTree().getBackingFile().getFileName(), fatBranch.getBasketEntryOffsets(), fatBranch.getArrayDescriptor());
         for (int i = 0; i < fatBranch.getBasketCount(); i += 1) {
-            SlimTBasket slimBasket = SlimTBasket.makeLazyBasket(slimBranch,
-                    fatBranch.getBasketSeek()[i]);
+            SlimTBasket slimBasket = SlimTBasket.makeLazyBasket(fatBranch.getBasketSeek()[i]);
             slimBranch.addBasket(i, slimBasket);
         }
         return slimBranch;
@@ -255,7 +254,7 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
             return ret;
         }
 
-        public static SlimTBasket makeLazyBasket(SlimTBranchInterface branch, long offset) {
+        public static SlimTBasket makeLazyBasket(long offset) {
             SlimTBasket ret = new SlimTBasket(offset);
             ret.isPopulated = false;
             return ret;
