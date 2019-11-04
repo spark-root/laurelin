@@ -36,13 +36,6 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
     private static final long serialVersionUID = 1L;
     private String path;
 
-    /**
-     * This value is marked transient to ensure that it is not sent through
-     * the serialization machinery, with the ensuing bloat. Will eventually be
-     * deleted
-     */
-    private transient long []basketEntryOffsets;
-
     private int basketEntryOffsetsLength;
 
     /**
@@ -56,6 +49,22 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
     private int basketEnd;
 
     /**
+     * Deduplicate range->basket maps, since many (all?) of them will be same
+     * for different branches in a file
+     */
+    private static HashMap<ImmutableRangeMap<Long, Integer>,
+                           ImmutableRangeMap<Long, Integer>> dedupRangeMap =
+                           new HashMap<ImmutableRangeMap<Long, Integer>,
+                                       ImmutableRangeMap<Long, Integer>>();
+
+    public synchronized ImmutableRangeMap<Long, Integer> dedupAndReturnRangeMap(ImmutableRangeMap<Long, Integer> val) {
+        dedupRangeMap.putIfAbsent(val, val);
+        return dedupRangeMap.get(val);
+    }
+
+    /**
+     * Copy the given slim branch and trim it by removing unneccessary basket
+     * information
      *
      * @param eventStart the zeroth event we want to read
      * @param eventEnd the event past the last event we want to read
@@ -63,31 +72,63 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
      */
 
     public SlimTBranch copyAndTrim(long eventStart, long eventEnd) {
-        SlimTBranch ret = new SlimTBranch(path, basketEntryOffsets, arrayDesc);;
-        ImmutableRangeMap<Long, Integer> overlap = entryOffsetToRangeMap(basketEntryOffsets, eventStart, eventEnd);
-        ret.rangeToBasketIDMap = overlap;
+        SlimTBranch ret = new SlimTBranch(path, this.getBasketEntryOffsets(), arrayDesc);
+        ImmutableRangeMap<Long, Integer> overlap = entryOffsetToRangeMap(this.getBasketEntryOffsets(), eventStart, eventEnd);
+
         for (Entry<Range<Long>, Integer> e: overlap.asMapOfRanges().entrySet()) {
             ret.addBasket(e.getValue(), baskets.get(e.getValue()));
         }
         ret.basketStart = rangeToBasketIDMap.get(eventStart);
-        ret.basketEnd = rangeToBasketIDMap.get(eventEnd - 1);
+        ret.basketEnd = rangeToBasketIDMap.get(eventEnd - 1) + 1;
+        ret.checkInvariants();
         return ret;
     }
 
+    public void checkInvariants() {
+        if (basketEnd == 0) {
+            assert basketEnd != 0;
+        }
+    }
+
     public SlimTBranch(String path, long []basketEntryOffsets, TBranch.ArrayDescriptor desc) {
+        this(path, basketEntryOffsets, desc, 0);
+        checkInvariants();
+    }
+
+    private static Range<Long>[] entryOffsetToRangeArray(long[] basketEntryOffsets) {
+        @SuppressWarnings("unchecked")
+        Range<Long>[] ret = new Range[basketEntryOffsets.length - 1];
+        for (int i = 0; i < basketEntryOffsets.length - 1; i += 1) {
+            Range<Long> range = Range.closed(basketEntryOffsets[i], basketEntryOffsets[i + 1] - 1);
+            ret[i] = range;
+        }
+        return ret;
+    }
+
+    private SlimTBranch(String path, long []basketEntryOffsets, TBranch.ArrayDescriptor desc, int basketStart) {
+        this(path, entryOffsetToRangeArray(basketEntryOffsets), desc, basketStart);
+        checkInvariants();
+    }
+
+    public SlimTBranch(String path, Range<Long>[] basketRangeList, TBranch.ArrayDescriptor desc) {
+        this(path, basketRangeList, desc, 0);
+        checkInvariants();
+    }
+
+    public SlimTBranch(String path, Range<Long>[] basketRangeList, TBranch.ArrayDescriptor desc, int basketStart) {
         this.path = path;
-        this.basketEntryOffsets = basketEntryOffsets;
-        this.basketEntryOffsetsLength = basketEntryOffsets.length;
-        this.baskets = new HashMap<Integer, SlimTBasket>();
         this.arrayDesc = desc;
-        this.basketStart = 0;
-        this.basketEnd = basketEntryOffsets.length;
+        this.baskets = new HashMap<Integer, SlimTBasket>();
+        this.basketStart = basketStart;
+        this.basketEnd = basketRangeList.length + basketStart;
 
         Builder<Long, Integer> basketBuilder = new ImmutableRangeMap.Builder<Long, Integer>();
-        for (int i = 0; i < basketEntryOffsets.length - 1; i += 1) {
-            basketBuilder = basketBuilder.put(Range.closed(basketEntryOffsets[i], basketEntryOffsets[i + 1] - 1), i);
+        for (int i = 0; i < basketRangeList.length; i += 1) {
+            int targetBasket = i + basketStart;
+            basketBuilder = basketBuilder.put(basketRangeList[i], targetBasket);
         }
-        rangeToBasketIDMap = basketBuilder.build();
+        rangeToBasketIDMap = dedupAndReturnRangeMap(basketBuilder.build());
+        checkInvariants();
     }
 
     public static SlimTBranch getFromTBranch(TBranch fatBranch) {
@@ -104,29 +145,36 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
         return rangeToBasketIDMap;
     }
 
+    private long[] cachedBasketEntry = null;
+
     @Override
-    public long [] getBasketEntryOffsets() {
-        ImmutableMap<Range<Long>, Integer> descMap = rangeToBasketIDMap.asMapOfRanges();
-        long[] tmpBasket = new long[basketEntryOffsetsLength];
+    public synchronized long [] getBasketEntryOffsets() {
+        if (cachedBasketEntry != null) {
+            return cachedBasketEntry;
+        }
+        ImmutableMap<Range<Long>, Integer> descMap = getRangeToBasketIDMap().asMapOfRanges();
+        int maxIdx = Math.max(basketEntryOffsetsLength, basketEnd);
+        cachedBasketEntry = new long[maxIdx + 1];
         for (int i = 0; i < basketStart; i += 1) {
-            tmpBasket[i] = i;
+            cachedBasketEntry[i] = i;
         }
         long topMost = 0;
         for (Entry<Range<Long>, Integer> e: descMap.entrySet()) {
-            tmpBasket[e.getValue()] = e.getKey().lowerEndpoint();
-            tmpBasket[e.getValue() + 1] = e.getKey().upperEndpoint() + 1;
+            int idx = e.getValue();
+            if ((idx < basketStart) || (idx >= basketEnd)) {
+                continue;
+            }
+            cachedBasketEntry[idx] = e.getKey().lowerEndpoint();
+            cachedBasketEntry[idx + 1] = e.getKey().upperEndpoint() + 1;
             topMost = e.getKey().upperEndpoint() + 1;
         }
-        for (int i = basketEnd + 2; i < basketEntryOffsetsLength; i += 1) {
-            tmpBasket[i] = topMost + i;
+        for (int i = basketEnd + 2; i < maxIdx; i += 1) {
+            cachedBasketEntry[i] = topMost + i;
         }
-        if ((basketEntryOffsets != null) && (basketStart == 0) && (basketEnd == basketEntryOffsetsLength)) {
-            assert Arrays.equals(tmpBasket, basketEntryOffsets);
+        if (cachedBasketEntry[0] != 0) {
+            assert cachedBasketEntry[0] == 0;
         }
-        if (tmpBasket[0] != 0) {
-            assert tmpBasket[0] == 0;
-        }
-        return tmpBasket;
+        return cachedBasketEntry;
     }
 
     @Override
