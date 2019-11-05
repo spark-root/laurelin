@@ -3,6 +3,9 @@ package edu.vanderbilt.accre.laurelin.spark_ttree;
 import static edu.vanderbilt.accre.laurelin.root_proxy.TBranch.entryOffsetToRangeMap;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputValidation;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -32,7 +35,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TKey;
  * without needing to deserialize the ROOT metadata -- i.e. this contains paths
  * and byte offsets to each basket
  */
-public class SlimTBranch implements Serializable, SlimTBranchInterface {
+public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectInputValidation {
     private static final long serialVersionUID = 1L;
     private String path;
 
@@ -373,6 +376,168 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface {
                     compressedLen,
                     uncompressedLen,
                     keyLen);
+        }
+    }
+
+    /**
+     * The in-memory representation of a SlimTBranch is quite bulky, and this
+     * space usage is multiplied by the # of branches and the # of partitions
+     * being processed that needs to be transmitted from the driver to
+     * executors. This repeated transmitting adds a decently-high per-partition
+     * overhead. Though, the total size of all SlimTBranch for an entire
+     * CMS NANOAOD file ends up being ~3MByte, so it's not so bad to have it
+     * in-memory, it's repeatedly transmitting the 3MByte 10s of thousands of
+     * times.
+     * <br />
+     * Instead of jumping through hoops to make the in-memory size really
+     * compact, we can instead override Java's serialization mechanism to
+     * provide an alternate representation used for (de-)serialization. The
+     * SerializeStorage class is what's actually transmitted over the wire.
+     *
+     */
+    public static class SerializeStorage implements Serializable, ObjectInputValidation {
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * Offset of this branch's baskets into the global basket list, the
+         * transmitted basket information is a slice of the global basket list
+         * delimited by basketStart and basketEnd
+         */
+        private int basketStart;
+
+        /**
+         * Offset of this branch's baskets into the global basket list, the
+         * transmitted basket information is a slice of the global basket list
+         * delimited by basketStart and basketEnd
+         */
+        private int basketEnd;
+
+        /**
+         * List of the byte offsets of the TKeys corresponding to the baskets
+         */
+        private long[] basketByteOffsets;
+
+        /**
+         * representation of the rangeToBasketIDMap where the index is the value
+         * minus basketStart and the value at each index is the range that's
+         * represented. This is significantly more space efficient
+         */
+        private Range<Long>[] rangeToBasketID;
+        private TBranch.ArrayDescriptor arrayDesc;
+        private String path;
+
+        public Range<Long>[] getRangeToBasketID() {
+            return rangeToBasketID;
+        }
+
+        private static class ArrayKeyWrapper<T> {
+            public T[] val;
+
+            public ArrayKeyWrapper(T[] val) {
+                this.val = val;
+            }
+
+            @Override
+            public int hashCode() {
+                final int prime = 31;
+                int result = 1;
+                result = prime * result + Arrays.deepHashCode(val);
+                return result;
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) {
+                    return true;
+                }
+                if (obj == null) {
+                    return false;
+                }
+                if (!(obj instanceof ArrayKeyWrapper)) {
+                    return false;
+                }
+                ArrayKeyWrapper<T> other = (ArrayKeyWrapper<T>) obj;
+                return Arrays.deepEquals(val, other.val);
+            }
+        }
+
+        private static transient HashMap<ArrayKeyWrapper<Range<Long>>, Range<Long>[]> rangeDedupMap = new
+                                 HashMap<ArrayKeyWrapper<Range<Long>>, Range<Long>[]>();
+
+        private synchronized Range<Long>[] dedupRange(Range<Long>[] val) {
+            ArrayKeyWrapper<Range<Long>> key = new ArrayKeyWrapper<Range<Long>>(val);
+            rangeDedupMap.putIfAbsent(key, val);
+            return rangeDedupMap.get(key);
+        }
+
+        protected SerializeStorage(SlimTBranch in) {
+            in.checkInvariants();
+            path = in.getPath();
+            basketStart = in.basketStart;
+            basketEnd = in.basketEnd;
+            arrayDesc = in.getArrayDesc();
+
+            /*
+             * Store the byte offset of each basket
+             */
+            basketByteOffsets = new long[in.basketEnd - in.basketStart];
+            for (int i = in.basketStart; i < in.basketEnd; i += 1) {
+                int idx = i - basketStart;
+                basketByteOffsets[idx] = in.getBasket(i).getOffset();
+            }
+
+            /*
+             * Store the entry range of each basketID
+             */
+            ImmutableMap<Range<Long>, Integer> map = in.getRangeToBasketIDMap().asMapOfRanges();
+            rangeToBasketID = new Range[basketEnd - basketStart];
+            for (Entry<Range<Long>, Integer> e: map.entrySet()) {
+                int idx = e.getValue();
+                if ((idx < basketStart) || (idx >= basketEnd)) {
+                    continue;
+                }
+                Range<Long> val = e.getKey();
+                rangeToBasketID[idx - basketStart] = val;
+            }
+            rangeToBasketID = dedupRange(rangeToBasketID);
+        }
+
+        /**
+         * Called by Java deserialization routines
+         * @return The SlimTBranch object represented by this object
+         * @throws ObjectStreamException We don't throw, but required by Java in signature
+         */
+        private Object readResolve() throws ObjectStreamException {
+            SlimTBranch ret = new SlimTBranch(path, rangeToBasketID, arrayDesc, basketStart);
+            int idx = basketStart;
+            for (long off: basketByteOffsets) {
+                ret.addBasket(idx, new SlimTBasket(off));
+                idx += 1;
+            }
+            return ret;
+        }
+
+        @Override
+        public void validateObject() throws InvalidObjectException {
+            if (basketEnd == 0) {
+                throw new InvalidObjectException("Null basketEnd");
+            }
+        }
+    }
+
+    /**
+     * Called by Java deserialization routines
+     * @return The SerializeStorage object which represents this object
+     * @throws ObjectStreamException We don't throw, but required by Java in signature
+     */
+    private Object writeReplace() throws ObjectStreamException {
+        return new SerializeStorage(this);
+    }
+
+    @Override
+    public void validateObject() throws InvalidObjectException {
+        if (basketEnd == 0) {
+            throw new InvalidObjectException("Got zero-length baskets");
         }
     }
 }
