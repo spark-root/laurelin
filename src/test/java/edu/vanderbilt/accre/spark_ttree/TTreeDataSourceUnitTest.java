@@ -6,7 +6,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -98,6 +104,78 @@ public class TTreeDataSourceUnitTest {
         // ... and the number of unique bytes we read to do the same
         assertTrue(5964 >= uniqReads);
     }
+
+    /*
+     * @lgray reported that too much data was being transmitted in partitions.
+     * this ended up being because an unnecessary hard reference was being held
+     * to the whole tbranch
+     */
+    @Test
+    public void checkSerializedPartitionSize() throws IOException {
+        String testPath = getBigTestDataIfExists("testdata/nano_19.root");
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", testPath);
+        optmap.put("tree",  "Events");
+        DataSourceOptions opts = new DataSourceOptions(optmap);
+        Root source = new Root();
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+
+        InputPartition<ColumnarBatch> partition = partitions.get(0);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ByteArrayInputStream bis;
+        ObjectOutput out = null;
+        byte[] yourBytes = null;
+        try {
+            out = new ObjectOutputStream(bos);
+            out.writeObject(partition);
+            out.flush();
+            yourBytes = bos.toByteArray();
+            /*
+             *  This patch produces 348555 bytes serialized, ensure it doesn't
+             *  grow accidentally
+             */
+            assertTrue("Partition size too large", yourBytes.length < 349000);
+
+            System.out.println("Got length: " + yourBytes.length);
+            bis = new ByteArrayInputStream(yourBytes);
+            ObjectInput in = new ObjectInputStream(bis);
+            @SuppressWarnings("unchecked")
+            InputPartition<ColumnarBatch> partitionBack = (InputPartition<ColumnarBatch>) in.readObject();
+            System.out.println("got partition" + partitionBack);
+
+        } catch (ClassNotFoundException e) {
+
+        } finally {
+            try {
+                bos.close();
+            } catch (IOException ex) {
+                // ignore close exception
+            }
+        }
+    }
+
+    private static int getSerializedSize(Object x) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutput out = null;
+        byte[] yourBytes = new byte[0];
+        try {
+            out = new ObjectOutputStream(bos);
+            out.writeObject(x);
+            out.flush();
+            yourBytes = bos.toByteArray();
+        } catch (IOException e) {
+            // who cares
+        } finally {
+            try {
+                bos.close();
+            } catch (IOException ex) {
+                // ignore close exception
+            }
+        }
+        return yourBytes.length;
+    }
+
 
     @Test
     public void testMultipleBasketsForiter() throws IOException {
