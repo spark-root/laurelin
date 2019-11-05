@@ -4,14 +4,23 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.google.common.collect.ImmutableRangeMap;
+import com.google.common.collect.ImmutableRangeMap.Builder;
+import com.google.common.collect.Range;
 
 public class TBranch {
     protected Proxy data;
     protected ArrayList<TBranch> branches;
     private ArrayList<TLeaf> leaves;
-    private ArrayList<TBasket> baskets;
+    private ArrayList<TBasket> lazyBasketStorage;
+    private int fMaxBaskets = 0;
+    private int[] fBasketBytes;
+    private long[] fBasketEntry;
+    private long[] fBasketSeek;
 
     protected boolean isBranch;
     protected TBranch parent;
@@ -67,8 +76,9 @@ public class TBranch {
         this.tree = tree;
 
         branches = new ArrayList<TBranch>();
+
+
         if (getClass().equals(TBranch.class)) {
-            baskets = new ArrayList<TBasket>();
             leaves = new ArrayList<TLeaf>();
             isBranch = true;
             ProxyArray fBranches = (ProxyArray) data.getProxy("fBranches");
@@ -90,7 +100,6 @@ public class TBranch {
                 }
                 leaves.add(leaf);
             }
-
             /*
              * Instead of being in the ObjArray of fBaskets, ROOT stores the baskets in separate
              * toplevel entries in the file
@@ -98,26 +107,35 @@ public class TBranch {
              *     Long64_t   *fBasketEntry;      ///<[fMaxBaskets] Table of first entry in each basket
              *     Long64_t   *fBasketSeek;       ///<[fMaxBaskets] Addresses of baskets on file
              */
-            int fMaxBaskets = (int) data.getScalar("fMaxBaskets").getVal();
-            int[] fBasketBytes = (int[]) data.getScalar("fBasketBytes").getVal();
-            long[] fBasketEntry = (long[]) data.getScalar("fBasketEntry").getVal();
-            long[] fBasketSeek = (long[]) data.getScalar("fBasketSeek").getVal();
-            baskets = new ArrayList<TBasket>();
-            TFile backing = tree.getBackingFile();
+            fMaxBaskets = (int) data.getScalar("fMaxBaskets").getVal();
+            int[] fBasketBytesTmp = (int[]) data.getScalar("fBasketBytes").getVal();
+            long[] fBasketEntryTmp = (long[]) data.getScalar("fBasketEntry").getVal();
+            long[] fBasketSeekTmp = (long[]) data.getScalar("fBasketSeek").getVal();
+
+            /*
+             *  Root sometimes makes zero-length/empty baskets, so we need to
+             *  trim them to preserve the invariant in ArrayBuilder that the
+             *  values are monotonically increasing
+             */
+            int nonEmptyBaskets = 0;
             for (int i = 0; i < fMaxBaskets; i += 1) {
-                Cursor c;
-                if (fBasketSeek[i] == 0) {
-                    // An empty basket?
-                    continue;
-                }
-                try {
-                    c = backing.getCursorAt(fBasketSeek[i]);
-                    TBasket b = TBasket.getFromFile(c, fBasketBytes[i], fBasketEntry[i], fBasketSeek[i]);
-                    baskets.add(b);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                if (fBasketSeekTmp[i] != 0) {
+                    nonEmptyBaskets += 1;
                 }
             }
+            fBasketBytes = new int[nonEmptyBaskets];
+            fBasketEntry = new long[nonEmptyBaskets];
+            fBasketSeek = new long[nonEmptyBaskets];
+            int j = 0;
+            for (int i = 0; i < nonEmptyBaskets; i += 1) {
+                if (fBasketSeekTmp[i] != 0) {
+                    fBasketBytes[j] = fBasketBytesTmp[i];
+                    fBasketEntry[j] = fBasketEntryTmp[i];
+                    fBasketSeek[j] = fBasketSeekTmp[i];
+                    j += 1;
+                }
+            }
+            fMaxBaskets = nonEmptyBaskets;
         } else {
             isBranch = false;
         }
@@ -176,8 +194,30 @@ public class TBranch {
         return fType;
     }
 
-    public List<TBasket> getBaskets() {
-        return baskets;
+    public synchronized List<TBasket> getBaskets() {
+        if (lazyBasketStorage == null) {
+            loadBaskets();
+        }
+        return lazyBasketStorage;
+    }
+
+    private void loadBaskets() {
+        lazyBasketStorage = new ArrayList<TBasket>();
+        TFile backing = tree.getBackingFile();
+        for (int i = 0; i < fMaxBaskets; i += 1) {
+            Cursor c;
+            if (fBasketSeek[i] == 0) {
+                // An empty basket?
+                continue;
+            }
+            try {
+                c = backing.getCursorAt(fBasketSeek[i]);
+                TBasket b = TBasket.getFromFile(c, fBasketBytes[i], fBasketEntry[i], fBasketSeek[i]);
+                lazyBasketStorage.add(b);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     /*
@@ -364,15 +404,58 @@ public class TBranch {
     }
 
     public long[] getBasketEntryOffsets() {
-        int basketCount = baskets.size();
+        int basketCount = fBasketEntry.length;
         // The array processing code wants a final entry to cap the last true
         // basket from above
-        long []ret = new long[basketCount + 1];
-        for (int i = 0; i < basketCount; i += 1) {
-            ret[i] = baskets.get(i).getBasketEntry();
+        if (fBasketEntry[basketCount - 1] == tree.getEntries()) {
+            long []ret = new long[basketCount];
+            for (int i = 0; i < basketCount; i += 1) {
+                ret[i] = fBasketEntry[i];
+            }
+            return ret;
+        } else {
+            long []ret = new long[basketCount + 1];
+            for (int i = 0; i < basketCount; i += 1) {
+                ret[i] = fBasketEntry[i];
+            }
+            ret[basketCount] = tree.getEntries();
+            return ret;
         }
-        ret[basketCount] = tree.getEntries();
-        return ret;
     }
 
+    public int getBasketCount() {
+        return fMaxBaskets;
+    }
+
+    public int[] getBasketBytes() {
+        return fBasketBytes;
+    }
+
+    public long[] getBasketSeek() {
+        return fBasketSeek;
+    }
+
+    /**
+     * Converts a root-style basketEntryOffset into a RangeMap which maps
+     * (long) entries to (int)basketIDs. This is a bit more complicated than
+     * the regular RangeMap intersection function, because when we decode
+     * baskets, we need to process a whole basket at a time, but intersect()
+     * will trim the ranges to line up with our input range
+     *
+     * @param basketEntryOffsets ROOTs value + the cap end to close the last
+     * @param entrystart the beginning entry we want
+     * @param entrystop one past the last entry we want
+     * @return RangeMap of all the baskets containing our range
+     */
+    public static ImmutableRangeMap<Long, Integer> entryOffsetToRangeMap(long[] basketEntryOffsets, long entrystart, long entrystop) {
+        Builder<Long, Integer> basketBuilder = new ImmutableRangeMap.Builder<Long, Integer>();
+        for (int i = 0; i < basketEntryOffsets.length - 1; i += 1) {
+            basketBuilder = basketBuilder.put(Range.closed(basketEntryOffsets[i], basketEntryOffsets[i + 1] - 1), i);
+        }
+        ImmutableRangeMap<Long, Integer> rangeToBasketIDMap = basketBuilder.build();
+        Entry<Range<Long>, Integer> low = rangeToBasketIDMap.getEntry(entrystart);
+        Entry<Range<Long>, Integer> high = rangeToBasketIDMap.getEntry(entrystop - 1);
+        Range<Long> wideRange = Range.closed(low.getKey().lowerEndpoint(), high.getKey().upperEndpoint());
+        return rangeToBasketIDMap.subRangeMap(wideRange);
+    }
 }

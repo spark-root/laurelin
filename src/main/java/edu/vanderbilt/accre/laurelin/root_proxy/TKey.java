@@ -13,16 +13,13 @@ public class TKey {
     String fClassName;
     String fName;
     String fTitle;
-    private Cursor startCursor;
-    private Cursor endCursor;
 
-    public void getFromFile(ROOTFile fh, long off) throws IOException {
+    public Cursor getFromFile(ROOTFile fh, long off) throws IOException {
         Cursor buffer = fh.getCursor(off);
-        getFromFile(buffer);
+        return getFromFile(buffer);
     }
 
-    public void getFromFile(Cursor buffer) throws IOException {
-        startCursor = buffer.duplicate();
+    public Cursor getFromFile(Cursor buffer) throws IOException {
         Nbytes = buffer.readInt();
         version = buffer.readShort();
         ObjLen = buffer.readInt();
@@ -44,24 +41,18 @@ public class TKey {
         fClassName = buffer.readTString();
         fName = buffer.readTString();
         fTitle = buffer.readTString();
-        endCursor = buffer.duplicate();
+        return buffer;
     }
 
-    /**
-     * get the begining of this key
-     *
-     * @return cursor pointing to beginning of the key
-     */
-    public Cursor getStartCursor() {
-        return startCursor.duplicate();
+    public int getKeyLen() {
+        return KeyLen;
     }
 
-    /**
-     * get the ending of this key
-     *
-     * @return cursor pointing to ending of the key
-     */
-    public Cursor getEndCursor() {
-        return endCursor.duplicate();
+    public int getNBytes() {
+        return Nbytes;
+    }
+
+    public int getObjLen() {
+        return ObjLen;
     }
 }

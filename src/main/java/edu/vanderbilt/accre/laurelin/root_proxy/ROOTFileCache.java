@@ -231,8 +231,10 @@ public class ROOTFileCache {
             logger.trace(String.format("Opening underlying %s to %s", path, fileInterface));
         }
         ROOTFile ret = ROOTFile.getInputFile(path, fileInterface);
-        ROOTFileFinalizer ref = new ROOTFileFinalizer(ret, phantomQueue, ret.getFileInterface());
-        phantomMap.put(path, ref);
+        if (!phantomMap.containsKey(path)) {
+            ROOTFileFinalizer ref = new ROOTFileFinalizer(ret, phantomQueue, ret.getFileInterface());
+            phantomMap.put(path, ref);
+        }
         assert timedCache.getIfPresent(path) == null;
         return ret;
     }

@@ -8,8 +8,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.reader.InputPartition;
@@ -32,17 +34,71 @@ import org.apache.spark.sql.vectorized.ColumnarArray;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.junit.Test;
 
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
+
 import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.Root;
 import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
+import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
+import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
+import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
+import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranchInterface;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
 public class TTreeDataSourceUnitTest {
+    /*
+     * @lgray reported that too much data was being deserialised when TTrees
+     * were loaded and partitions made. Make sure that the bytes read don't
+     * balloon accidentally.
+     */
+    @Test
+    public void loadMinimalBytes() throws IOException {
+        LinkedList<Storage> accum = new LinkedList<Storage>();
+        Function<Event, Integer> cb = e -> {
+            accum.add(e.getStorage());
+            return 0;
+        };
+        IOProfile.getInstance().setCB(cb);
+
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", "testdata/uproot-foriter.root");
+        optmap.put("tree",  "foriter");
+        DataSourceOptions opts = new DataSourceOptions(optmap);
+        Root source = new Root();
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        DataType schema = reader.readSchema();
+        StructType schemaCast = (StructType) schema;
+        assertEquals(1, schemaCast.size());
+        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+
+        // Count all bytes read
+        long sumReads = 0;
+        long uniqReads = 0;
+        RangeSet<Long> readRanges = TreeRangeSet.create();
+        for (Storage s: accum) {
+            sumReads += s.len;
+            Range<Long> r = Range.closedOpen(s.offset, s.offset + s.len);
+            readRanges.add(r);
+        }
+
+        // Count unique bytes read
+        for (Range<Long> r: readRanges.asDescendingSetOfRanges()) {
+            uniqReads += r.upperEndpoint() - r.lowerEndpoint();
+        }
+
+        // Cap the number of bytes we read to load a file and make partitions
+        assertTrue(15794 >= sumReads);
+        // ... and the number of unique bytes we read to do the same
+        assertTrue(5964 >= uniqReads);
+    }
+
     @Test
     public void testMultipleBasketsForiter() throws IOException {
         Map<String, String> optmap = new HashMap<String, String>();
@@ -50,16 +106,16 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "foriter");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(1, schemaCast.size());
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
-        assertEquals(8, partitions.size());
+        assertEquals(1, partitions.size());
         InputPartition<ColumnarBatch> partition;
-        long []expectedCounts = {6, 6, 6, 6, 6, 6, 6, 4};
-        for (int i = 0; i < 8; i += 1) {
+        long []expectedCounts = {46};
+        for (int i = 0; i < 1; i += 1) {
             partition = partitions.get(i);
             InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
             assertTrue(partitionReader.next());
@@ -77,7 +133,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "Events");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
         // only get a scalar float_t for now since that's all that works
         MetadataBuilder metadata = new MetadataBuilder();
         metadata.putString("rootType", "float");
@@ -86,23 +142,10 @@ public class TTreeDataSourceUnitTest {
         reader.pruneColumns(prune);
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
-        assertEquals(13, partitions.size());
+        assertEquals(1, partitions.size());
         InputPartition<ColumnarBatch> partition;
-        long []expectedCounts = {1000,
-                                    13519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    14519,
-                                    1827
-                                 };
-        for (int i = 0; i < 8; i += 1) {
+        long []expectedCounts = {161536};
+        for (int i = 0; i < 1; i += 1) {
             partition = partitions.get(i);
             InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
             assertTrue(partitionReader.next());
@@ -122,7 +165,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
         List<InputPartition<ColumnarBatch>> batch = reader.planBatchInputPartitions();
         assertNotNull(batch);
     }
@@ -134,7 +177,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
         assertNotNull(reader.planBatchInputPartitions());
     }
 
@@ -146,7 +189,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("threadCount", "0");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
         List<InputPartition<ColumnarBatch>> partitionPlan = reader.planBatchInputPartitions();
         assertNotNull(partitionPlan);
         StructType schema = reader.readSchema();
@@ -180,7 +223,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
         assertEquals(1, partitions.size());
@@ -220,7 +263,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null);
+        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
         assertEquals(1, partitions.size());
@@ -249,7 +292,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarI1").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new BooleanType(), SimpleType.fromString("bool"), SimpleType.dtypeFromString("bool"), cache, 0, 9, slim, null);
         assertEquals(result.getBoolean(0), false);
@@ -269,7 +312,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayI1").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new BooleanType(), false), new SimpleType.ArrayType(SimpleType.fromString("bool")), SimpleType.dtypeFromString("bool"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -325,7 +368,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarI8").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ByteType(), SimpleType.fromString("char"), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
         assertEquals(result.getByte(0), 0);
@@ -345,7 +388,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarUI8").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ShortType(), SimpleType.fromString("uchar"), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
         assertEquals(result.getShort(0), 0);
@@ -365,7 +408,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayI8").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ByteType(), false), new SimpleType.ArrayType(SimpleType.fromString("char")), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -421,7 +464,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayUI8").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("uchar")), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -477,7 +520,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceI8").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ByteType(), false), new SimpleType.ArrayType(SimpleType.fromString("char")), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -515,7 +558,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceUI8").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("uchar")), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -553,7 +596,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarI16").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ShortType(), SimpleType.fromString("short"), SimpleType.dtypeFromString("short"), cache, 0, 9, slim, null);
         assertEquals(result.getShort(0), 0);
@@ -573,7 +616,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarUI16").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new IntegerType(), SimpleType.fromString("ushort"), SimpleType.dtypeFromString("ushort"), cache, 0, 9, slim, null);
         assertEquals(result.getInt(0), 0);
@@ -593,7 +636,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayI16").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("short")), SimpleType.dtypeFromString("short"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -649,7 +692,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayUI16").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("ushort")), SimpleType.dtypeFromString("ushort"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -705,7 +748,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceI16").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("short")), SimpleType.dtypeFromString("short"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -743,7 +786,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceUI16").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("ushort")), SimpleType.dtypeFromString("ushort"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -781,7 +824,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarI32").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new IntegerType(), SimpleType.fromString("int"), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
         assertEquals(result.getInt(0), 0);
@@ -801,7 +844,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarUI32").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new LongType(), SimpleType.fromString("uint"), SimpleType.dtypeFromString("uint"), cache, 0, 9, slim, null);
         assertEquals(result.getLong(0), 0);
@@ -821,7 +864,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayI32").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("int")), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -877,7 +920,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayUI32").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("uint")), SimpleType.dtypeFromString("uint"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -933,7 +976,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceI32").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("int")), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -971,7 +1014,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceUI32").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("uint")), SimpleType.dtypeFromString("uint"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -1009,7 +1052,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarI64").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new LongType(), SimpleType.fromString("long"), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
         assertEquals(result.getLong(0), 0);
@@ -1029,22 +1072,22 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarUI64").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new DoubleType(), SimpleType.fromString("ulong"), SimpleType.dtypeFromString("ulong"), cache, 0, 9, slim, null);
-        assertEquals(result.getDouble(0), 0, 0.1);
-        assertEquals(result.getDouble(1), 1, 0.1);
-        assertEquals(result.getDouble(2), 2, 0.1);
-        assertEquals(result.getDouble(3), 0, 0.1);
-        assertEquals(result.getDouble(4), 1, 0.1);
-        assertEquals(result.getDouble(5), 2, 0.1);
+        assertEquals(result.getLong(0), 0, 0.1);
+        assertEquals(result.getLong(1), 1, 0.1);
+        assertEquals(result.getLong(2), 2, 0.1);
+        assertEquals(result.getLong(3), 0, 0.1);
+        assertEquals(result.getLong(4), 1, 0.1);
+        assertEquals(result.getLong(5), 2, 0.1);
         /*
          *  There's not enough bits in the mantissa to be able to tell the
          *  difference between ULONG_MAX and (ULONG_MAX - 1). Oh well.
          */
-        assertEquals(result.getDouble(6), 1.8446744073709552E19, 0.1);
-        assertEquals(result.getDouble(7), 1.8446744073709552E19, 0.1);
-        assertEquals(result.getDouble(8), 1.8446744073709552E19, 0.1);
+        assertEquals(result.getLong(6), -1, 0.1);
+        assertEquals(result.getLong(7), -2, 0.1);
+        assertEquals(result.getLong(8), -3, 0.1);
     }
 
     @Test
@@ -1053,7 +1096,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayI64").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -1109,54 +1152,54 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayUI64").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("ulong")), SimpleType.dtypeFromString("ulong"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 3);
-        assertEquals(event0.getDouble(0), 0, 0.1);
-        assertEquals(event0.getDouble(1), 0, 0.1);
-        assertEquals(event0.getDouble(2), 0, 0.1);
+        assertEquals(event0.getLong(0), 0, 0.1);
+        assertEquals(event0.getLong(1), 0, 0.1);
+        assertEquals(event0.getLong(2), 0, 0.1);
         ColumnarArray event1 = result.getArray(1);
         assertEquals(event1.numElements(), 3);
-        assertEquals(event1.getDouble(0), 1, 0.1);
-        assertEquals(event1.getDouble(1), 1, 0.1);
-        assertEquals(event1.getDouble(2), 1, 0.1);
+        assertEquals(event1.getLong(0), 1, 0.1);
+        assertEquals(event1.getLong(1), 1, 0.1);
+        assertEquals(event1.getLong(2), 1, 0.1);
         ColumnarArray event2 = result.getArray(2);
         assertEquals(event2.numElements(), 3);
-        assertEquals(event2.getDouble(0), 2, 0.1);
-        assertEquals(event2.getDouble(1), 2, 0.1);
-        assertEquals(event2.getDouble(2), 2, 0.1);
+        assertEquals(event2.getLong(0), 2, 0.1);
+        assertEquals(event2.getLong(1), 2, 0.1);
+        assertEquals(event2.getLong(2), 2, 0.1);
         ColumnarArray event3 = result.getArray(3);
         assertEquals(event3.numElements(), 3);
-        assertEquals(event3.getDouble(0), 0, 0.1);
-        assertEquals(event3.getDouble(1), 0, 0.1);
-        assertEquals(event3.getDouble(2), 0, 0.1);
+        assertEquals(event3.getLong(0), 0, 0.1);
+        assertEquals(event3.getLong(1), 0, 0.1);
+        assertEquals(event3.getLong(2), 0, 0.1);
         ColumnarArray event4 = result.getArray(4);
         assertEquals(event4.numElements(), 3);
-        assertEquals(event4.getDouble(0), 1, 0.1);
-        assertEquals(event4.getDouble(1), 1, 0.1);
-        assertEquals(event4.getDouble(2), 1, 0.1);
+        assertEquals(event4.getLong(0), 1, 0.1);
+        assertEquals(event4.getLong(1), 1, 0.1);
+        assertEquals(event4.getLong(2), 1, 0.1);
         ColumnarArray event5 = result.getArray(5);
         assertEquals(event5.numElements(), 3);
-        assertEquals(event5.getDouble(0), 2, 0.1);
-        assertEquals(event5.getDouble(1), 2, 0.1);
-        assertEquals(event5.getDouble(2), 2, 0.1);
+        assertEquals(event5.getLong(0), 2, 0.1);
+        assertEquals(event5.getLong(1), 2, 0.1);
+        assertEquals(event5.getLong(2), 2, 0.1);
         ColumnarArray event6 = result.getArray(6);
         assertEquals(event6.numElements(), 3);
-        assertEquals(event6.getDouble(0), 1.8446744073709552E19, 0.1);
-        assertEquals(event6.getDouble(1), 1.8446744073709552E19, 0.1);
-        assertEquals(event6.getDouble(2), 1.8446744073709552E19, 0.1);
+        assertEquals(event6.getLong(0), -1, 0.1);
+        assertEquals(event6.getLong(1), -1, 0.1);
+        assertEquals(event6.getLong(2), -1, 0.1);
         ColumnarArray event7 = result.getArray(7);
         assertEquals(event7.numElements(), 3);
-        assertEquals(event7.getDouble(0), 1.8446744073709552E19, 0.1);
-        assertEquals(event7.getDouble(1), 1.8446744073709552E19, 0.1);
-        assertEquals(event7.getDouble(2), 1.8446744073709552E19, 0.1);
+        assertEquals(event7.getLong(0), -2, 0.1);
+        assertEquals(event7.getLong(1), -2, 0.1);
+        assertEquals(event7.getLong(2), -2, 0.1);
         ColumnarArray event8 = result.getArray(8);
         assertEquals(event8.numElements(), 3);
-        assertEquals(event8.getDouble(0), 1.8446744073709552E19, 0.1);
-        assertEquals(event8.getDouble(1), 1.8446744073709552E19, 0.1);
-        assertEquals(event8.getDouble(2), 1.8446744073709552E19, 0.1);
+        assertEquals(event8.getLong(0), -3, 0.1);
+        assertEquals(event8.getLong(1), -3, 0.1);
+        assertEquals(event8.getLong(2), -3, 0.1);
     }
 
     @Test
@@ -1165,7 +1208,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceI64").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
@@ -1203,36 +1246,36 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceUI64").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("ulong")), SimpleType.dtypeFromString("ulong"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 0);
         ColumnarArray event1 = result.getArray(1);
         assertEquals(event1.numElements(), 1);
-        assertEquals(event1.getDouble(0), 1, 0.1);
+        assertEquals(event1.getLong(0), 1, 0.1);
         ColumnarArray event2 = result.getArray(2);
         assertEquals(event2.numElements(), 2);
-        assertEquals(event2.getDouble(0), 2, 0.1);
-        assertEquals(event2.getDouble(1), 2, 0.1);
+        assertEquals(event2.getLong(0), 2, 0.1);
+        assertEquals(event2.getLong(1), 2, 0.1);
         ColumnarArray event3 = result.getArray(3);
         assertEquals(event3.numElements(), 0);
         ColumnarArray event4 = result.getArray(4);
         assertEquals(event4.numElements(), 1);
-        assertEquals(event4.getDouble(0), 1, 0.1);
+        assertEquals(event4.getLong(0), 1, 0.1);
         ColumnarArray event5 = result.getArray(5);
         assertEquals(event5.numElements(), 2);
-        assertEquals(event5.getDouble(0), 2, 0.1);
-        assertEquals(event5.getDouble(1), 2, 0.1);
+        assertEquals(event5.getLong(0), 2, 0.1);
+        assertEquals(event5.getLong(1), 2, 0.1);
         ColumnarArray event6 = result.getArray(6);
         assertEquals(event6.numElements(), 0);
         ColumnarArray event7 = result.getArray(7);
         assertEquals(event7.numElements(), 1);
-        assertEquals(event7.getDouble(0), 1.8446744073709552E19, 0.1);
+        assertEquals(event7.getLong(0), -2, 0.1);
         ColumnarArray event8 = result.getArray(8);
         assertEquals(event8.numElements(), 2);
-        assertEquals(event8.getDouble(0), 1.8446744073709552E19, 0.1);
-        assertEquals(event8.getDouble(1), 1.8446744073709552E19, 0.1);
+        assertEquals(event8.getLong(0), -3, 0.1);
+        assertEquals(event8.getLong(1), -3, 0.1);
         result.close();
     }
 
@@ -1242,7 +1285,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("tree"), file);
         TBranch branch = tree.getBranches("Float32").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new FloatType(), SimpleType.fromString("float"), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
         for (int i = 0;  i < 100;  i++) {
@@ -1257,7 +1300,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("tree"), file);
         TBranch branch = tree.getBranches("ArrayFloat32").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new FloatType(), false), new SimpleType.ArrayType(SimpleType.fromString("float")), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
         for (int i = 0;  i < 100;  i++) {
@@ -1276,7 +1319,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("tree"), file);
         TBranch branch = tree.getBranches("SliceFloat32").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new FloatType(), false), new SimpleType.ArrayType(SimpleType.fromString("float")), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
         for (int i = 0;  i < 100;  i++) {
@@ -1294,7 +1337,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("tree"), file);
         TBranch branch = tree.getBranches("Float64").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new DoubleType(), SimpleType.fromString("double"), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
         for (int i = 0;  i < 100;  i++) {
@@ -1309,7 +1352,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("tree"), file);
         TBranch branch = tree.getBranches("ArrayFloat64").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("double")), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
         for (int i = 0;  i < 100;  i++) {
@@ -1328,7 +1371,7 @@ public class TTreeDataSourceUnitTest {
         TTree tree = new TTree(file.getProxy("tree"), file);
         TBranch branch = tree.getBranches("SliceFloat64").get(0);
         Cache cache = new Cache();
-        SlimTBranch slim = SlimTBranch.getFromTBranch(branch);
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("double")), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
         for (int i = 0;  i < 100;  i++) {
@@ -1341,4 +1384,42 @@ public class TTreeDataSourceUnitTest {
         result.close();
     }
 
+    /*
+     *  +----------------------------------------+
+        |long                                    |
+        +----------------------------------------+
+        |[0]                                     |
+        |[10, 11]                                |
+        |[20, 21, 22]                            |
+        |[30, 31, 32, 33]                        |
+        |[40, 41, 42, 43, 44]                    |
+        |[50, 51, 52, 53, 54, 55]                |
+        |[60, 61, 62, 63, 64, 65, 66]            |
+        |[70, 71, 72, 73, 74, 75, 76, 77]        |
+        |[80, 81, 82, 83, 84, 85, 86, 87, 88]    |
+        |[90, 91, 92, 93, 94, 95, 96, 97, 98, 99]|
+        +----------------------------------------+
+     */
+    @Test
+    public void testBasketingAroundVector() throws IOException {
+        TFile file = TFile.getFromFile("testdata/stdvector.root");
+        TTree tree = new TTree(file.getProxy("tvec"), file);
+        TBranch branch = tree.getBranches("long").get(0);
+        Cache cache = new Cache();
+        SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
+
+        for (int start = 0; start < 10; start += 1) {
+            for (int end = start + 1; end <= 10; end += 1) {
+                TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, start, end, slim, null);
+                for (int i = start; i < end; i += 1) {
+                    ColumnarArray event = result.getArray(i - start);
+                    assertEquals(i + 1, event.numElements());
+                    for (int j = 0; j <= i; j += 1) {
+                        assertEquals(i * 10 + j, event.getLong(j));
+                    }
+                }
+                result.close();
+            }
+        }
+    }
 }

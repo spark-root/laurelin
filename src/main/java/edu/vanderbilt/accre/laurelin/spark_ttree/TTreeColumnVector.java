@@ -29,31 +29,26 @@ public class TTreeColumnVector extends ColumnVector {
     private ArrayBuilder.GetBasket getbasket;
     private ArrayBuilder builder;
 
-    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch, ThreadPoolExecutor executor, ROOTFileCache fileCache) {
+    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, Cache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor, ROOTFileCache fileCache) {
         super(type);
-        logger.trace("new column vec of type: " + type);
 
         this.basketEntryOffsets = slimBranch.getBasketEntryOffsets();
         this.getbasket = slimBranch.getArrayBranchCallback(basketCache, fileCache);
 
         TBranch.ArrayDescriptor desc = slimBranch.getArrayDesc();
         if (desc == null) {
-            logger.trace("  scalar vec");
             Interpretation interpretation = new AsDtype(dtype);
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
-        }
-        else if (desc.isFixed()) {
-            logger.trace("  fixed vec");
+        } else if (desc.isFixed()) {
             Interpretation interpretation = new AsDtype(dtype, Arrays.asList(desc.getFixedLength()));
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         } else {
-            logger.trace("  slice vec");
             Interpretation interpretation = new AsJagged(new AsDtype(dtype), desc.getSkipBytes());
             this.builder = new ArrayBuilder(getbasket, interpretation, basketEntryOffsets, executor, entrystart, entrystop);
         }
     }
 
-    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, Cache basketCache, long entrystart, long entrystop, SlimTBranch slimBranch, ThreadPoolExecutor executor) {
+    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, Cache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor) {
         this(type, rootType, dtype, basketCache, entrystart, entrystop, slimBranch, executor, (ROOTFileCache) null);
     }
 

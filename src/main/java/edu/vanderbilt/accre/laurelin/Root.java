@@ -8,8 +8,11 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
+import java.util.Map.Entry;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +40,8 @@ import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.apache.spark.util.CollectionAccumulator;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOFactory;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
@@ -49,6 +54,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
+import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranchInterface;
 import edu.vanderbilt.accre.laurelin.spark_ttree.StructColumnVector;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
@@ -102,6 +108,21 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         private long entryEnd;
         private int currBasket = -1;
         private Map<String, SlimTBranch> slimBranches;
+
+        /**
+         * Thread factory for async processing/decompression of baskets
+         */
+        private static ThreadFactory namedThreadFactory =
+                new ThreadFactoryBuilder().setNameFormat("laurelin-arraybuilder-%d").build();
+
+        /**
+         * ThreadPool handling the async decompression tasks
+         */
+        private static ThreadPoolExecutor staticExecutor = new ThreadPoolExecutor(1,1,60L, TimeUnit.SECONDS,new LinkedBlockingQueue<Runnable>());
+
+        /**
+         * Holds the async threadpool if enabled, null otherwise
+         */
         private static ThreadPoolExecutor executor;
         private CollectionAccumulator<Storage> profileData;
         private int pid;
@@ -126,7 +147,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
             IOProfile.getInstance(pid, cb);
 
             if (threadCount >= 1) {
-                executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
+                executor = staticExecutor;
                 executor.setCorePoolSize(threadCount);
                 executor.setMaximumPoolSize(threadCount);
             } else {
@@ -180,7 +201,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                     vecs.add(new StructColumnVector(field.dataType(), nestedVecs));
                     continue;
                 }
-                SlimTBranch slimBranch = slimBranches.get(field.name());
+                SlimTBranchInterface slimBranch = slimBranches.get(field.name());
                 SimpleType rootType;
                 rootType = SimpleType.fromString(field.metadata().getString("rootType"));
 
@@ -310,11 +331,11 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                     ret = DataTypes.ShortType;
                 } else if ((simpleType == SimpleType.Int32) || (simpleType == SimpleType.UInt16)) {
                     ret = DataTypes.IntegerType;
-                } else if ((simpleType == SimpleType.Int64) || (simpleType == SimpleType.UInt32)) {
+                } else if ((simpleType == SimpleType.UInt64) || (simpleType == SimpleType.Int64) || (simpleType == SimpleType.UInt32)) {
                     ret = DataTypes.LongType;
                 } else if (simpleType == SimpleType.Float32) {
                     ret = DataTypes.FloatType;
-                } else if ((simpleType == SimpleType.Float64) || (simpleType == SimpleType.UInt64)) {
+                } else if (simpleType == SimpleType.Float64) {
                     ret = DataTypes.DoubleType;
                 } else if (simpleType == SimpleType.Pointer) {
                     ret = DataTypes.LongType;
@@ -331,6 +352,10 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
 
         protected static class PartitionHelper implements Serializable {
             private static final long serialVersionUID = 1L;
+            /**
+             * How many events to put in a partition
+             */
+            private static final long PARTITION_SIZE = 200 * 1000;
             String treeName;
             StructType schema;
             int threadCount;
@@ -360,38 +385,40 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                 List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
                 int pid = 0;
                 TTree inputTree;
-                try (TFile inputFile = TFile.getFromFile(path)) {
+
+                try {
+                    TFile inputFile = TFile.getFromFile(fileCache.getROOTFile(path));
                     inputTree = new TTree(inputFile.getProxy(treeName), inputFile);
+
+                    Map<String, SlimTBranch> slimBranches = new HashMap<String, SlimTBranch>();
+                    parseStructFields(inputTree, slimBranches, schema, "");
+
+                    // TODO We partition based on a fixed number of events per
+                    //      partition, which isn't smart. Redo it with something
+                    //      smarter later
+                    long[] entryOffset = inputTree.getBranches().get(0).getBasketEntryOffsets();
+                    long lastEntry = entryOffset[entryOffset.length - 1];
+                    for (int i = 0; i < lastEntry; i += PARTITION_SIZE) {
+                        pid += 1;
+                        long partitionStart = i;
+                        long partitionEnd = Math.min(lastEntry, partitionStart + PARTITION_SIZE);
+                        Map<String, SlimTBranch> trimmedSlimBranches = new HashMap<String, SlimTBranch>();
+                        for (Entry<String, SlimTBranch> e: slimBranches.entrySet()) {
+                            trimmedSlimBranches.put(e.getKey(), e.getValue().copyAndTrim(partitionStart, partitionEnd));
+                        }
+                        ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, partitionStart, partitionEnd, slimBranches, threadCount, profileData, pid));
+                    }
+                    if (ret.size() == 0) {
+                        // Only one basket?
+                        logger.debug("Planned for zero baskets, adding a dummy one");
+                        pid += 1;
+                        ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, 0, inputTree.getEntries(), slimBranches, threadCount, profileData, pid));
+                    }
+                    return ret.iterator();
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
 
-                Map<String, SlimTBranch> slimBranches = new HashMap<String, SlimTBranch>();
-                parseStructFields(inputTree, slimBranches, schema, "");
-
-
-                // TODO We partition based on the basketing of the first branch
-                //      which might not be optimal. We should do something
-                //      smarter later
-                long[] entryOffset = inputTree.getBranches().get(0).getBasketEntryOffsets();
-                for (int i = 0; i < (entryOffset.length - 1); i += 1) {
-                    pid += 1;
-                    long entryStart = entryOffset[i];
-                    long entryEnd = entryOffset[i + 1];
-                    // the last basket is dumb and annoying
-                    if (i == (entryOffset.length - 1)) {
-                        entryEnd = inputTree.getEntries();
-                    }
-
-                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, entryStart, entryEnd, slimBranches, threadCount, profileData, pid));
-                }
-                if (ret.size() == 0) {
-                    // Only one basket?
-                    logger.debug("Planned for zero baskets, adding a dummy one");
-                    pid += 1;
-                    ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, 0, inputTree.getEntries(), slimBranches, threadCount, profileData, pid));
-                }
-                return ret.iterator();
             }
 
             FlatMapFunction<String, InputPartition<ColumnarBatch>> getLambda() {
@@ -441,7 +468,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
 
     @Override
     public DataSourceReader createReader(DataSourceOptions options) {
-        return createReader(options, SparkContext.getOrCreate());
+        return createReader(options, SparkContext.getOrCreate(), false);
     }
 
     /**
@@ -451,11 +478,11 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
      * @return new reader
      */
 
-    public DataSourceReader createReader(DataSourceOptions options, SparkContext context) {
+    public DataSourceReader createReader(DataSourceOptions options, SparkContext context, boolean traceIO) {
         logger.trace("make new reader");
         CacheFactory basketCacheFactory = new CacheFactory();
         CollectionAccumulator<Event.Storage> ioAccum = null;
-        if (context != null) {
+        if ((traceIO) && (context != null)) {
             ioAccum = new CollectionAccumulator<Event.Storage>();
             context.register(ioAccum, "edu.vanderbilt.accre.laurelin.ioprofile");
         }
