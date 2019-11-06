@@ -1,20 +1,42 @@
 language: java
+env:
+  global:
+    - GPG_EXECUTABLE=gpg
 jdk:
   - openjdk8
 install: true
+
 before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
   - ./scripts/get-pristine
+
 script: mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+
 after_script:
   - JACOCO_SOURCE_PATH=src/main/java ./cc-test-reporter format-coverage target/site/jacoco/jacoco.xml --input-type jacoco
   - CC_TEST_REPORTER_ID=0000000000 ./cc-test-reporter upload-coverage
+
+before_install:
+  - if [ ! -z "$GPG_SECRET_KEYS" ]; then echo $GPG_SECRET_KEYS | base64 --decode | $GPG_EXECUTABLE --import; fi
+  - if [ ! -z "$GPG_OWNERTRUST" ]; then echo $GPG_OWNERTRUST | base64 --decode | $GPG_EXECUTABLE --import-ownertrust; fi
+
+install:
+    mvn --settings .travis.settings.xml install -DskipTests=true -Dgpg.skip -Dmaven.javadoc.skip=true -B -V
+
 after_success:
 # Move the code coverage results to codecov
   - mvn jacoco:report
   - bash <(curl -s https://codecov.io/bash)
+
+deploy:
+  provider: script
+  script: "mvn clean deploy --settings .travis.settings.xml -DskipTests=true -B -U -P release"
+  skip_cleanup: true
+  on:
+    branch: master
+
 cache:
   directories:
     - testdata/pristine
