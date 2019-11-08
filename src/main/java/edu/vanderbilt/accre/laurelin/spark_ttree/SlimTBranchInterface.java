@@ -14,8 +14,6 @@ public interface SlimTBranchInterface {
 
     SlimTBasket getBasket(int basketid);
 
-    String getPath();
-
     TBranch.ArrayDescriptor getArrayDesc();
 
     /**

@@ -452,10 +452,10 @@ public class TBranch {
         for (int i = 0; i < basketEntryOffsets.length - 1; i += 1) {
             basketBuilder = basketBuilder.put(Range.closed(basketEntryOffsets[i], basketEntryOffsets[i + 1] - 1), i);
         }
-        ImmutableRangeMap<Long, Integer> rangeToBasketIDMap = basketBuilder.build();
-        Entry<Range<Long>, Integer> low = rangeToBasketIDMap.getEntry(entrystart);
-        Entry<Range<Long>, Integer> high = rangeToBasketIDMap.getEntry(entrystop - 1);
+        ImmutableRangeMap<Long, Integer> tmpMap = basketBuilder.build();
+        Entry<Range<Long>, Integer> low = tmpMap.getEntry(entrystart);
+        Entry<Range<Long>, Integer> high = tmpMap.getEntry(entrystop - 1);
         Range<Long> wideRange = Range.closed(low.getKey().lowerEndpoint(), high.getKey().upperEndpoint());
-        return rangeToBasketIDMap.subRangeMap(wideRange);
+        return tmpMap.subRangeMap(wideRange);
     }
 }

@@ -406,7 +406,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                         for (Entry<String, SlimTBranch> e: slimBranches.entrySet()) {
                             trimmedSlimBranches.put(e.getKey(), e.getValue().copyAndTrim(partitionStart, partitionEnd));
                         }
-                        ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, partitionStart, partitionEnd, slimBranches, threadCount, profileData, pid));
+                        ret.add(new TTreeDataSourceV2Partition(schema, basketCacheFactory, partitionStart, partitionEnd, trimmedSlimBranches, threadCount, profileData, pid));
                     }
                     if (ret.size() == 0) {
                         // Only one basket?
