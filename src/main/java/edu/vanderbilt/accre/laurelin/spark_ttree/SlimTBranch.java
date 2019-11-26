@@ -1,5 +1,6 @@
 package edu.vanderbilt.accre.laurelin.spark_ttree;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static edu.vanderbilt.accre.laurelin.root_proxy.TBranch.entryOffsetToRangeMap;
 
 import java.io.IOException;
@@ -8,7 +9,6 @@ import java.io.ObjectInputValidation;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -16,9 +16,14 @@ import java.util.Map.Entry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.ImmutableRangeMap.Builder;
+import com.google.common.collect.Interner;
+import com.google.common.collect.Interners;
 import com.google.common.collect.Range;
 
 import edu.vanderbilt.accre.laurelin.Cache;
@@ -36,6 +41,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TKey;
  * and byte offsets to each basket
  */
 public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectInputValidation {
+    private static final Logger logger = LogManager.getLogger();
     private static final long serialVersionUID = 1L;
     private String path;
 
@@ -51,19 +57,7 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectIn
     private int basketStart;
     private int basketEnd;
 
-    /**
-     * Deduplicate range->basket maps, since many (all?) of them will be same
-     * for different branches in a file
-     */
-    private static HashMap<ImmutableRangeMap<Long, Integer>,
-                           ImmutableRangeMap<Long, Integer>> dedupRangeMap =
-                           new HashMap<ImmutableRangeMap<Long, Integer>,
-                                       ImmutableRangeMap<Long, Integer>>();
-
-    public synchronized ImmutableRangeMap<Long, Integer> dedupAndReturnRangeMap(ImmutableRangeMap<Long, Integer> val) {
-        dedupRangeMap.putIfAbsent(val, val);
-        return dedupRangeMap.get(val);
-    }
+    private Interner<ImmutableRangeMap<Long, Integer>> rangeMapInterner = Interners.newWeakInterner();
 
     /**
      * Copy the given slim branch and trim it by removing unneccessary basket
@@ -88,6 +82,7 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectIn
     }
 
     public void checkInvariants() {
+        checkNotNull(rangeToBasketIDMap);
         if (basketEnd == 0) {
             assert basketEnd != 0;
         }
@@ -130,7 +125,9 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectIn
             int targetBasket = i + basketStart;
             basketBuilder = basketBuilder.put(basketRangeList[i], targetBasket);
         }
-        rangeToBasketIDMap = dedupAndReturnRangeMap(basketBuilder.build());
+        ImmutableRangeMap<Long, Integer> tmp = basketBuilder.build();
+        checkNotNull(tmp);
+        rangeToBasketIDMap = rangeMapInterner.intern(tmp);
         checkInvariants();
     }
 
@@ -145,6 +142,7 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectIn
 
     @Override
     public ImmutableRangeMap<Long, Integer> getRangeToBasketIDMap() {
+        checkNotNull(rangeToBasketIDMap);
         return rangeToBasketIDMap;
     }
 
@@ -430,18 +428,22 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectIn
             return rangeToBasketID;
         }
 
-        private static class ArrayKeyWrapper<T> {
-            public T[] val;
+        private static class TrimBasketKey {
+            private ImmutableRangeMap<Long, Integer> range;
+            private int start;
+            private int end;
 
-            public ArrayKeyWrapper(T[] val) {
-                this.val = val;
+            public TrimBasketKey(ImmutableRangeMap<Long, Integer> range, int start, int end) {
+                this.range = range;
+                this.start = start;
+                this.end = end;
             }
 
             @Override
             public int hashCode() {
                 final int prime = 31;
-                int result = 1;
-                result = prime * result + Arrays.deepHashCode(val);
+                int result = start + end;
+                result = (prime * result) ^ range.hashCode();
                 return result;
             }
 
@@ -453,22 +455,45 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectIn
                 if (obj == null) {
                     return false;
                 }
-                if (!(obj instanceof ArrayKeyWrapper)) {
+                if (!(obj instanceof TrimBasketKey)) {
                     return false;
                 }
-                ArrayKeyWrapper<T> other = (ArrayKeyWrapper<T>) obj;
-                return Arrays.deepEquals(val, other.val);
+                TrimBasketKey other = (TrimBasketKey) obj;
+                return ((start == other.start) &&
+                        (end == other.end) &&
+                        (range.equals(other.range)));
             }
         }
 
-        private static transient HashMap<ArrayKeyWrapper<Range<Long>>, Range<Long>[]> rangeDedupMap = new
-                                 HashMap<ArrayKeyWrapper<Range<Long>>, Range<Long>[]>();
-
-        private synchronized Range<Long>[] dedupRange(Range<Long>[] val) {
-            ArrayKeyWrapper<Range<Long>> key = new ArrayKeyWrapper<Range<Long>>(val);
-            rangeDedupMap.putIfAbsent(key, val);
-            return rangeDedupMap.get(key);
-        }
+        /**
+         * Deduplicate range->basket maps, since many (all?) of them will be same
+         * for different branches in a file. Guessing 2000 as a good cache size
+         * since that's the upper-bound on the number of branches I'd expect to
+         * see in a file.
+         */
+        private static LoadingCache<TrimBasketKey,
+                                    Range<Long>[]> dedupRangeMap =
+                                        CacheBuilder.newBuilder()
+                                        .maximumSize(2000)
+                                        .softValues()
+                                        .build(
+                                           new CacheLoader<TrimBasketKey,
+                                                           Range<Long>[]>() {
+                                                @Override
+                                                public Range<Long>[] load(TrimBasketKey key) {
+                                                    ImmutableMap<Range<Long>, Integer> map = key.range.asMapOfRanges();
+                                                    Range<Long>[] rangeToBasketID = new Range[key.end - key.start];
+                                                    for (Entry<Range<Long>, Integer> e: map.entrySet()) {
+                                                        int idx = e.getValue();
+                                                        if ((idx < key.start) || (idx >= key.end)) {
+                                                            continue;
+                                                        }
+                                                        Range<Long> val = e.getKey();
+                                                        rangeToBasketID[idx - key.start] = val;
+                                                    }
+                                                    return rangeToBasketID;
+                                                }
+                                                });
 
         protected SerializeStorage(SlimTBranch in) {
             in.checkInvariants();
@@ -499,7 +524,9 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectIn
                 Range<Long> val = e.getKey();
                 rangeToBasketID[idx - basketStart] = val;
             }
-            rangeToBasketID = dedupRange(rangeToBasketID);
+            TrimBasketKey cacheKey = new TrimBasketKey(in.getRangeToBasketIDMap(), basketStart, basketEnd);
+            rangeToBasketID = dedupRangeMap.getUnchecked(cacheKey);
+            checkNotNull(rangeToBasketID);
         }
 
         /**
@@ -508,6 +535,7 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectIn
          * @throws ObjectStreamException We don't throw, but required by Java in signature
          */
         private Object readResolve() throws ObjectStreamException {
+            checkNotNull(rangeToBasketID);
             SlimTBranch ret = new SlimTBranch(path, rangeToBasketID, arrayDesc, basketStart);
             int idx = basketStart;
             for (long off: basketByteOffsets) {
