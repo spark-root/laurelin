@@ -110,15 +110,37 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         private Map<String, SlimTBranch> slimBranches;
 
         /**
-         * Thread factory for async processing/decompression of baskets
-         */
-        private static ThreadFactory namedThreadFactory =
-                new ThreadFactoryBuilder().setNameFormat("laurelin-arraybuilder-%d").build();
-
-        /**
          * ThreadPool handling the async decompression tasks
          */
-        private static ThreadPoolExecutor staticExecutor = new ThreadPoolExecutor(1,1,60L, TimeUnit.SECONDS,new LinkedBlockingQueue<Runnable>());
+        private static ThreadPoolExecutor staticExecutor;
+
+        /**
+         *  (very) surprisingly, a static thread pool executor will prevent the
+         *  JVM from ever properly shutting down, because of a circular nature
+         *  of the references. Static variables and thread objects are GC roots,
+         *  and the thread pool object references its child threads while the
+         *  threads themselves reference the threadpool. No amount of GC runs
+         *  will make anything unreachable, so the JVM can't finalize and
+         *  shut down. To break the cycle, we need to forcibly shutdown the
+         *  thread pool, which causes it to kill its threads and allows the GC
+         *  to unravel the references.
+         *  <p>
+         *  see also: https://stackoverflow.com/a/10395700
+         */
+        static {
+            ThreadFactory factory = new ThreadFactoryBuilder().setNameFormat("laurelin-arraybuilder-%d").build();
+            staticExecutor = new ThreadPoolExecutor(1, 1,
+                                                    5L, TimeUnit.SECONDS,
+                                                    new LinkedBlockingQueue<Runnable>(),
+                                                    factory);
+            staticExecutor.allowCoreThreadTimeOut(true);
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                @Override
+                public void run() {
+                    TTreeDataSourceV2PartitionReader.staticExecutor.shutdownNow();
+                }
+            });
+        }
 
         /**
          * Holds the async threadpool if enabled, null otherwise
