@@ -386,8 +386,8 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectIn
      * CMS NANOAOD file ends up being ~3MByte, so it's not so bad to have it
      * in-memory, it's repeatedly transmitting the 3MByte 10s of thousands of
      * times.
-     * <br />
-     * Instead of jumping through hoops to make the in-memory size really
+     *
+     * <p>Instead of jumping through hoops to make the in-memory size really
      * compact, we can instead override Java's serialization mechanism to
      * provide an alternate representation used for (de-)serialization. The
      * SerializeStorage class is what's actually transmitted over the wire.
