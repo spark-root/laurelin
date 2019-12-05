@@ -20,6 +20,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+
 public class NIOFile implements FileInterface {
     private RandomAccessFile fh;
     private FileChannel channel;
@@ -66,6 +67,14 @@ public class NIOFile implements FileInterface {
     @Override
     public long getLimit() throws IOException {
         return fh.length();
+    }
+
+    public static List<String> expandPathsToList(String[] paths) throws IOException {
+	ArrayList<String> out = new ArrayList<String>();
+        for(int i = 0; i < paths.length; ++i) {
+	    out.addAll(NIOFile.expandPathToList(paths[i]));
+	}
+        return out;
     }
 
     public static List<String> expandPathToList(String path) throws IOException {
