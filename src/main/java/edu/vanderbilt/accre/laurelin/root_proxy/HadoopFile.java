@@ -76,12 +76,13 @@ public class HadoopFile implements FileInterface {
     public static List<String> expandPathsToList(String[] paths) throws IOException {
 	LinkedList<String> out = new LinkedList<String>();
 	Configuration conf = new Configuration();
-	FileSystem fileSystem = FileSystem.get(conf);
+	URI uri = URI.create(paths[0]);
+	FileSystem fileSystem = FileSystem.get(uri, conf);
 	Path[] hpaths = new Path[paths.length];
 	for(int i = 0; i < paths.length; ++i) { hpaths[i] = new Path(paths[i]); }
 	FileStatus[] statoos  = fileSystem.listStatus(hpaths);
 	for (int i = 0; i < statoos.length; ++i) {
-	    String strpath = statoos[i].getPath().getName();
+	    String strpath = statoos[i].getPath().toString();
 	    if((statoos[i].isFile() || statoos[i].isSymlink()) && strpath.endsWith(".root")) {
 		out.add(strpath);
 	    } else if(statoos[i].isDirectory()) {
