@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -70,7 +71,7 @@ public class NIOFile implements FileInterface {
     }
 
     public static List<String> expandPathsToList(String[] paths) throws IOException {
-	ArrayList<String> out = new ArrayList<String>();
+	LinkedList<String> out = new LinkedList<String>();
         for(int i = 0; i < paths.length; ++i) {
 	    out.addAll(NIOFile.expandPathToList(paths[i]));
 	}

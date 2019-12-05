@@ -74,7 +74,7 @@ public class HadoopFile implements FileInterface {
     }
 
     public static List<String> expandPathsToList(String[] paths) throws IOException {
-	ArrayList<String> out =new ArrayList<String>();
+	LinkedList<String> out = new LinkedList<String>();
 	Configuration conf = new Configuration();
 	FileSystem fileSystem = FileSystem.get(conf);
 	Path[] hpaths = new Path[paths.length];
