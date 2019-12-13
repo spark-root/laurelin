@@ -176,6 +176,30 @@ public class TTreeDataSourceUnitTest {
         return yourBytes.length;
     }
 
+    @Test
+    public void testReaderInterning() {
+        TTreeDataSourceV2Reader reader1;
+        TTreeDataSourceV2Reader reader2;
+        {
+            Map<String, String> optmap = new HashMap<String, String>();
+            optmap.put("path", "testdata/uproot-foriter.root");
+            optmap.put("tree",  "foriter");
+            DataSourceOptions opts = new DataSourceOptions(optmap);
+            Root source = new Root();
+            reader1 = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        }
+
+        {
+            Map<String, String> optmap = new HashMap<String, String>();
+            optmap.put("path", "testdata/uproot-foriter.root");
+            optmap.put("tree",  "foriter");
+            DataSourceOptions opts = new DataSourceOptions(optmap);
+            Root source = new Root();
+            reader2 = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        }
+        assertEquals("Should be same object", reader1, reader2);
+    }
+
 
     @Test
     public void testMultipleBasketsForiter() throws IOException {
