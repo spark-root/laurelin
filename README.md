@@ -13,7 +13,7 @@ types and both fixed-length/jagged arrays of those types.
 
 ## Usage example
 
-Note that the most recent version number can be found [here](https://search.maven.org/search?q=a:laurelin%20g:edu.vanderbilt.accre). To use a different version, replace 0.0.15 with your
+Note that the most recent version number can be found [here](https://search.maven.org/search?q=a:laurelin%20g:edu.vanderbilt.accre). To use a different version, replace 1.0.0 with your
 desired version
 
 ```python
@@ -21,7 +21,7 @@ import pyspark.sql
 
 spark = pyspark.sql.SparkSession.builder \
     .master("local[1]") \
-    .config('spark.jars.packages', 'edu.vanderbilt.accre:laurelin:0.0.15') \
+    .config('spark.jars.packages', 'edu.vanderbilt.accre:laurelin:1.0.0') \
     .getOrCreate()
 sc = spark.sparkContext
 df = spark.read.format('root') \
