@@ -3,6 +3,7 @@ package edu.vanderbilt.accre.spark_ttree;
 import static edu.vanderbilt.accre.Helpers.getBigTestDataIfExists;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -180,6 +181,7 @@ public class TTreeDataSourceUnitTest {
     public void testReaderInterning() {
         TTreeDataSourceV2Reader reader1;
         TTreeDataSourceV2Reader reader2;
+        TTreeDataSourceV2Reader reader3;
         {
             Map<String, String> optmap = new HashMap<String, String>();
             optmap.put("path", "testdata/uproot-foriter.root");
@@ -198,6 +200,17 @@ public class TTreeDataSourceUnitTest {
             reader2 = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
         }
         assertEquals("Should be same object", reader1, reader2);
+
+        {
+            Map<String, String> optmap = new HashMap<String, String>();
+            optmap.put("path", "testdata/all-types.root");
+            optmap.put("tree",  "Events");
+            DataSourceOptions opts = new DataSourceOptions(optmap);
+            Root source = new Root();
+            reader3 = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        }
+        assertNotEquals("Should not be same object", reader2, reader3);
+        assertNotEquals("Should not be same object", reader1, reader3);
     }
 
 
