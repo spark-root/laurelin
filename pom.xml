@@ -19,7 +19,7 @@
     <scm>
         <developerConnection>scm:git:git@github.com:spark-root/laurelin.git</developerConnection>
         <url>https://github.com/spark-root/laurelin</url>
-        <tag>laurelin-0.0.1</tag>
+        <tag>branch-0.X</tag>
     </scm>
     <description>Spark datasource for ROOT (http://root.cern) files</description>
     <url>https://github.com/spark-root/laurelin</url>
