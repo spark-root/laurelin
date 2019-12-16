@@ -35,9 +35,10 @@ deploy:
   script: "mvn clean deploy --settings .travis.settings.xml -DskipTests=true -B -U -P release"
   skip_cleanup: true
   on:
-    branch: master
+    all_branches: true
+    condition: $TRAVIS_BRANCH =~ ^master|branch-0.X$ 
 
-cache:
+    cache:
   directories:
     - testdata/pristine
     - $HOME/.m2
