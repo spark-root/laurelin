@@ -213,6 +213,17 @@ public class TTreeDataSourceUnitTest {
         assertNotEquals("Should not be same object", reader1, reader3);
     }
 
+    @Test(expected = RuntimeException.class)
+    public void testReaderInterningFail() {
+        TTreeDataSourceV2Reader reader1;
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", "testdata/uproot-foriter.root");
+        optmap.put("tree",  "INVALID TREE");
+        DataSourceOptions opts = new DataSourceOptions(optmap);
+        Root source = new Root();
+        reader1 = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+    }
+
 
     @Test
     public void testMultipleBasketsForiter() throws IOException {
