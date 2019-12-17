@@ -18,7 +18,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
-import edu.vanderbilt.accre.laurelin.cache.CacheFactory;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
 
@@ -55,14 +54,13 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
                                                 DataSourceOptions options = new DataSourceOptions(key.options);
                                                 boolean traceIO = key.traceIO;
                                                 SparkContext context = key.context;
-                                                CacheFactory basketCacheFactory = new CacheFactory();
                                                 if ((traceIO) && (context != null)) {
                                                     synchronized (Root.class) {
                                                         ioAccum = new CollectionAccumulator<Event.Storage>();
                                                         context.register(ioAccum, "edu.vanderbilt.accre.laurelin.ioprofile");
                                                     }
                                                 }
-                                                return new Reader(options, basketCacheFactory, context, ioAccum);
+                                                return new Reader(options, context, ioAccum);
                                             }
                                             });
 

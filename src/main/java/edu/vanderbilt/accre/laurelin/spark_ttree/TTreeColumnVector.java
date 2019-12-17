@@ -14,7 +14,7 @@ import org.apache.spark.unsafe.types.UTF8String;
 
 import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
-import edu.vanderbilt.accre.laurelin.cache.Cache;
+import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
@@ -29,7 +29,7 @@ public class TTreeColumnVector extends ColumnVector {
     private ArrayBuilder.GetBasket getbasket;
     private ArrayBuilder builder;
 
-    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, Cache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor, ROOTFileCache fileCache) {
+    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, BasketCache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor, ROOTFileCache fileCache) {
         super(type);
 
         this.basketEntryOffsets = slimBranch.getBasketEntryOffsets();
@@ -48,7 +48,7 @@ public class TTreeColumnVector extends ColumnVector {
         }
     }
 
-    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, Cache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor) {
+    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, BasketCache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor) {
         this(type, rootType, dtype, basketCache, entrystart, entrystop, slimBranch, executor, (ROOTFileCache) null);
     }
 

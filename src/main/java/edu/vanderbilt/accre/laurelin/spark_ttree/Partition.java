@@ -10,7 +10,6 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.apache.spark.util.CollectionAccumulator;
 
-import edu.vanderbilt.accre.laurelin.cache.CacheFactory;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
 
 /**
@@ -27,15 +26,13 @@ class Partition implements InputPartition<ColumnarBatch> {
     private long entryStart;
     private long entryEnd;
     private Map<String, SlimTBranch> slimBranches;
-    private CacheFactory basketCacheFactory;
     private int threadCount;
     private CollectionAccumulator<Storage> profileData;
     private int pid;
 
-    public Partition(StructType schema, CacheFactory basketCacheFactory, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount, CollectionAccumulator<Storage> profileData, int pid) {
+    public Partition(StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount, CollectionAccumulator<Storage> profileData, int pid) {
         logger.trace("dsv2partition new");
         this.schema = schema;
-        this.basketCacheFactory = basketCacheFactory;
         this.entryStart = entryStart;
         this.entryEnd = entryEnd;
         this.slimBranches = slimBranches;
@@ -47,7 +44,7 @@ class Partition implements InputPartition<ColumnarBatch> {
     @Override
     public InputPartitionReader<ColumnarBatch> createPartitionReader() {
         logger.trace("input partition reader");
-        return new PartitionReader(basketCacheFactory, schema, entryStart, entryEnd, slimBranches, threadCount, profileData, pid);
+        return new PartitionReader(schema, entryStart, entryEnd, slimBranches, threadCount, profileData, pid);
     }
 
     public void setPid(int pid) {

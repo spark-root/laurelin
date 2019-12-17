@@ -22,8 +22,7 @@ import com.google.common.collect.Range;
 
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
-import edu.vanderbilt.accre.laurelin.cache.Cache;
-import edu.vanderbilt.accre.laurelin.cache.CacheStash;
+import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
@@ -35,7 +34,7 @@ import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 public class TTreeColumnVectorTest {
     byte[] tmp = new byte []{127,-1,0,1};
     Integer[] tmp2 = new Integer [] {1,2,3};
-    Cache basketCache = CacheStash.getCache();
+    BasketCache basketCache = BasketCache.getCache();
 
     private static class SlimTBranchStub implements SlimTBranchInterface {
         /*
@@ -81,16 +80,16 @@ public class TTreeColumnVectorTest {
         }
 
         @Override
-        public ArrayBuilder.GetBasket getArrayBranchCallback(Cache basketCache, ROOTFileCache fileCache) {
+        public ArrayBuilder.GetBasket getArrayBranchCallback(BasketCache basketCache, ROOTFileCache fileCache) {
             return new BranchCallback(basketCache, this, fileCache);
         }
 
         class BranchCallback implements ArrayBuilder.GetBasket {
-            Cache basketCache;
+            BasketCache basketCache;
             SlimTBranchInterface branch;
             ROOTFileCache fileCache;
 
-            public BranchCallback(Cache basketCache, SlimTBranchInterface branch, ROOTFileCache fileCache) {
+            public BranchCallback(BasketCache basketCache, SlimTBranchInterface branch, ROOTFileCache fileCache) {
                 this.basketCache = basketCache;
                 this.branch = branch;
                 this.fileCache = fileCache;

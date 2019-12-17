@@ -14,7 +14,7 @@ import org.junit.Test;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.JaggedArray;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
-import edu.vanderbilt.accre.laurelin.cache.Cache;
+import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
@@ -64,7 +64,7 @@ public class ArrayBoundsTest {
         List<TBranch> branches = currTree.getBranches(branchName);
         TBranch branch = branches.get(0);
         List<TBasket> baskets = branch.getBaskets();
-        Cache branchCache = new Cache();
+        BasketCache branchCache = new BasketCache();
         SlimTBranchInterface slimBranch = SlimTBranch.getFromTBranch(branch);
         ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache, null);
         long []basketEntryOffsets = slimBranch.getBasketEntryOffsets();

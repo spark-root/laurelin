@@ -9,13 +9,22 @@ import java.util.WeakHashMap;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
 
-public class Cache {
+public class BasketCache {
+    private static BasketCache singleton = null;
+
+    public static synchronized BasketCache getCache() {
+        if (singleton == null) {
+            singleton = new BasketCache();
+        }
+        return singleton;
+    }
+
     Map<ROOTFile, Map<Long, SoftReference<RawArray>>> cache;
     int totalCount = 0;
     int hitCount = 0;
     int missCount = 0;
 
-    public Cache() {
+    public BasketCache() {
         cache = Collections.synchronizedMap(new WeakHashMap<ROOTFile, Map<Long, SoftReference<RawArray>>>());
     }
 

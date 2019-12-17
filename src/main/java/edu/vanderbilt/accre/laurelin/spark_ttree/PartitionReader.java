@@ -20,8 +20,7 @@ import org.apache.spark.util.CollectionAccumulator;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import edu.vanderbilt.accre.laurelin.cache.Cache;
-import edu.vanderbilt.accre.laurelin.cache.CacheFactory;
+import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
@@ -32,7 +31,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 class PartitionReader implements InputPartitionReader<ColumnarBatch> {
     static final Logger logger = LogManager.getLogger();
 
-    private Cache basketCache;
+    private BasketCache basketCache;
     private StructType schema;
     private long entryStart;
     private long entryEnd;
@@ -80,8 +79,8 @@ class PartitionReader implements InputPartitionReader<ColumnarBatch> {
     private int pid;
     private static ROOTFileCache fileCache = new ROOTFileCache();
 
-    public PartitionReader(CacheFactory basketCacheFactory, StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount, CollectionAccumulator<Storage> profileData, int pid) {
-        this.basketCache = basketCacheFactory.getCache();
+    public PartitionReader(StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount, CollectionAccumulator<Storage> profileData, int pid) {
+        this.basketCache = BasketCache.getCache();
         this.schema = schema;
         this.entryStart = entryStart;
         this.entryEnd = entryEnd;

@@ -31,7 +31,6 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.apache.spark.util.CollectionAccumulator;
 
-import edu.vanderbilt.accre.laurelin.cache.CacheFactory;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOFactory;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
@@ -52,7 +51,6 @@ public class Reader implements DataSourceReader,
     private String treeName;
     private TTree currTree;
     private TFile currFile;
-    private CacheFactory basketCacheFactory;
     private StructType schema;
     private int threadCount;
     private IOProfile profiler;
@@ -60,7 +58,7 @@ public class Reader implements DataSourceReader,
     private SparkContext sparkContext;
     private static ROOTFileCache fileCache = new ROOTFileCache();
 
-    public Reader(DataSourceOptions options, CacheFactory basketCacheFactory, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
+    public Reader(DataSourceOptions options, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
         logger.trace("construct ttreedatasourcev2reader");
         this.sparkContext = sparkContext;
         try {
@@ -72,7 +70,6 @@ public class Reader implements DataSourceReader,
             currFile = TFile.getFromFile(fileCache.getROOTFile(this.paths.get(0)));
             treeName = options.get("tree").orElse("Events");
             currTree = new TTree(currFile.getProxy(treeName), currFile);
-            this.basketCacheFactory = basketCacheFactory;
             this.schema = readSchemaPriv();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -192,13 +189,11 @@ public class Reader implements DataSourceReader,
         String treeName;
         StructType schema;
         int threadCount;
-        CacheFactory basketCacheFactory;
 
-        public PartitionHelper(String treeName, StructType schema, int threadCount, CacheFactory basketCacheFactory) {
+        public PartitionHelper(String treeName, StructType schema, int threadCount) {
             this.treeName = treeName;
             this.schema = schema;
             this.threadCount = threadCount;
-            this.basketCacheFactory = basketCacheFactory;
         }
 
         private static void parseStructFields(TTree inputTree, Map<String, SlimTBranch> slimBranches, StructType struct, String namespace) {
@@ -214,7 +209,7 @@ public class Reader implements DataSourceReader,
             }
         }
 
-        public static Iterator<InputPartition<ColumnarBatch>> partitionSingleFileImpl(String path, String treeName, StructType schema, int threadCount, CacheFactory basketCacheFactory) {
+        public static Iterator<InputPartition<ColumnarBatch>> partitionSingleFileImpl(String path, String treeName, StructType schema, int threadCount) {
             List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
             int pid = 0;
             TTree inputTree;
@@ -239,13 +234,13 @@ public class Reader implements DataSourceReader,
                     for (Entry<String, SlimTBranch> e: slimBranches.entrySet()) {
                         trimmedSlimBranches.put(e.getKey(), e.getValue().copyAndTrim(partitionStart, partitionEnd));
                     }
-                    ret.add(new Partition(schema, basketCacheFactory, partitionStart, partitionEnd, trimmedSlimBranches, threadCount, profileData, pid));
+                    ret.add(new Partition(schema, partitionStart, partitionEnd, trimmedSlimBranches, threadCount, profileData, pid));
                 }
                 if (ret.size() == 0) {
                     // Only one basket?
                     logger.debug("Planned for zero baskets, adding a dummy one");
                     pid += 1;
-                    ret.add(new Partition(schema, basketCacheFactory, 0, inputTree.getEntries(), slimBranches, threadCount, profileData, pid));
+                    ret.add(new Partition(schema, 0, inputTree.getEntries(), slimBranches, threadCount, profileData, pid));
                 }
                 return ret.iterator();
             } catch (Exception e) {
@@ -255,7 +250,7 @@ public class Reader implements DataSourceReader,
         }
 
         FlatMapFunction<String, InputPartition<ColumnarBatch>> getLambda() {
-            return s -> PartitionHelper.partitionSingleFileImpl(s, treeName, schema, threadCount, basketCacheFactory);
+            return s -> PartitionHelper.partitionSingleFileImpl(s, treeName, schema, threadCount);
         }
     }
 
@@ -270,7 +265,7 @@ public class Reader implements DataSourceReader,
         } else {
             JavaSparkContext sc = JavaSparkContext.fromSparkContext(sparkContext);
             JavaRDD<String> rdd_paths = sc.parallelize(paths, paths.size());
-            Reader.PartitionHelper helper = new PartitionHelper(treeName, schema, threadCount, basketCacheFactory);
+            Reader.PartitionHelper helper = new PartitionHelper(treeName, schema, threadCount);
             JavaRDD<InputPartition<ColumnarBatch>> partitions = rdd_paths.flatMap(helper.getLambda());
             ret = partitions.collect();
         }
@@ -283,7 +278,7 @@ public class Reader implements DataSourceReader,
     }
 
     public Iterator<InputPartition<ColumnarBatch>> partitionSingleFile(String path) {
-        return PartitionHelper.partitionSingleFileImpl(path, treeName, schema, threadCount, basketCacheFactory);
+        return PartitionHelper.partitionSingleFileImpl(path, treeName, schema, threadCount);
     }
 
     @Override
