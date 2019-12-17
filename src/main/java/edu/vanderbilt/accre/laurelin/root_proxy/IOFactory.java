@@ -36,6 +36,14 @@ public class IOFactory {
         return ret;
     }
 
+    public static List<String> expandPathsToList(String[] paths) throws IOException {
+        if (Pattern.matches(hadoopPattern,  paths[0])) {
+            return HadoopFile.expandPathsToList(paths);
+        } else {
+            return NIOFile.expandPathsToList(paths);
+        }
+    }
+
     public static List<String> expandPathToList(String path) throws IOException {
         if (Pattern.matches(hadoopPattern,  path)) {
             return HadoopFile.expandPathToList(path);

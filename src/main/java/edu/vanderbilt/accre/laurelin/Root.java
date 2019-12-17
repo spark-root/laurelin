@@ -258,10 +258,7 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
             logger.trace("construct ttreedatasourcev2reader");
             this.sparkContext = sparkContext;
             try {
-                this.paths = new LinkedList<String>();
-                for (String path: options.paths()) {
-                    this.paths.addAll(IOFactory.expandPathToList(path));
-                }
+                this.paths = (LinkedList<String>)IOFactory.expandPathsToList(options.paths());
                 // FIXME - More than one file, please
                 currFile = TFile.getFromFile(fileCache.getROOTFile(this.paths.get(0)));
                 treeName = options.get("tree").orElse("Events");

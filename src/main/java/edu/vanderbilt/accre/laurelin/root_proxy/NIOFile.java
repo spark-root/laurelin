@@ -15,10 +15,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 
 public class NIOFile implements FileInterface {
     private RandomAccessFile fh;
@@ -66,6 +68,14 @@ public class NIOFile implements FileInterface {
     @Override
     public long getLimit() throws IOException {
         return fh.length();
+    }
+
+    public static List<String> expandPathsToList(String[] paths) throws IOException {
+	LinkedList<String> out = new LinkedList<String>();
+        for(int i = 0; i < paths.length; ++i) {
+	    out.addAll(NIOFile.expandPathToList(paths[i]));
+	}
+        return out;
     }
 
     public static List<String> expandPathToList(String path) throws IOException {

@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.LinkedList;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -168,6 +169,24 @@ public class IOTest {
         Path currentRelativePath = Paths.get("");
         String s = currentRelativePath.toAbsolutePath().toString();
         List<String> files = IOFactory.expandPathToList("file:///" + s + "/" + "testdata/recursive");
+        assertEquals(3, files.size());
+    }
+
+    @Test
+    public void searchDirectory_nio_paths() throws IOException {
+	String[] paths = new String[1];
+	paths[0] = "testdata/recursive";
+        List<String> files = IOFactory.expandPathsToList(paths);
+        assertEquals(3, files.size());
+    }
+
+    @Test
+    public void searchDirectory_hadoop_paths() throws IOException {
+        Path currentRelativePath = Paths.get("");
+        String s = currentRelativePath.toAbsolutePath().toString();
+	String[] paths = new String[1];
+	paths[0] = "file:///" + s + "/" + "testdata/recursive";
+        List<String> files = IOFactory.expandPathsToList(paths);
         assertEquals(3, files.size());
     }
 
