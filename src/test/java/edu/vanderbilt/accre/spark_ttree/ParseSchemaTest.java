@@ -12,7 +12,7 @@ import org.apache.spark.sql.types.StructType;
 import org.junit.Test;
 
 import edu.vanderbilt.accre.laurelin.Root;
-import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
+import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
 
 public class ParseSchemaTest {
     @Test
@@ -21,7 +21,7 @@ public class ParseSchemaTest {
         optmap.put("path", "testdata/nano_tree.root");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(1011, schemaCast.size());
@@ -37,7 +37,7 @@ public class ParseSchemaTest {
         optmap.put("path", testPath);
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(866, schemaCast.size());
@@ -50,7 +50,7 @@ public class ParseSchemaTest {
         optmap.put("path", testPath);
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(1119, schemaCast.size());
@@ -63,7 +63,7 @@ public class ParseSchemaTest {
         optmap.put("tree",  "foriter");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(1, schemaCast.size());
@@ -77,7 +77,7 @@ public class ParseSchemaTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         // Note - there's 20 branches, but we ignore one because I'm not trying to deserialize strings
@@ -91,7 +91,7 @@ public class ParseSchemaTest {
         optmap.put("tree",  "three/tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         System.out.println(schema.prettyJson());

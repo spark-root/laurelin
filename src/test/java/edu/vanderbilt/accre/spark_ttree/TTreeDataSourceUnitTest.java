@@ -46,7 +46,6 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 
 import edu.vanderbilt.accre.laurelin.Root;
-import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
 import edu.vanderbilt.accre.laurelin.cache.Cache;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
@@ -55,6 +54,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
+import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranchInterface;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
@@ -79,7 +79,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "foriter");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(1, schemaCast.size());
@@ -119,7 +119,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "Events");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
 
         InputPartition<ColumnarBatch> partition = partitions.get(0);
@@ -179,16 +179,16 @@ public class TTreeDataSourceUnitTest {
 
     @Test
     public void testReaderInterning() {
-        TTreeDataSourceV2Reader reader1;
-        TTreeDataSourceV2Reader reader2;
-        TTreeDataSourceV2Reader reader3;
+        Reader reader1;
+        Reader reader2;
+        Reader reader3;
         {
             Map<String, String> optmap = new HashMap<String, String>();
             optmap.put("path", "testdata/uproot-foriter.root");
             optmap.put("tree",  "foriter");
             DataSourceOptions opts = new DataSourceOptions(optmap);
             Root source = new Root();
-            reader1 = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+            reader1 = (Reader) source.createReader(opts, null, true);
         }
 
         {
@@ -197,7 +197,7 @@ public class TTreeDataSourceUnitTest {
             optmap.put("tree",  "foriter");
             DataSourceOptions opts = new DataSourceOptions(optmap);
             Root source = new Root();
-            reader2 = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+            reader2 = (Reader) source.createReader(opts, null, true);
         }
         assertEquals("Should be same object", reader1, reader2);
 
@@ -207,7 +207,7 @@ public class TTreeDataSourceUnitTest {
             optmap.put("tree",  "Events");
             DataSourceOptions opts = new DataSourceOptions(optmap);
             Root source = new Root();
-            reader3 = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+            reader3 = (Reader) source.createReader(opts, null, true);
         }
         assertNotEquals("Should not be same object", reader2, reader3);
         assertNotEquals("Should not be same object", reader1, reader3);
@@ -215,13 +215,13 @@ public class TTreeDataSourceUnitTest {
 
     @Test(expected = RuntimeException.class)
     public void testReaderInterningFail() {
-        TTreeDataSourceV2Reader reader1;
+        Reader reader1;
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-foriter.root");
         optmap.put("tree",  "INVALID TREE");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        reader1 = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        reader1 = (Reader) source.createReader(opts, null, true);
     }
 
 
@@ -232,7 +232,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "foriter");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(1, schemaCast.size());
@@ -259,7 +259,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "Events");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         // only get a scalar float_t for now since that's all that works
         MetadataBuilder metadata = new MetadataBuilder();
         metadata.putString("rootType", "float");
@@ -291,7 +291,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         List<InputPartition<ColumnarBatch>> batch = reader.planBatchInputPartitions();
         assertNotNull(batch);
     }
@@ -303,7 +303,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         assertNotNull(reader.planBatchInputPartitions());
     }
 
@@ -315,7 +315,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("threadCount", "0");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         List<InputPartition<ColumnarBatch>> partitionPlan = reader.planBatchInputPartitions();
         assertNotNull(partitionPlan);
         StructType schema = reader.readSchema();
@@ -349,7 +349,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
         assertEquals(1, partitions.size());
@@ -389,7 +389,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
         assertEquals(1, partitions.size());
