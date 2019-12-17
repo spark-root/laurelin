@@ -11,10 +11,10 @@ import java.util.List;
 
 import org.junit.Test;
 
-import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.JaggedArrayPrep;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
+import edu.vanderbilt.accre.laurelin.cache.Cache;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;

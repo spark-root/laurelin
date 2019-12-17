@@ -1,4 +1,4 @@
-package edu.vanderbilt.accre.laurelin;
+package edu.vanderbilt.accre.laurelin.cache;
 
 import java.io.Serializable;
 

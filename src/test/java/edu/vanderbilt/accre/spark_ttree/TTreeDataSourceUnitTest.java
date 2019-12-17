@@ -45,9 +45,9 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 
-import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.Root;
 import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
+import edu.vanderbilt.accre.laurelin.cache.Cache;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;

@@ -1,4 +1,4 @@
-package edu.vanderbilt.accre.laurelin;
+package edu.vanderbilt.accre.laurelin.cache;
 
 public class CacheStash {
     private static Cache cache;

@@ -47,6 +47,8 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import edu.vanderbilt.accre.laurelin.cache.Cache;
+import edu.vanderbilt.accre.laurelin.cache.CacheFactory;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOFactory;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;

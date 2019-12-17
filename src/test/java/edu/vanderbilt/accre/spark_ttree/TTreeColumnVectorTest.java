@@ -20,10 +20,10 @@ import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.ImmutableRangeMap.Builder;
 import com.google.common.collect.Range;
 
-import edu.vanderbilt.accre.laurelin.Cache;
-import edu.vanderbilt.accre.laurelin.CacheStash;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
+import edu.vanderbilt.accre.laurelin.cache.Cache;
+import edu.vanderbilt.accre.laurelin.cache.CacheStash;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;

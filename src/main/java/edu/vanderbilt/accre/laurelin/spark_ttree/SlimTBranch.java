@@ -26,9 +26,9 @@ import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
 import com.google.common.collect.Range;
 
-import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
+import edu.vanderbilt.accre.laurelin.cache.Cache;
 import edu.vanderbilt.accre.laurelin.root_proxy.Cursor;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;

@@ -11,8 +11,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import org.junit.Test;
 
-import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
+import edu.vanderbilt.accre.laurelin.cache.Cache;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
