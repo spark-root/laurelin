@@ -12,7 +12,7 @@ import java.util.List;
 import org.junit.Test;
 
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
-import edu.vanderbilt.accre.laurelin.array.JaggedArrayPrep;
+import edu.vanderbilt.accre.laurelin.array.JaggedArray;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.cache.Cache;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
@@ -70,7 +70,7 @@ public class ArrayBoundsTest {
         long []basketEntryOffsets = slimBranch.getBasketEntryOffsets();
         Interpretation interp = new AsJagged(new AsDtype(type));
         ArrayBuilder builder = new ArrayBuilder(getbasket, interp, basketEntryOffsets, null, 0, 50069);
-        JaggedArrayPrep testarray = (JaggedArrayPrep)builder.getArray(0, 10);
+        JaggedArray testarray = (JaggedArray)builder.getArray(0, 10);
         System.out.println(Arrays.toString((int[])(testarray.counts().toArray(true))));
         System.out.println(Arrays.toString((float[])(testarray.content().toArray(true))));
     }
