@@ -24,6 +24,8 @@ public class BasketCache {
     int totalCount = 0;
     int hitCount = 0;
     int missCount = 0;
+    long putBytes = 0;
+    long getBytes = 0;
 
     public RawArray get(ROOTFile backingFile, long offset) {
         totalCount += 1;
@@ -32,13 +34,17 @@ public class BasketCache {
             missCount += 1;
             return null;
         }
-        SoftReference<RawArray> ref = fileMap.get(offset);
-        if (ref == null) {
-            missCount += 1;
-            return null;
+        synchronized (fileMap) {
+            SoftReference<RawArray> ref = fileMap.get(offset);
+            if (ref == null) {
+                missCount += 1;
+                return null;
+            }
+            hitCount += 1;
+            RawArray ret = ref.get();
+            getBytes += ret.length();
+            return ret;
         }
-        hitCount += 1;
-        return ref.get();
     }
 
     public RawArray put(ROOTFile backingFile, long offset, RawArray data) {
@@ -49,7 +55,10 @@ public class BasketCache {
                 cache.putIfAbsent(backingFile, Collections.synchronizedMap(new HashMap<Long, SoftReference<RawArray>>()));
             }
         }
-        fileMap.put(offset, new SoftReference<RawArray>(data));
-        return data;
+        synchronized (fileMap) {
+            fileMap.put(offset, new SoftReference<RawArray>(data));
+            putBytes += data.length();
+            return data;
+        }
     }
 }
