@@ -76,7 +76,7 @@ public class TTreeTest {
 
         ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
 
-        BasketCache branchCache = new BasketCache();
+        BasketCache branchCache = BasketCache.getCache();
         SlimTBranchInterface slimBranch = SlimTBranch.getFromTBranch(branch);
         ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache, null);
         long []basketEntryOffsets = slimBranch.getBasketEntryOffsets();
@@ -98,7 +98,7 @@ public class TTreeTest {
         TBasket basket = baskets.get(0);
         ByteBuffer buf = basket.getPayload();
 
-        BasketCache branchCache = new BasketCache();
+        BasketCache branchCache = BasketCache.getCache();
         ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache, null);
         long [] basketEntryOffsets = branch.getBasketEntryOffsets(); //{ 0, 100 };
         Interpretation interpretation = new AsJagged(new AsDtype(AsDtype.Dtype.FLOAT4));
@@ -124,7 +124,7 @@ public class TTreeTest {
 
         ThreadPoolExecutor executor = (ThreadPoolExecutor)Executors.newFixedThreadPool(10);
 
-        BasketCache branchCache = new BasketCache();
+        BasketCache branchCache = BasketCache.getCache();
         SlimTBranchInterface slimBranch = SlimTBranch.getFromTBranch(branch);
         ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache, null);
         long [] basketEntryOffsets = slimBranch.getBasketEntryOffsets(); //{ 0, 100 };

@@ -64,7 +64,7 @@ public class ArrayBoundsTest {
         List<TBranch> branches = currTree.getBranches(branchName);
         TBranch branch = branches.get(0);
         List<TBasket> baskets = branch.getBaskets();
-        BasketCache branchCache = new BasketCache();
+        BasketCache branchCache = BasketCache.getCache();
         SlimTBranchInterface slimBranch = SlimTBranch.getFromTBranch(branch);
         ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache, null);
         long []basketEntryOffsets = slimBranch.getBasketEntryOffsets();

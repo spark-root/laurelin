@@ -10,23 +10,20 @@ import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
 
 public class BasketCache {
-    private static BasketCache singleton = null;
+    private static BasketCache singleton = new BasketCache();
 
     public static synchronized BasketCache getCache() {
-        if (singleton == null) {
-            singleton = new BasketCache();
-        }
         return singleton;
+    }
+
+    private BasketCache() {
+        cache = Collections.synchronizedMap(new WeakHashMap<ROOTFile, Map<Long, SoftReference<RawArray>>>());
     }
 
     Map<ROOTFile, Map<Long, SoftReference<RawArray>>> cache;
     int totalCount = 0;
     int hitCount = 0;
     int missCount = 0;
-
-    public BasketCache() {
-        cache = Collections.synchronizedMap(new WeakHashMap<ROOTFile, Map<Long, SoftReference<RawArray>>>());
-    }
 
     public RawArray get(ROOTFile backingFile, long offset) {
         totalCount += 1;
