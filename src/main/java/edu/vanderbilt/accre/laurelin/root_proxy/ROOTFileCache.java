@@ -29,6 +29,28 @@ public class ROOTFileCache {
      */
     private HashMap<String, WeakReference<ROOTFile>> fileCache = new HashMap<String, WeakReference<ROOTFile>>();
 
+    /**
+     * Default constructor, hidden for singleton.
+     */
+    private ROOTFileCache() {
+        this(Ticker.systemTicker());
+    }
+
+    /**
+     * Singleton object
+     */
+    private static ROOTFileCache singleton = null;
+
+    /**
+     * Singleton constructor
+     * @return The singleton ROOTFileCache
+     */
+    public static synchronized ROOTFileCache getCache() {
+        if (singleton == null) {
+            singleton = new ROOTFileCache();
+        }
+        return singleton;
+    }
 
     /**
      * Notification queue for when ROOTFiles are unreachable
@@ -55,13 +77,6 @@ public class ROOTFileCache {
      * reaped after the end of the timeout.
      */
     private TimedCache timedCache;
-
-    /**
-     * Default constructor
-     */
-    public ROOTFileCache() {
-        this(Ticker.systemTicker());
-    }
 
     /**
      * Constructor which accepts a Ticker object, used for testing.

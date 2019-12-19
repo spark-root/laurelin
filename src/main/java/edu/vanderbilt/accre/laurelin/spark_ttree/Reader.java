@@ -56,7 +56,7 @@ public class Reader implements DataSourceReader,
     private IOProfile profiler;
     private static CollectionAccumulator<Storage> profileData;
     private SparkContext sparkContext;
-    private static ROOTFileCache fileCache = new ROOTFileCache();
+    private static ROOTFileCache fileCache = ROOTFileCache.getCache();
 
     public Reader(DataSourceOptions options, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
         logger.trace("construct ttreedatasourcev2reader");

@@ -77,7 +77,7 @@ class PartitionReader implements InputPartitionReader<ColumnarBatch> {
     private static ThreadPoolExecutor executor;
     private CollectionAccumulator<Storage> profileData;
     private int pid;
-    private static ROOTFileCache fileCache = new ROOTFileCache();
+    private static ROOTFileCache fileCache = ROOTFileCache.getCache();
 
     public PartitionReader(StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount, CollectionAccumulator<Storage> profileData, int pid) {
         this.basketCache = BasketCache.getCache();
