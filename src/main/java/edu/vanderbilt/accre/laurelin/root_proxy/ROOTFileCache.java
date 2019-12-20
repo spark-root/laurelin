@@ -172,7 +172,6 @@ public class ROOTFileCache {
     public ROOTFile getROOTFile(String path) throws IOException {
         try {
             lock.lock();
-            logger.trace(String.format("Acquiring (%s): %s", this, path));
             WeakReference<ROOTFile> ref = fileCache.get(path);
             ROOTFile ret = null;
             // Do it in this order to keep the GC from sneaking in
