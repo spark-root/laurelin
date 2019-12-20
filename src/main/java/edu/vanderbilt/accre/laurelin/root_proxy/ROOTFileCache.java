@@ -229,6 +229,7 @@ public class ROOTFileCache {
     }
 
     private ROOTFile load(String path) throws IOException {
+        assert lock.isHeldByCurrentThread() == true;
         FileInterface fileInterface = timedCache.getIfPresent(path);
         if (fileInterface == null) {
             fileInterface = interfaceMap.get(path);
