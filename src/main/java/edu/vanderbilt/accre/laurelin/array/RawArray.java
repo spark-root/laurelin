@@ -19,11 +19,6 @@ public class RawArray extends PrimitiveArray {
     }
 
     @Override
-    public int disk_itemsize() {
-        return 1;
-    }
-
-    @Override
     public int multiplicity() {
         return 1;
     }
