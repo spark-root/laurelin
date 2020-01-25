@@ -45,9 +45,8 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 
-import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.Root;
-import edu.vanderbilt.accre.laurelin.Root.TTreeDataSourceV2Reader;
+import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
@@ -55,6 +54,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
+import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranchInterface;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
@@ -79,7 +79,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "foriter");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(1, schemaCast.size());
@@ -119,7 +119,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "Events");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
 
         InputPartition<ColumnarBatch> partition = partitions.get(0);
@@ -179,16 +179,16 @@ public class TTreeDataSourceUnitTest {
 
     @Test
     public void testReaderInterning() {
-        TTreeDataSourceV2Reader reader1;
-        TTreeDataSourceV2Reader reader2;
-        TTreeDataSourceV2Reader reader3;
+        Reader reader1;
+        Reader reader2;
+        Reader reader3;
         {
             Map<String, String> optmap = new HashMap<String, String>();
             optmap.put("path", "testdata/uproot-foriter.root");
             optmap.put("tree",  "foriter");
             DataSourceOptions opts = new DataSourceOptions(optmap);
             Root source = new Root();
-            reader1 = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+            reader1 = (Reader) source.createReader(opts, null, true);
         }
 
         {
@@ -197,7 +197,7 @@ public class TTreeDataSourceUnitTest {
             optmap.put("tree",  "foriter");
             DataSourceOptions opts = new DataSourceOptions(optmap);
             Root source = new Root();
-            reader2 = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+            reader2 = (Reader) source.createReader(opts, null, true);
         }
         assertEquals("Should be same object", reader1, reader2);
 
@@ -207,7 +207,7 @@ public class TTreeDataSourceUnitTest {
             optmap.put("tree",  "Events");
             DataSourceOptions opts = new DataSourceOptions(optmap);
             Root source = new Root();
-            reader3 = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+            reader3 = (Reader) source.createReader(opts, null, true);
         }
         assertNotEquals("Should not be same object", reader2, reader3);
         assertNotEquals("Should not be same object", reader1, reader3);
@@ -215,13 +215,13 @@ public class TTreeDataSourceUnitTest {
 
     @Test(expected = RuntimeException.class)
     public void testReaderInterningFail() {
-        TTreeDataSourceV2Reader reader1;
+        Reader reader1;
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-foriter.root");
         optmap.put("tree",  "INVALID TREE");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        reader1 = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        reader1 = (Reader) source.createReader(opts, null, true);
     }
 
 
@@ -232,7 +232,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "foriter");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(1, schemaCast.size());
@@ -259,7 +259,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "Events");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         // only get a scalar float_t for now since that's all that works
         MetadataBuilder metadata = new MetadataBuilder();
         metadata.putString("rootType", "float");
@@ -291,7 +291,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         List<InputPartition<ColumnarBatch>> batch = reader.planBatchInputPartitions();
         assertNotNull(batch);
     }
@@ -303,7 +303,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         assertNotNull(reader.planBatchInputPartitions());
     }
 
@@ -315,7 +315,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("threadCount", "0");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         List<InputPartition<ColumnarBatch>> partitionPlan = reader.planBatchInputPartitions();
         assertNotNull(partitionPlan);
         StructType schema = reader.readSchema();
@@ -349,7 +349,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
         assertEquals(1, partitions.size());
@@ -389,7 +389,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        TTreeDataSourceV2Reader reader = (TTreeDataSourceV2Reader) source.createReader(opts, null, true);
+        Reader reader = (Reader) source.createReader(opts, null, true);
         List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
         assertEquals(1, partitions.size());
@@ -417,7 +417,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarI1").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new BooleanType(), SimpleType.fromString("bool"), SimpleType.dtypeFromString("bool"), cache, 0, 9, slim, null);
@@ -437,7 +437,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayI1").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new BooleanType(), false), new SimpleType.ArrayType(SimpleType.fromString("bool")), SimpleType.dtypeFromString("bool"), cache, 0, 9, slim, null);
@@ -493,7 +493,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarI8").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ByteType(), SimpleType.fromString("char"), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
@@ -513,7 +513,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarUI8").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ShortType(), SimpleType.fromString("uchar"), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
@@ -533,7 +533,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayI8").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ByteType(), false), new SimpleType.ArrayType(SimpleType.fromString("char")), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
@@ -589,7 +589,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayUI8").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("uchar")), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
@@ -645,7 +645,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceI8").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ByteType(), false), new SimpleType.ArrayType(SimpleType.fromString("char")), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
@@ -683,7 +683,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceUI8").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("uchar")), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
@@ -721,7 +721,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarI16").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ShortType(), SimpleType.fromString("short"), SimpleType.dtypeFromString("short"), cache, 0, 9, slim, null);
@@ -741,7 +741,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarUI16").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new IntegerType(), SimpleType.fromString("ushort"), SimpleType.dtypeFromString("ushort"), cache, 0, 9, slim, null);
@@ -761,7 +761,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayI16").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("short")), SimpleType.dtypeFromString("short"), cache, 0, 9, slim, null);
@@ -817,7 +817,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayUI16").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("ushort")), SimpleType.dtypeFromString("ushort"), cache, 0, 9, slim, null);
@@ -873,7 +873,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceI16").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("short")), SimpleType.dtypeFromString("short"), cache, 0, 9, slim, null);
@@ -911,7 +911,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceUI16").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("ushort")), SimpleType.dtypeFromString("ushort"), cache, 0, 9, slim, null);
@@ -949,7 +949,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarI32").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new IntegerType(), SimpleType.fromString("int"), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
@@ -969,7 +969,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarUI32").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new LongType(), SimpleType.fromString("uint"), SimpleType.dtypeFromString("uint"), cache, 0, 9, slim, null);
@@ -989,7 +989,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayI32").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("int")), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
@@ -1045,7 +1045,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayUI32").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("uint")), SimpleType.dtypeFromString("uint"), cache, 0, 9, slim, null);
@@ -1101,7 +1101,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceI32").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("int")), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
@@ -1139,7 +1139,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceUI32").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("uint")), SimpleType.dtypeFromString("uint"), cache, 0, 9, slim, null);
@@ -1177,7 +1177,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarI64").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new LongType(), SimpleType.fromString("long"), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
@@ -1197,7 +1197,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ScalarUI64").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new DoubleType(), SimpleType.fromString("ulong"), SimpleType.dtypeFromString("ulong"), cache, 0, 9, slim, null);
@@ -1221,7 +1221,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayI64").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
@@ -1277,7 +1277,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("ArrayUI64").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("ulong")), SimpleType.dtypeFromString("ulong"), cache, 0, 9, slim, null);
@@ -1333,7 +1333,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceI64").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
@@ -1371,7 +1371,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/all-types.root");
         TTree tree = new TTree(file.getProxy("Events"), file);
         TBranch branch = tree.getBranches("SliceUI64").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("ulong")), SimpleType.dtypeFromString("ulong"), cache, 0, 9, slim, null);
@@ -1410,7 +1410,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
         TTree tree = new TTree(file.getProxy("tree"), file);
         TBranch branch = tree.getBranches("Float32").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new FloatType(), SimpleType.fromString("float"), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
@@ -1425,7 +1425,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
         TTree tree = new TTree(file.getProxy("tree"), file);
         TBranch branch = tree.getBranches("ArrayFloat32").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new FloatType(), false), new SimpleType.ArrayType(SimpleType.fromString("float")), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
@@ -1444,7 +1444,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
         TTree tree = new TTree(file.getProxy("tree"), file);
         TBranch branch = tree.getBranches("SliceFloat32").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new FloatType(), false), new SimpleType.ArrayType(SimpleType.fromString("float")), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
@@ -1462,7 +1462,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
         TTree tree = new TTree(file.getProxy("tree"), file);
         TBranch branch = tree.getBranches("Float64").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new DoubleType(), SimpleType.fromString("double"), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
@@ -1477,7 +1477,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
         TTree tree = new TTree(file.getProxy("tree"), file);
         TBranch branch = tree.getBranches("ArrayFloat64").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("double")), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
@@ -1496,7 +1496,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/uproot-small-flat-tree.root");
         TTree tree = new TTree(file.getProxy("tree"), file);
         TBranch branch = tree.getBranches("SliceFloat64").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("double")), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
@@ -1531,7 +1531,7 @@ public class TTreeDataSourceUnitTest {
         TFile file = TFile.getFromFile("testdata/stdvector.root");
         TTree tree = new TTree(file.getProxy("tvec"), file);
         TBranch branch = tree.getBranches("long").get(0);
-        Cache cache = new Cache();
+        BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
         for (int start = 0; start < 10; start += 1) {

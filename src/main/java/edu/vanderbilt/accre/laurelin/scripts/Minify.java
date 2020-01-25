@@ -1,4 +1,4 @@
-package edu.vanderbilt.accre.laurelin;
+package edu.vanderbilt.accre.laurelin.scripts;
 
 import java.io.BufferedReader;
 import java.io.File;

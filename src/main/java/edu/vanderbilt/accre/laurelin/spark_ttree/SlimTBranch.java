@@ -26,9 +26,9 @@ import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
 import com.google.common.collect.Range;
 
-import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
+import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.Cursor;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
@@ -211,16 +211,16 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectIn
      * @return GetBasket object used by array
      */
     @Override
-    public ArrayBuilder.GetBasket getArrayBranchCallback(Cache basketCache, ROOTFileCache fileCache) {
+    public ArrayBuilder.GetBasket getArrayBranchCallback(BasketCache basketCache, ROOTFileCache fileCache) {
         return new BranchCallback(basketCache, this, fileCache);
     }
 
     class BranchCallback implements ArrayBuilder.GetBasket {
-        Cache basketCache;
+        BasketCache basketCache;
         SlimTBranchInterface branch;
         ROOTFileCache fileCache;
 
-        public BranchCallback(Cache basketCache, SlimTBranchInterface branch, ROOTFileCache fileCache) {
+        public BranchCallback(BasketCache basketCache, SlimTBranchInterface branch, ROOTFileCache fileCache) {
             this.basketCache = basketCache;
             this.branch = branch;
             this.fileCache = fileCache;

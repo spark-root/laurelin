@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 import org.apache.logging.log4j.LogManager;
 
 import edu.vanderbilt.accre.laurelin.array.Array;
-import edu.vanderbilt.accre.laurelin.array.JaggedArrayPrep;
+import edu.vanderbilt.accre.laurelin.array.JaggedArray;
 import edu.vanderbilt.accre.laurelin.array.PrimitiveArray;
 import edu.vanderbilt.accre.laurelin.array.PrimitiveArray.Int4;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
@@ -42,7 +42,7 @@ public class AsJagged implements Interpretation {
 
     @Override
     public Array empty() {
-        return new JaggedArrayPrep(this, 0, new PrimitiveArray.Int4(new AsDtype(AsDtype.Dtype.INT4), 0), this.content.empty());
+        return new JaggedArray(this, 0, new PrimitiveArray.Int4(new AsDtype(AsDtype.Dtype.INT4), 0), this.content.empty());
     }
 
     @Override
@@ -52,7 +52,7 @@ public class AsJagged implements Interpretation {
 
     @Override
     public int source_numitems(Array source) {
-        return this.content.source_numitems(((JaggedArrayPrep)source).content());
+        return this.content.source_numitems(((JaggedArray)source).content());
     }
 
     @Override
@@ -79,28 +79,28 @@ public class AsJagged implements Interpretation {
         } else {
             content = this.content.fromroot(compact, null, start, stop);
         }
-        return new JaggedArrayPrep(this, local_entrystop - local_entrystart, counts, content);
+        return new JaggedArray(this, local_entrystop - local_entrystart, counts, content);
     }
 
     @Override
     public Array destination(int numitems, int numentries) {
         PrimitiveArray.Int4 counts = new PrimitiveArray.Int4(new AsDtype(AsDtype.Dtype.INT4), numentries);
         Array content = this.content.destination(numitems, numentries);
-        return new JaggedArrayPrep(this, numentries, counts, content);
+        return new JaggedArray(this, numentries, counts, content);
     }
 
     @Override
     public void fill(Array source, Array destination, int itemstart, int itemstop, int entrystart, int entrystop) {
-        this.content.fill(((JaggedArrayPrep)source).content(), ((JaggedArrayPrep)destination).content(), itemstart, itemstop, entrystart, entrystop);
-        ((JaggedArrayPrep)destination).counts().copyitems(((JaggedArrayPrep)source).counts(), entrystart, entrystop);
+        this.content.fill(((JaggedArray)source).content(), ((JaggedArray)destination).content(), itemstart, itemstop, entrystart, entrystop);
+        ((JaggedArray)destination).counts().copyitems(((JaggedArray)source).counts(), entrystart, entrystop);
     }
 
     @Override
     public Array clip(Array destination, int entrystart, int entrystop) {
-        PrimitiveArray.Int4 counts = (PrimitiveArray.Int4)(((JaggedArrayPrep)destination).counts().clip(entrystart, entrystop));
+        PrimitiveArray.Int4 counts = (PrimitiveArray.Int4)(((JaggedArray)destination).counts().clip(entrystart, entrystop));
         // FIXME: does the content need to be explicitly clipped? Does that involve a cumsum?
-        Array content = ((JaggedArrayPrep)destination).content();
-        return new JaggedArrayPrep(this, counts.length(), counts, content);
+        Array content = ((JaggedArray)destination).content();
+        return new JaggedArray(this, counts.length(), counts, content);
     }
 
     @Override

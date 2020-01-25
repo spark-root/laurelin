@@ -11,10 +11,10 @@ import java.util.List;
 
 import org.junit.Test;
 
-import edu.vanderbilt.accre.laurelin.Cache;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
-import edu.vanderbilt.accre.laurelin.array.JaggedArrayPrep;
+import edu.vanderbilt.accre.laurelin.array.JaggedArray;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
+import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
@@ -64,13 +64,13 @@ public class ArrayBoundsTest {
         List<TBranch> branches = currTree.getBranches(branchName);
         TBranch branch = branches.get(0);
         List<TBasket> baskets = branch.getBaskets();
-        Cache branchCache = new Cache();
+        BasketCache branchCache = BasketCache.getCache();
         SlimTBranchInterface slimBranch = SlimTBranch.getFromTBranch(branch);
         ArrayBuilder.GetBasket getbasket = slimBranch.getArrayBranchCallback(branchCache, null);
         long []basketEntryOffsets = slimBranch.getBasketEntryOffsets();
         Interpretation interp = new AsJagged(new AsDtype(type));
         ArrayBuilder builder = new ArrayBuilder(getbasket, interp, basketEntryOffsets, null, 0, 50069);
-        JaggedArrayPrep testarray = (JaggedArrayPrep)builder.getArray(0, 10);
+        JaggedArray testarray = (JaggedArray)builder.getArray(0, 10);
         System.out.println(Arrays.toString((int[])(testarray.counts().toArray(true))));
         System.out.println(Arrays.toString((float[])(testarray.content().toArray(true))));
     }

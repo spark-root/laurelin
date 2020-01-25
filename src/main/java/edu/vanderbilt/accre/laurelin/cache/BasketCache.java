@@ -1,4 +1,4 @@
-package edu.vanderbilt.accre.laurelin;
+package edu.vanderbilt.accre.laurelin.cache;
 
 import java.lang.ref.SoftReference;
 import java.util.Collections;
@@ -9,15 +9,23 @@ import java.util.WeakHashMap;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
 
-public class Cache {
+public class BasketCache {
+    private static BasketCache singleton = new BasketCache();
+
+    public static synchronized BasketCache getCache() {
+        return singleton;
+    }
+
+    private BasketCache() {
+        cache = Collections.synchronizedMap(new WeakHashMap<ROOTFile, Map<Long, SoftReference<RawArray>>>());
+    }
+
     Map<ROOTFile, Map<Long, SoftReference<RawArray>>> cache;
     int totalCount = 0;
     int hitCount = 0;
     int missCount = 0;
-
-    public Cache() {
-        cache = Collections.synchronizedMap(new WeakHashMap<ROOTFile, Map<Long, SoftReference<RawArray>>>());
-    }
+    long putBytes = 0;
+    long getBytes = 0;
 
     public RawArray get(ROOTFile backingFile, long offset) {
         totalCount += 1;
@@ -26,13 +34,17 @@ public class Cache {
             missCount += 1;
             return null;
         }
-        SoftReference<RawArray> ref = fileMap.get(offset);
-        if (ref == null) {
-            missCount += 1;
-            return null;
+        synchronized (fileMap) {
+            SoftReference<RawArray> ref = fileMap.get(offset);
+            if (ref == null) {
+                missCount += 1;
+                return null;
+            }
+            hitCount += 1;
+            RawArray ret = ref.get();
+            getBytes += ret.length();
+            return ret;
         }
-        hitCount += 1;
-        return ref.get();
     }
 
     public RawArray put(ROOTFile backingFile, long offset, RawArray data) {
@@ -43,7 +55,10 @@ public class Cache {
                 cache.putIfAbsent(backingFile, Collections.synchronizedMap(new HashMap<Long, SoftReference<RawArray>>()));
             }
         }
-        fileMap.put(offset, new SoftReference<RawArray>(data));
-        return data;
+        synchronized (fileMap) {
+            fileMap.put(offset, new SoftReference<RawArray>(data));
+            putBytes += data.length();
+            return data;
+        }
     }
 }
