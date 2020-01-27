@@ -34,7 +34,10 @@ public class LaurelinDSConfigTest {
                 newConfig("longWithDependent")
                     .type(LONG_TYPE)
                     .dependentDefault("longWithLiteral")
-                    .build()
+                    .build(),
+                newConfig("longWithNoDefault")
+                    .type(LONG_TYPE)
+                    .build(),
         };
     }
 
@@ -48,6 +51,15 @@ public class LaurelinDSConfigTest {
         assertEquals(12345678900L, dsConfig.getLong("longWithDependent"));
         assertEquals(16, dsConfig.getInt("threadCount"));
         assertEquals("Events", dsConfig.getString("tree"));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testDefaults_fail_nodef() {
+        ConfigListing configList = new ConfigListing(getConfigList());
+        HashMap<String, String> map = new HashMap<String, String>();
+        DataSourceOptions sparkDSOpts = new DataSourceOptions(map);
+        LaurelinDSConfig dsConfig = new LaurelinDSConfig(sparkDSOpts, configList);
+        assertEquals(12345678900L, dsConfig.getLong("longWithNoDefault"));
     }
 
     public static ConfigBuilder newConfig(String name) {

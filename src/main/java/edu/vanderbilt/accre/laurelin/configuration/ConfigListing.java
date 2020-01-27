@@ -312,7 +312,7 @@ public class ConfigListing {
         private String getValue(Optional<String> optionalVal, Map<String, String> userConfig, ConfigListing configListing) {
             if (!optionalVal.isPresent()) {
                 if (defValue == null) {
-                    optionalVal = Optional.of("");
+                    throw new RuntimeException("Configuration value " + name + " was requested, but the value was unset by the user and no default was provided");
                 } else {
                     // Default values can occasionally be other values, so we need
                     // to pass in the whole state
