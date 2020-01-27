@@ -133,10 +133,10 @@ public class TTreeDataSourceUnitTest {
             out.flush();
             yourBytes = bos.toByteArray();
             /*
-             *  This patch produces 348555 bytes serialized, ensure it doesn't
+             *  This patch produces 349972 bytes serialized, ensure it doesn't
              *  grow accidentally
              */
-            assertTrue("Partition size too large", yourBytes.length < 349000);
+            assertTrue("Partition size too large: " + yourBytes.length, yourBytes.length < 351000);
 
             System.out.println("Got length: " + yourBytes.length);
             bis = new ByteArrayInputStream(yourBytes);

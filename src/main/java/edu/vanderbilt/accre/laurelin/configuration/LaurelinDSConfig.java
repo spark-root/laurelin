@@ -1,5 +1,8 @@
 package edu.vanderbilt.accre.laurelin.configuration;
 
+import java.io.Serializable;
+import java.util.Map;
+
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 
 /**
@@ -10,8 +13,10 @@ import org.apache.spark.sql.sources.v2.DataSourceOptions;
  * correctly declares variables properly and B) the Laurelin code accesses these
  * values properly
  */
-public class LaurelinDSConfig  {
-    private DataSourceOptions sparkOpts;
+public class LaurelinDSConfig implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private Map<String, String> map;
+    private String[] sparkProvidedPathList = null;
     private ConfigListing listing;
 
     /**
@@ -20,7 +25,8 @@ public class LaurelinDSConfig  {
      * @param listing ConfigListing object describing valid options
      */
     public LaurelinDSConfig(DataSourceOptions sparkOpts, ConfigListing listing) {
-        this.sparkOpts = sparkOpts;
+        sparkProvidedPathList = sparkOpts.paths();
+        map = sparkOpts.asMap();
         this.listing = listing;
         listing.validateConfigMap(sparkOpts.asMap());
     }
@@ -39,11 +45,11 @@ public class LaurelinDSConfig  {
      * @return List of paths passed in via user
      */
     public String[] paths() {
-        return sparkOpts.paths();
+        return sparkProvidedPathList;
     }
 
     private String getGeneric(String key) {
-        return listing.resolveValue(key, sparkOpts.asMap());
+        return listing.resolveValue(key, map);
     }
 
     /**

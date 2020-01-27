@@ -54,7 +54,6 @@ public class Reader implements DataSourceReader,
     private TTree currTree;
     private TFile currFile;
     private StructType schema;
-    private int threadCount;
     private IOProfile profiler;
     private static CollectionAccumulator<Storage> profileData;
     private SparkContext sparkContext;
@@ -77,7 +76,6 @@ public class Reader implements DataSourceReader,
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        threadCount = options.getInt("threadCount");
 
         Function<Event, Integer> cb = null;
         if (ioAccum != null) {
@@ -192,11 +190,12 @@ public class Reader implements DataSourceReader,
         String treeName;
         StructType schema;
         int threadCount;
+        LaurelinDSConfig options;
 
-        public PartitionHelper(String treeName, StructType schema, int threadCount) {
+        public PartitionHelper(String treeName, StructType schema, LaurelinDSConfig options) {
             this.treeName = treeName;
             this.schema = schema;
-            this.threadCount = threadCount;
+            this.options = options;
         }
 
         private static void parseStructFields(TTree inputTree, Map<String, SlimTBranch> slimBranches, StructType struct, String namespace) {
@@ -212,7 +211,7 @@ public class Reader implements DataSourceReader,
             }
         }
 
-        public static Iterator<InputPartition<ColumnarBatch>> partitionSingleFileImpl(String path, String treeName, StructType schema, int threadCount) {
+        public static Iterator<InputPartition<ColumnarBatch>> partitionSingleFileImpl(String path, String treeName, StructType schema, LaurelinDSConfig options) {
             List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
             int pid = 0;
             TTree inputTree;
@@ -237,13 +236,13 @@ public class Reader implements DataSourceReader,
                     for (Entry<String, SlimTBranch> e: slimBranches.entrySet()) {
                         trimmedSlimBranches.put(e.getKey(), e.getValue().copyAndTrim(partitionStart, partitionEnd));
                     }
-                    ret.add(new Partition(schema, partitionStart, partitionEnd, trimmedSlimBranches, threadCount, profileData, pid));
+                    ret.add(new Partition(schema, partitionStart, partitionEnd, trimmedSlimBranches, options, profileData, pid));
                 }
                 if (ret.size() == 0) {
                     // Only one basket?
                     logger.debug("Planned for zero baskets, adding a dummy one");
                     pid += 1;
-                    ret.add(new Partition(schema, 0, inputTree.getEntries(), slimBranches, threadCount, profileData, pid));
+                    ret.add(new Partition(schema, 0, inputTree.getEntries(), slimBranches, options, profileData, pid));
                 }
                 return ret.iterator();
             } catch (Exception e) {
@@ -253,7 +252,7 @@ public class Reader implements DataSourceReader,
         }
 
         FlatMapFunction<String, InputPartition<ColumnarBatch>> getLambda() {
-            return s -> PartitionHelper.partitionSingleFileImpl(s, treeName, schema, threadCount);
+            return s -> PartitionHelper.partitionSingleFileImpl(s, treeName, schema, options);
         }
     }
 
@@ -268,7 +267,7 @@ public class Reader implements DataSourceReader,
         } else {
             JavaSparkContext sc = JavaSparkContext.fromSparkContext(sparkContext);
             JavaRDD<String> rdd_paths = sc.parallelize(paths, paths.size());
-            Reader.PartitionHelper helper = new PartitionHelper(treeName, schema, threadCount);
+            Reader.PartitionHelper helper = new PartitionHelper(treeName, schema, options);
             JavaRDD<InputPartition<ColumnarBatch>> partitions = rdd_paths.flatMap(helper.getLambda());
             ret = partitions.collect();
         }
@@ -281,7 +280,7 @@ public class Reader implements DataSourceReader,
     }
 
     public Iterator<InputPartition<ColumnarBatch>> partitionSingleFile(String path) {
-        return PartitionHelper.partitionSingleFileImpl(path, treeName, schema, threadCount);
+        return PartitionHelper.partitionSingleFileImpl(path, treeName, schema, options);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package edu.vanderbilt.accre.laurelin.configuration;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -10,7 +11,8 @@ import java.util.Optional;
  * of which handles the processing of a single key/value configuration pair.
  * Importantly, Spark only stores/outputs strings, so we'll do the same here.
  */
-public class ConfigListing {
+public class ConfigListing implements Serializable {
+    private static final long serialVersionUID = 1L;
     /**
      * List of ConfigOptions, each of which describes one possible configuration
      * option
@@ -79,7 +81,8 @@ public class ConfigListing {
     /**
      * Represents a configuration value type
      */
-    public abstract static class ConfigValueType {
+    public abstract static class ConfigValueType implements Serializable {
+        private static final long serialVersionUID = 1L;
         /**
          * Validates the user-provided parameter against (possibly custom) rules
          * @param val The parameter to validate
@@ -91,7 +94,8 @@ public class ConfigListing {
     /**
      * Ensures the stored value is an integer
      */
-    public static class IntegerValueType extends ConfigValueType {
+    public static class IntegerValueType extends ConfigValueType implements Serializable {
+        private static final long serialVersionUID = 1L;
         @Override
         Optional<String> validate(String val) {
             try {
@@ -106,7 +110,8 @@ public class ConfigListing {
     /**
      * Ensures the stored value is a long
      */
-    public static class LongValueType extends ConfigValueType {
+    public static class LongValueType extends ConfigValueType implements Serializable {
+        private static final long serialVersionUID = 1L;
         @Override
         Optional<String> validate(String val) {
             try {
@@ -122,7 +127,8 @@ public class ConfigListing {
      * Ensures the stored value is a string. This is trivially true since we get
      * Strings from the Spark config map
      */
-    static class StringValueType extends ConfigValueType {
+    static class StringValueType extends ConfigValueType implements Serializable {
+        private static final long serialVersionUID = 1L;
         @Override
         Optional<String> validate(String val) {
             // No way a string can't be valid
@@ -137,11 +143,13 @@ public class ConfigListing {
      * cases where it's possible to set the variable differently in driver and
      * executor contexts
      */
-    private abstract static class ConfigDefault {
+    private abstract static class ConfigDefault implements Serializable {
+        private static final long serialVersionUID = 1L;
         public abstract String getDefault(String key, Map<String, String> userConfig, ConfigListing configListing);
     }
 
-    private static class LiteralDefault extends ConfigDefault {
+    private static class LiteralDefault extends ConfigDefault implements Serializable {
+        private static final long serialVersionUID = 1L;
         String def;
 
         public LiteralDefault(String def) {
@@ -154,7 +162,8 @@ public class ConfigListing {
         }
     }
 
-    private static class DependentDefault extends ConfigDefault {
+    private static class DependentDefault extends ConfigDefault implements Serializable {
+        private static final long serialVersionUID = 1L;
         String other;
 
         public DependentDefault(String other) {
@@ -250,7 +259,8 @@ public class ConfigListing {
      * Stores the description for a single configuration option
      *
      */
-    public static class ConfigOption {
+    public static class ConfigOption implements Serializable {
+        private static final long serialVersionUID = 1L;
         /**
          * Plaintext description
          */
