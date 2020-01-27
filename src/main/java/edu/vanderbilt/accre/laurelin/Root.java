@@ -11,6 +11,7 @@ import org.apache.spark.sql.sources.DataSourceRegister;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.DataSourceV2;
 import org.apache.spark.sql.sources.v2.ReadSupport;
+import org.apache.spark.sql.sources.v2.SessionConfigSupport;
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
 import org.apache.spark.util.CollectionAccumulator;
 
@@ -21,7 +22,7 @@ import com.google.common.cache.LoadingCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
 
-public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
+public class Root implements DataSourceV2, ReadSupport, DataSourceRegister, SessionConfigSupport {
     static final Logger logger = LogManager.getLogger();
 
     /**
@@ -114,9 +115,16 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
         }
     }
 
+    // So you can use .format('root')
     @Override
     public String shortName() {
         return "root";
+    }
+
+    // So you can use .setConfig('spark.datasource.laurelin.XXX', "foo")
+    @Override
+    public String keyPrefix() {
+        return "laurelin";
     }
 
 }
