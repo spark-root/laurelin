@@ -31,6 +31,7 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.apache.spark.util.CollectionAccumulator;
 
+import edu.vanderbilt.accre.laurelin.configuration.LaurelinDSConfig;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOFactory;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
@@ -47,6 +48,7 @@ public class Reader implements DataSourceReader,
         SupportsPushDownRequiredColumns {
     static final Logger logger = LogManager.getLogger();
 
+    private LaurelinDSConfig options;
     private LinkedList<String> paths;
     private String treeName;
     private TTree currTree;
@@ -58,8 +60,9 @@ public class Reader implements DataSourceReader,
     private SparkContext sparkContext;
     private static ROOTFileCache fileCache = ROOTFileCache.getCache();
 
-    public Reader(DataSourceOptions options, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
+    public Reader(DataSourceOptions sparkOptions, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
         logger.trace("construct ttreedatasourcev2reader");
+        options = LaurelinDSConfig.wrap(sparkOptions);
         this.sparkContext = sparkContext;
         try {
             this.paths = new LinkedList<String>();
@@ -68,13 +71,13 @@ public class Reader implements DataSourceReader,
             }
             // FIXME - More than one file, please
             currFile = TFile.getFromFile(fileCache.getROOTFile(this.paths.get(0)));
-            treeName = options.get("tree").orElse("Events");
+            treeName = options.getString("tree");
             currTree = new TTree(currFile.getProxy(treeName), currFile);
             this.schema = readSchemaPriv();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        threadCount = options.getInt("threadCount", 16);
+        threadCount = options.getInt("threadCount");
 
         Function<Event, Integer> cb = null;
         if (ioAccum != null) {
