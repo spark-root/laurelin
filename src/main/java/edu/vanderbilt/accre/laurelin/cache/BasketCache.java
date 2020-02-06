@@ -42,6 +42,10 @@ public class BasketCache {
             }
             hitCount += 1;
             RawArray ret = ref.get();
+            if (ret == null) {
+                missCount += 1;
+                return null;
+            }
             getBytes += ret.length();
             return ret;
         }
