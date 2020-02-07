@@ -1,4 +1,4 @@
-package edu.vanderbilt.accre.spark_ttree;
+package edu.vanderbilt.accre.laurelin.spark_ttree;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -17,9 +17,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.junit.Test;
-
-import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBasket;
-import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 
 public class SlimTBranchTest {
 

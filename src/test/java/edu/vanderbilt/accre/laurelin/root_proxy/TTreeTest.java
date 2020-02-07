@@ -1,6 +1,6 @@
-package edu.vanderbilt.accre.root_proxy;
+package edu.vanderbilt.accre.laurelin.root_proxy;
 
-import static edu.vanderbilt.accre.Helpers.getBigTestDataIfExists;
+import static edu.vanderbilt.accre.laurelin.Helpers.getBigTestDataIfExists;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
@@ -16,11 +16,6 @@ import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
-import edu.vanderbilt.accre.laurelin.root_proxy.TBasket;
-import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
-import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
-import edu.vanderbilt.accre.laurelin.root_proxy.TLeaf;
-import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranchInterface;
 

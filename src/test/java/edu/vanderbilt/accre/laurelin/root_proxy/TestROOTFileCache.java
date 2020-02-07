@@ -1,4 +1,4 @@
-package edu.vanderbilt.accre.root_proxy;
+package edu.vanderbilt.accre.laurelin.root_proxy;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -8,10 +8,6 @@ import java.io.IOException;
 import org.junit.Test;
 
 import com.google.common.base.Ticker;
-
-import edu.vanderbilt.accre.laurelin.root_proxy.FileInterface;
-import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
-import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
 
 public class TestROOTFileCache {
     private static class TestTicker extends Ticker {

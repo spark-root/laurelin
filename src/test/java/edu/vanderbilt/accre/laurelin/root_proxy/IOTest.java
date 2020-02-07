@@ -1,4 +1,4 @@
-package edu.vanderbilt.accre.root_proxy;
+package edu.vanderbilt.accre.laurelin.root_proxy;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -17,13 +17,6 @@ import java.util.List;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import edu.vanderbilt.accre.laurelin.root_proxy.Cursor;
-import edu.vanderbilt.accre.laurelin.root_proxy.FileInterface;
-import edu.vanderbilt.accre.laurelin.root_proxy.HadoopFile;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOFactory;
-import edu.vanderbilt.accre.laurelin.root_proxy.NIOFile;
-import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
 
 public class IOTest {
     /*

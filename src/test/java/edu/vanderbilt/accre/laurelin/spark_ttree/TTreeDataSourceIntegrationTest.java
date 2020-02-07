@@ -1,4 +1,4 @@
-package edu.vanderbilt.accre.spark_ttree;
+package edu.vanderbilt.accre.laurelin.spark_ttree;
 
 import static org.junit.Assert.assertEquals;
 

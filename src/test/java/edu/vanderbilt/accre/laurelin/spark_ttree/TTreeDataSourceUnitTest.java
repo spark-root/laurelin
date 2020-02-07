@@ -1,6 +1,6 @@
-package edu.vanderbilt.accre.spark_ttree;
+package edu.vanderbilt.accre.laurelin.spark_ttree;
 
-import static edu.vanderbilt.accre.Helpers.getBigTestDataIfExists;
+import static edu.vanderbilt.accre.laurelin.Helpers.getBigTestDataIfExists;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -53,10 +53,6 @@ import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
-import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
-import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
-import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranchInterface;
-import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
 public class TTreeDataSourceUnitTest {
     /*

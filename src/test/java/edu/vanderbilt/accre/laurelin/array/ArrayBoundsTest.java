@@ -1,6 +1,6 @@
-package edu.vanderbilt.accre.array;
+package edu.vanderbilt.accre.laurelin.array;
 
-import static edu.vanderbilt.accre.Helpers.getBigTestDataIfExists;
+import static edu.vanderbilt.accre.laurelin.Helpers.getBigTestDataIfExists;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
@@ -11,9 +11,6 @@ import java.util.List;
 
 import org.junit.Test;
 
-import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
-import edu.vanderbilt.accre.laurelin.array.JaggedArray;
-import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;

@@ -1,6 +1,6 @@
-package edu.vanderbilt.accre.spark_ttree;
+package edu.vanderbilt.accre.laurelin.spark_ttree;
 
-import static edu.vanderbilt.accre.Helpers.getBigTestDataIfExists;
+import static edu.vanderbilt.accre.laurelin.Helpers.getBigTestDataIfExists;
 import static org.junit.Assert.assertEquals;
 
 import java.util.HashMap;
@@ -12,7 +12,6 @@ import org.apache.spark.sql.types.StructType;
 import org.junit.Test;
 
 import edu.vanderbilt.accre.laurelin.Root;
-import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
 
 public class ParseSchemaTest {
     @Test
