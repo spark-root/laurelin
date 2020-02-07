@@ -18,8 +18,8 @@ import java.lang.reflect.Method;
 
 import org.junit.Test;
 
+import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBasket;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
-import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch.SlimTBasket;
 
 public class SlimTBranchTest {
 

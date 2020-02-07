@@ -6,7 +6,6 @@ import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
-import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch.SlimTBasket;
 
 public interface SlimTBranchInterface {
 

@@ -27,7 +27,7 @@ import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch.ArrayDescriptor;
-import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch.SlimTBasket;
+import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBasket;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranchInterface;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
 
