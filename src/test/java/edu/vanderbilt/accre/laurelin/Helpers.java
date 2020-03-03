@@ -24,10 +24,10 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage.TypeEnum;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage.TypeEnum;
 
 public class Helpers {
     private static final Logger logger = LogManager.getLogger();

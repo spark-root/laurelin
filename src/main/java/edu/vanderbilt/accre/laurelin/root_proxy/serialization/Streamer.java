@@ -1,8 +1,14 @@
-package edu.vanderbilt.accre.laurelin.root_proxy;
+package edu.vanderbilt.accre.laurelin.root_proxy.serialization;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import edu.vanderbilt.accre.laurelin.root_proxy.TKey;
+import edu.vanderbilt.accre.laurelin.root_proxy.TList;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.Constants;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.Cursor;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.RangeCheck;
 
 public class Streamer {
     /*
@@ -57,7 +63,7 @@ public class Streamer {
     public Proxy deserializeWithStreamer(TKey key, Cursor c) throws IOException {
         Proxy ret = new Proxy();
         ret.createPlace = "deserializeWithStreamer";
-        return deserializeWithStreamerImpl(key.fClassName, c, ret);
+        return deserializeWithStreamerImpl(key.getClassName(), c, ret);
     }
 
     public Proxy deserializeWithStreamer(String fClassName, Cursor c) throws IOException {

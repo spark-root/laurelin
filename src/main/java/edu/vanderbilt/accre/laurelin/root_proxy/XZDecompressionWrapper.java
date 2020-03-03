@@ -11,6 +11,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.tukaani.xz.SeekableXZInputStream;
 
+import edu.vanderbilt.accre.laurelin.root_proxy.io.FileInterface;
+
 public class XZDecompressionWrapper implements FileInterface {
     private static final Logger logger = LogManager.getLogger();
 

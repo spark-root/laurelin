@@ -2,7 +2,7 @@
  * Constructed by IOFactory for URL pathnames (e.g root://, https://)
  */
 
-package edu.vanderbilt.accre.laurelin.root_proxy;
+package edu.vanderbilt.accre.laurelin.root_proxy.io;
 
 import java.io.IOException;
 import java.net.URI;

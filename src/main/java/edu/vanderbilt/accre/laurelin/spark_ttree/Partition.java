@@ -10,7 +10,7 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.apache.spark.util.CollectionAccumulator;
 
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
 
 /**
  * Represents a Partition of a TTree.

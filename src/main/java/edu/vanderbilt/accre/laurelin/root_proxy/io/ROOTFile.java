@@ -2,7 +2,7 @@
  * Handles low-level loading C-struct type things and (optionally compressed)
  * byte ranges from low level I/O
  */
-package edu.vanderbilt.accre.laurelin.root_proxy;
+package edu.vanderbilt.accre.laurelin.root_proxy.io;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -15,8 +15,8 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.FileProfiler;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.FileProfiler;
 
 public class ROOTFile implements AutoCloseable {
     private static final Logger logger = LogManager.getLogger();

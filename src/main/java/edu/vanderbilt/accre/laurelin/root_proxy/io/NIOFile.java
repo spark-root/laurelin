@@ -2,7 +2,7 @@
  * Constructed by IOFactory for non-URL pathnames (e.g. local files)
  */
 
-package edu.vanderbilt.accre.laurelin.root_proxy;
+package edu.vanderbilt.accre.laurelin.root_proxy.io;
 
 import java.io.File;
 import java.io.FileNotFoundException;

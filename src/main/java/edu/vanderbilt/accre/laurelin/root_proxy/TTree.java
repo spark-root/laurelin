@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import edu.vanderbilt.accre.laurelin.root_proxy.serialization.Proxy;
+import edu.vanderbilt.accre.laurelin.root_proxy.serialization.ProxyArray;
+
 
 public class TTree {
     private class Iterator {

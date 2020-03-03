@@ -1,10 +1,10 @@
-package edu.vanderbilt.accre.laurelin.root_proxy;
+package edu.vanderbilt.accre.laurelin.root_proxy.io;
 
 public class Constants {
     /*
      * Streamer related constants from ROOT
      */
-    public enum StreamerType {
+    public static enum StreamerType {
         kBase(0),
         kChar(1),
         kShort(2),
@@ -59,17 +59,17 @@ public class Constants {
     }
 
     // TObject stuff
-    static long kByteCountVMask = 0x4000;
-    static long kIsOnHeap = 0x01000000;
-    static long kIsReferenced = 1 << 4;
+    public static long kByteCountVMask = 0x4000;
+    public static long kIsOnHeap = 0x01000000;
+    public static long kIsReferenced = 1 << 4;
 
     // Streamer stuff
-    static long kByteCountMask = 0x0000000040000000L;
-    static long kNewClassTag = 0x00000000FFFFFFFFL;
-    static long kClassMask = 0x0000000080000000L;
-    static long kMapOffset = 2;
-    static int kOffsetL = 20;
-    static int kOffsetP = 40;
-    static int kObject = 61;
+    public static long kByteCountMask = 0x0000000040000000L;
+    public static long kNewClassTag = 0x00000000FFFFFFFFL;
+    public static long kClassMask = 0x0000000080000000L;
+    public static long kMapOffset = 2;
+    public static int kOffsetL = 20;
+    public static int kOffsetP = 40;
+    public static int kObject = 61;
 
 }

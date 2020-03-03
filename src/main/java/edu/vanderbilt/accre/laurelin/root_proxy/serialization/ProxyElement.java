@@ -1,4 +1,4 @@
-package edu.vanderbilt.accre.laurelin.root_proxy;
+package edu.vanderbilt.accre.laurelin.root_proxy.serialization;
 
 public class ProxyElement<T> extends Proxy {
     /*

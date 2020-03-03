@@ -46,13 +46,13 @@ import com.google.common.collect.TreeRangeSet;
 
 import edu.vanderbilt.accre.laurelin.Root;
 import edu.vanderbilt.accre.laurelin.cache.BasketCache;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
 
 public class TTreeDataSourceUnitTest {
     /*

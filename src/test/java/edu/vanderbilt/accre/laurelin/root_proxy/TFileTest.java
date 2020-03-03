@@ -13,8 +13,10 @@ import org.apache.logging.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
+import edu.vanderbilt.accre.laurelin.root_proxy.serialization.Proxy;
 
 public class TFileTest {
     List<Storage> accum;

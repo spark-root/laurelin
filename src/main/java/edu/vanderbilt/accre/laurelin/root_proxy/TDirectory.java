@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import edu.vanderbilt.accre.laurelin.root_proxy.io.Cursor;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFile;
+
 public class TDirectory {
 
     short version;
@@ -59,7 +62,7 @@ public class TDirectory {
         for (int i = 0; i < nKeys; i += 1) {
             TKey testkey = new TKey();
             testkey.getFromFile(fh, position);
-            if (testkey.fClassName.equals("TDirectory")) {
+            if (testkey.getClassName().equals("TDirectory")) {
                 TDirectory tmp = new TDirectory();
                 tmp.getFromFile(fh, testkey.fSeekKey + testkey.KeyLen);
                 subdirs.add(tmp);

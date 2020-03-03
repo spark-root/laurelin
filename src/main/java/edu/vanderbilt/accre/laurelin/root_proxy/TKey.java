@@ -2,6 +2,9 @@ package edu.vanderbilt.accre.laurelin.root_proxy;
 
 import java.io.IOException;
 
+import edu.vanderbilt.accre.laurelin.root_proxy.io.Cursor;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFile;
+
 public class TKey {
     int Nbytes;
     int version;
@@ -54,5 +57,9 @@ public class TKey {
 
     public int getObjLen() {
         return ObjLen;
+    }
+
+    public String getClassName() {
+        return fClassName;
     }
 }

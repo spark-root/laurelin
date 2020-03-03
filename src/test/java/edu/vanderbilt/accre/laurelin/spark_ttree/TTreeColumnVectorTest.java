@@ -24,9 +24,9 @@ import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
-import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch.ArrayDescriptor;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
 
 public class TTreeColumnVectorTest {
     byte[] tmp = new byte []{127,-1,0,1};

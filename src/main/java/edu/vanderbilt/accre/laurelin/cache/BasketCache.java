@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 import edu.vanderbilt.accre.laurelin.array.RawArray;
-import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFile;
 
 public class BasketCache {
     private static BasketCache singleton = new BasketCache();

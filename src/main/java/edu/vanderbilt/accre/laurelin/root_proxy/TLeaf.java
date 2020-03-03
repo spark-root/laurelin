@@ -1,6 +1,8 @@
 package edu.vanderbilt.accre.laurelin.root_proxy;
 
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTException.UnsupportedBranchTypeException;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.Constants;
+import edu.vanderbilt.accre.laurelin.root_proxy.serialization.Proxy;
 
 public class TLeaf extends TBranch {
 

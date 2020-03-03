@@ -11,6 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import edu.vanderbilt.accre.laurelin.root_proxy.io.Cursor;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFile;
+import edu.vanderbilt.accre.laurelin.root_proxy.serialization.Proxy;
+import edu.vanderbilt.accre.laurelin.root_proxy.serialization.Streamer;
+
 public class TFile implements AutoCloseable {
     ROOTFile fh;
     private String fileName;
@@ -85,6 +90,9 @@ public class TFile implements AutoCloseable {
          * https://github.com/scikit-hep/uproot/blob/662d1f859f8ba7a5d908a249b3cae5b743e56a19/uproot/rootio.py#L193
          */
         directory.getFromFile(fh, fBEGIN + fNbytesName);
+
+//        List<TKey> allKeys = new ArrayList<TKey>();
+//        for (long off = fSeekKeys; off < fSeekKeys + fNbytesKeys)
 
         /*
          * And then the Streamers can be found at fSeekInfo

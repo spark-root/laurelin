@@ -1,7 +1,11 @@
-package edu.vanderbilt.accre.laurelin.root_proxy;
+package edu.vanderbilt.accre.laurelin.root_proxy.serialization;
 
 import java.io.IOException;
 import java.util.HashMap;
+
+import edu.vanderbilt.accre.laurelin.root_proxy.io.Constants;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.Cursor;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.RangeCheck;
 
 public class ClassDeserializer extends Proxy {
     Streamer streamer;

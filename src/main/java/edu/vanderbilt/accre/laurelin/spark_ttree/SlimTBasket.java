@@ -7,9 +7,9 @@ import java.nio.ByteBuffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import edu.vanderbilt.accre.laurelin.root_proxy.Cursor;
-import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TKey;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.Cursor;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFile;
 
 public class SlimTBasket implements Serializable {
     private static final Logger logger = LogManager.getLogger();

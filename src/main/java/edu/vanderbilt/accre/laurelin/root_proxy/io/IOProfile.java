@@ -1,10 +1,10 @@
-package edu.vanderbilt.accre.laurelin.root_proxy;
+package edu.vanderbilt.accre.laurelin.root_proxy.io;
 
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage.TypeEnum;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage.TypeEnum;
 
 /*
  * Toolkit to profile IO, specifically storing operations performed and their

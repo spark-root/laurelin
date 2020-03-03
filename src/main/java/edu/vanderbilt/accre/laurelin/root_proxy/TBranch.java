@@ -10,6 +10,12 @@ import java.util.regex.Pattern;
 
 import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.ImmutableRangeMap.Builder;
+
+import edu.vanderbilt.accre.laurelin.root_proxy.io.Constants;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.Cursor;
+import edu.vanderbilt.accre.laurelin.root_proxy.serialization.Proxy;
+import edu.vanderbilt.accre.laurelin.root_proxy.serialization.ProxyArray;
+
 import com.google.common.collect.Range;
 
 public class TBranch {

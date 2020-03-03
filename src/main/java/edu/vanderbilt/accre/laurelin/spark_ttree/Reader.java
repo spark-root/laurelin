@@ -31,12 +31,12 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.apache.spark.util.CollectionAccumulator;
 
-import edu.vanderbilt.accre.laurelin.root_proxy.IOFactory;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTException.UnsupportedBranchTypeException;
-import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOFactory;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;

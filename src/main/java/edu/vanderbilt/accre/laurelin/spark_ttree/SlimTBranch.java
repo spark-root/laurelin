@@ -28,9 +28,9 @@ import com.google.common.collect.Range;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.cache.BasketCache;
-import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFile;
-import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFile;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
 
 /**
  * Contains all the info needed to read a TBranch and its constituent TBaskets

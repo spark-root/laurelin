@@ -1,4 +1,4 @@
-package edu.vanderbilt.accre.laurelin.root_proxy;
+package edu.vanderbilt.accre.laurelin.root_proxy.serialization;
 
 import java.util.HashMap;
 
@@ -7,10 +7,10 @@ public class Proxy {
      * Stores raw information for one ROOT object
      */
     private Streamer streamerInfo;
-    protected String className;
+    public String className;
     protected String proxyType = "proxy";
     public String createPlace = "";
-    HashMap<String, Proxy> data;
+    public HashMap<String, Proxy> data;
     private ClassDeserializer cd;
 
     public <T> void putScalar(String key, T val) {

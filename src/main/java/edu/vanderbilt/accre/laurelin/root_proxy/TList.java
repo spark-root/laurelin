@@ -2,6 +2,8 @@ package edu.vanderbilt.accre.laurelin.root_proxy;
 
 import java.io.IOException;
 
+import edu.vanderbilt.accre.laurelin.root_proxy.io.Cursor;
+
 public class TList {
     private TObject base;
     private String fName;

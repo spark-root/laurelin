@@ -22,11 +22,11 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event;
-import edu.vanderbilt.accre.laurelin.root_proxy.IOProfile.Event.Storage;
-import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
 
 class PartitionReader implements InputPartitionReader<ColumnarBatch> {
     static final Logger logger = LogManager.getLogger();

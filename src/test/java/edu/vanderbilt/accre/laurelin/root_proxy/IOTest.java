@@ -18,6 +18,13 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import edu.vanderbilt.accre.laurelin.root_proxy.io.Cursor;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.FileInterface;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.HadoopFile;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOFactory;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.NIOFile;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFile;
+
 public class IOTest {
     /*
      * Basic meta tests

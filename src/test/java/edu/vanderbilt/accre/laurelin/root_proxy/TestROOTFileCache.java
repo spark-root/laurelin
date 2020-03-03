@@ -9,6 +9,10 @@ import org.junit.Test;
 
 import com.google.common.base.Ticker;
 
+import edu.vanderbilt.accre.laurelin.root_proxy.io.FileInterface;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFile;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
+
 public class TestROOTFileCache {
     private static class TestTicker extends Ticker {
         long val = 0;

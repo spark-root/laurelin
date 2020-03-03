@@ -2,11 +2,13 @@
  * Factory object to load concrete IO implementations based on path
  */
 
-package edu.vanderbilt.accre.laurelin.root_proxy;
+package edu.vanderbilt.accre.laurelin.root_proxy.io;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import edu.vanderbilt.accre.laurelin.root_proxy.XZDecompressionWrapper;
 
 public class IOFactory {
     static final String hadoopPattern = "^[a-zA-Z]+:/.*";

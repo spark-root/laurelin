@@ -19,9 +19,9 @@ import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.interpretation.AsJagged;
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
-import edu.vanderbilt.accre.laurelin.root_proxy.ROOTFileCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
 
 public class TTreeColumnVector extends ColumnVector {
     private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
