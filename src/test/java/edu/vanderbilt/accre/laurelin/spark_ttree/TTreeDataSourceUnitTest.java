@@ -20,8 +20,6 @@ import java.util.Map;
 import java.util.function.Function;
 
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
-import org.apache.spark.sql.sources.v2.reader.InputPartition;
-import org.apache.spark.sql.sources.v2.reader.InputPartitionReader;
 import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.BooleanType;
 import org.apache.spark.sql.types.ByteType;
@@ -74,11 +72,11 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "foriter");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        Reader reader = (Reader) source.createReader(opts, null, true);
+        Reader reader = source.createTestReader(opts, null, true);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(1, schemaCast.size());
-        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        List<Partition> partitions = reader.planBatchInputPartitions();
 
         // Count all bytes read
         long sumReads = 0;
@@ -114,10 +112,10 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "Events");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        Reader reader = (Reader) source.createReader(opts, null, true);
-        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        Reader reader = source.createTestReader(opts, null, true);
+        List<Partition> partitions = reader.planBatchInputPartitions();
 
-        InputPartition<ColumnarBatch> partition = partitions.get(0);
+        Partition partition = partitions.get(0);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ByteArrayInputStream bis;
         ObjectOutput out = null;
@@ -137,7 +135,7 @@ public class TTreeDataSourceUnitTest {
             bis = new ByteArrayInputStream(yourBytes);
             ObjectInput in = new ObjectInputStream(bis);
             @SuppressWarnings("unchecked")
-            InputPartition<ColumnarBatch> partitionBack = (InputPartition<ColumnarBatch>) in.readObject();
+            Partition partitionBack = (Partition) in.readObject();
             System.out.println("got partition" + partitionBack);
 
         } catch (ClassNotFoundException e) {
@@ -179,18 +177,18 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "foriter");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        Reader reader = (Reader) source.createReader(opts, null, true);
+        Reader reader = source.createTestReader(opts, null, true);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
         assertEquals(1, schemaCast.size());
-        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        List<Partition> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
         assertEquals(1, partitions.size());
-        InputPartition<ColumnarBatch> partition;
+        Partition partition;
         long []expectedCounts = {46};
         for (int i = 0; i < 1; i += 1) {
             partition = partitions.get(i);
-            InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
+            PartitionReader partitionReader = partition.createPartitionReader();
             assertTrue(partitionReader.next());
             ColumnarBatch batch = partitionReader.get();
             assertFalse(partitionReader.next());
@@ -206,21 +204,21 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "Events");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        Reader reader = (Reader) source.createReader(opts, null, true);
+        Reader reader = source.createTestReader(opts, null, true);
         // only get a scalar float_t for now since that's all that works
         MetadataBuilder metadata = new MetadataBuilder();
         metadata.putString("rootType", "float");
         StructType prune = new StructType()
                             .add(new StructField("CaloMET_pt", DataTypes.FloatType, false, metadata.build()));
         reader.pruneColumns(prune);
-        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        List<Partition> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
         assertEquals(1, partitions.size());
-        InputPartition<ColumnarBatch> partition;
+        Partition partition;
         long []expectedCounts = {161536};
         for (int i = 0; i < 1; i += 1) {
             partition = partitions.get(i);
-            InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
+            PartitionReader partitionReader = partition.createPartitionReader();
             assertTrue(partitionReader.next());
             ColumnarBatch batch = partitionReader.get();
             assertFalse(partitionReader.next());
@@ -238,8 +236,8 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        Reader reader = (Reader) source.createReader(opts, null, true);
-        List<InputPartition<ColumnarBatch>> batch = reader.planBatchInputPartitions();
+        Reader reader = source.createTestReader(opts, null, true);
+        List<Partition> batch = reader.planBatchInputPartitions();
         assertNotNull(batch);
     }
 
@@ -250,7 +248,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        Reader reader = (Reader) source.createReader(opts, null, true);
+        Reader reader = source.createTestReader(opts, null, true);
         assertNotNull(reader.planBatchInputPartitions());
     }
 
@@ -262,14 +260,14 @@ public class TTreeDataSourceUnitTest {
         optmap.put("threadCount", "0");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        Reader reader = (Reader) source.createReader(opts, null, true);
-        List<InputPartition<ColumnarBatch>> partitionPlan = reader.planBatchInputPartitions();
+        Reader reader = source.createTestReader(opts, null, true);
+        List<Partition> partitionPlan = reader.planBatchInputPartitions();
         assertNotNull(partitionPlan);
         StructType schema = reader.readSchema();
         System.out.println(schema.prettyJson());
 
-        InputPartition<ColumnarBatch> partition = partitionPlan.get(0);
-        InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
+        Partition partition = partitionPlan.get(0);
+        PartitionReader partitionReader = partition.createPartitionReader();
         assertTrue(partitionReader.next());
         ColumnarBatch batch = partitionReader.get();
         ColumnVector col = batch.column(0);
@@ -296,15 +294,15 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        Reader reader = (Reader) source.createReader(opts, null, true);
-        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        Reader reader = source.createTestReader(opts, null, true);
+        List<Partition> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
         assertEquals(1, partitions.size());
         StructType schema = reader.readSchema();
 
 
-        InputPartition<ColumnarBatch> partition = partitions.get(0);
-        InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
+        Partition partition = partitions.get(0);
+        PartitionReader partitionReader = partition.createPartitionReader();
         assertTrue(partitionReader.next());
         ColumnarBatch batch = partitionReader.get();
         assertFalse(partitionReader.next());
@@ -336,14 +334,14 @@ public class TTreeDataSourceUnitTest {
         optmap.put("tree",  "tree");
         DataSourceOptions opts = new DataSourceOptions(optmap);
         Root source = new Root();
-        Reader reader = (Reader) source.createReader(opts, null, true);
-        List<InputPartition<ColumnarBatch>> partitions = reader.planBatchInputPartitions();
+        Reader reader = source.createTestReader(opts, null, true);
+        List<Partition> partitions = reader.planBatchInputPartitions();
         assertNotNull(partitions);
         assertEquals(1, partitions.size());
         StructType schema = reader.readSchema();
 
-        InputPartition<ColumnarBatch> partition = partitions.get(0);
-        InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
+        Partition partition = partitions.get(0);
+        PartitionReader partitionReader = partition.createPartitionReader();
         assertTrue(partitionReader.next());
         ColumnarBatch batch = partitionReader.get();
         assertFalse(partitionReader.next());

@@ -20,7 +20,6 @@ import com.google.common.cache.LoadingCache;
 
 import edu.vanderbilt.accre.laurelin.Root;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
-import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
 
 public class Root_v24 implements DataSourceV2, ReadSupport, DataSourceRegister {
     static final Logger logger = LogManager.getLogger();
@@ -61,7 +60,7 @@ public class Root_v24 implements DataSourceV2, ReadSupport, DataSourceRegister {
                                                         context.register(ioAccum, "edu.vanderbilt.accre.laurelin.ioprofile");
                                                     }
                                                 }
-                                                return new Reader(options, context, ioAccum);
+                                                return new Reader_v24(options, context, ioAccum);
                                             }
                                             });
 

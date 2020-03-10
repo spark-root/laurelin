@@ -18,33 +18,26 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
-import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
-import org.apache.spark.sql.sources.v2.reader.InputPartition;
-import org.apache.spark.sql.sources.v2.reader.SupportsPushDownRequiredColumns;
-import org.apache.spark.sql.sources.v2.reader.SupportsScanColumnarBatch;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.apache.spark.util.CollectionAccumulator;
 
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTException.UnsupportedBranchTypeException;
-import edu.vanderbilt.accre.laurelin.root_proxy.io.IOFactory;
-import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile;
-import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
-import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
-import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOFactory;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
 
-public class Reader implements DataSourceReader,
-        SupportsScanColumnarBatch,
-        SupportsPushDownRequiredColumns {
+public class Reader {
     static final Logger logger = LogManager.getLogger();
 
     private LinkedList<String> paths;
@@ -87,7 +80,6 @@ public class Reader implements DataSourceReader,
         profiler = IOProfile.getInstance(0, cb);
     }
 
-    @Override
     public StructType readSchema() {
         return schema;
     }
@@ -209,8 +201,8 @@ public class Reader implements DataSourceReader,
             }
         }
 
-        public static Iterator<InputPartition<ColumnarBatch>> partitionSingleFileImpl(String path, String treeName, StructType schema, int threadCount) {
-            List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
+        public static Iterator<Partition> partitionSingleFileImpl(String path, String treeName, StructType schema, int threadCount) {
+            List<Partition> ret = new ArrayList<Partition>();
             int pid = 0;
             TTree inputTree;
 
@@ -249,15 +241,14 @@ public class Reader implements DataSourceReader,
 
         }
 
-        FlatMapFunction<String, InputPartition<ColumnarBatch>> getLambda() {
+        FlatMapFunction<String, Partition> getLambda() {
             return s -> PartitionHelper.partitionSingleFileImpl(s, treeName, schema, threadCount);
         }
     }
 
-    @Override
-    public List<InputPartition<ColumnarBatch>> planBatchInputPartitions() {
+    public List<Partition> planBatchInputPartitions() {
         logger.trace("planbatchinputpartitions");
-        List<InputPartition<ColumnarBatch>> ret = new ArrayList<InputPartition<ColumnarBatch>>();
+        List<Partition> ret = new ArrayList<Partition>();
         if (sparkContext == null) {
             for (String path: paths) {
                 partitionSingleFile(path).forEachRemaining(ret::add);;
@@ -266,25 +257,23 @@ public class Reader implements DataSourceReader,
             JavaSparkContext sc = JavaSparkContext.fromSparkContext(sparkContext);
             JavaRDD<String> rdd_paths = sc.parallelize(paths, paths.size());
             Reader.PartitionHelper helper = new PartitionHelper(treeName, schema, threadCount);
-            JavaRDD<InputPartition<ColumnarBatch>> partitions = rdd_paths.flatMap(helper.getLambda());
+            JavaRDD<Partition> partitions = rdd_paths.flatMap(helper.getLambda());
             ret = partitions.collect();
         }
         int pid = 0;
-        for (InputPartition<ColumnarBatch> x: ret) {
-            ((Partition)x).setPid(pid);
+        for (Partition x: ret) {
+            x.setPid(pid);
             pid += 1;
         }
         return ret;
     }
 
-    public Iterator<InputPartition<ColumnarBatch>> partitionSingleFile(String path) {
+    public Iterator<Partition> partitionSingleFile(String path) {
         return PartitionHelper.partitionSingleFileImpl(path, treeName, schema, threadCount);
     }
 
-    @Override
     public void pruneColumns(StructType requiredSchema) {
         logger.trace("prunecolumns ");
         schema = requiredSchema;
     }
-
 }

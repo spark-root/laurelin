@@ -11,7 +11,6 @@ import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.spark.sql.sources.v2.reader.InputPartitionReader;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnVector;
@@ -24,11 +23,11 @@ import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile;
-import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
 
-class PartitionReader implements InputPartitionReader<ColumnarBatch> {
+public class PartitionReader {
     static final Logger logger = LogManager.getLogger();
 
     private BasketCache basketCache;
@@ -106,14 +105,12 @@ class PartitionReader implements InputPartitionReader<ColumnarBatch> {
         }
     }
 
-    @Override
     public void close() throws IOException {
         logger.trace("close");
         // This will eventually go away due to GC, should I add
         // explicit closing too?
     }
 
-    @Override
     public boolean next() throws IOException {
         logger.trace("next");
         if (currBasket == -1) {
@@ -126,7 +123,6 @@ class PartitionReader implements InputPartitionReader<ColumnarBatch> {
         }
     }
 
-    @Override
     public ColumnarBatch get() {
         logger.trace("columnarbatch");
         LinkedList<ColumnVector> vecs = new LinkedList<ColumnVector>();
