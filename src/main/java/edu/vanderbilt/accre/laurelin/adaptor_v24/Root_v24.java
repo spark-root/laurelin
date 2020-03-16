@@ -1,5 +1,7 @@
 package edu.vanderbilt.accre.laurelin.adaptor_v24;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
@@ -18,8 +20,9 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
-import edu.vanderbilt.accre.laurelin.Root;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
+import edu.vanderbilt.accre.laurelin.spark_ttree.DataSourceOptionsInterface;
+import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
 
 public class Root_v24 implements DataSourceV2, ReadSupport, DataSourceRegister {
     static final Logger logger = LogManager.getLogger();
@@ -51,11 +54,11 @@ public class Root_v24 implements DataSourceV2, ReadSupport, DataSourceRegister {
                                             @Override
                                             public DataSourceReader load(DataSourceReaderKey key) {
                                                 logger.trace("Construct new reader");
-                                                DataSourceOptions options = new DataSourceOptions(key.options);
+                                                DataSourceOptionsAdaptor_v24 options = new DataSourceOptionsAdaptor_v24(key.options);
                                                 boolean traceIO = key.traceIO;
                                                 SparkContext context = key.context;
                                                 if ((traceIO) && (context != null)) {
-                                                    synchronized (Root.class) {
+                                                    synchronized (Root_v24.class) {
                                                         ioAccum = new CollectionAccumulator<Event.Storage>();
                                                         context.register(ioAccum, "edu.vanderbilt.accre.laurelin.ioprofile");
                                                     }
@@ -118,5 +121,21 @@ public class Root_v24 implements DataSourceV2, ReadSupport, DataSourceRegister {
     @Override
     public String shortName() {
         return "root_v24";
+    }
+
+    public static class DataSourceOptionsAdaptor_v24 extends DataSourceOptions implements DataSourceOptionsInterface {
+        public DataSourceOptionsAdaptor_v24(java.util.Map<String, String> originalMap) {
+            super(originalMap);
+        }
+
+        @Override
+        public String getOrDefault(String key, String defVal) {
+            return this.get(key).orElse(defVal);
+        }
+    }
+
+    public Reader createTestReader(DataSourceOptionsAdaptor_v24 options, SparkContext context, boolean traceIO) {
+        List<String> paths = Arrays.asList(options.paths());
+        return new Reader(paths, options, context, null);
     }
 }

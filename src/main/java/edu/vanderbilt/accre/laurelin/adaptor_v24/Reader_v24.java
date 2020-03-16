@@ -1,10 +1,10 @@
 package edu.vanderbilt.accre.laurelin.adaptor_v24;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.spark.SparkContext;
-import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
 import org.apache.spark.sql.sources.v2.reader.InputPartition;
 import org.apache.spark.sql.sources.v2.reader.SupportsPushDownRequiredColumns;
@@ -13,6 +13,7 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.apache.spark.util.CollectionAccumulator;
 
+import edu.vanderbilt.accre.laurelin.adaptor_v24.Root_v24.DataSourceOptionsAdaptor_v24;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.spark_ttree.Partition;
 import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
@@ -22,8 +23,9 @@ public class Reader_v24 implements DataSourceReader,
         SupportsPushDownRequiredColumns {
     private Reader reader;
 
-    public Reader_v24(DataSourceOptions options, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
-        reader = new Reader(options, sparkContext, ioAccum);
+    public Reader_v24(DataSourceOptionsAdaptor_v24 options, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
+        List<String> paths = Arrays.asList(options.paths());
+        reader = new Reader(paths, options, sparkContext, ioAccum);
     }
 
     @Override

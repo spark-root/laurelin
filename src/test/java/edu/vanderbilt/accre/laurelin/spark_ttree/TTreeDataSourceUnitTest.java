@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.BooleanType;
 import org.apache.spark.sql.types.ByteType;
@@ -43,6 +42,7 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 
 import edu.vanderbilt.accre.laurelin.Root;
+import edu.vanderbilt.accre.laurelin.Root.DataSourceOptionsAdaptor;
 import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
@@ -51,6 +51,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
+
 
 public class TTreeDataSourceUnitTest {
     /*
@@ -70,7 +71,8 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-foriter.root");
         optmap.put("tree",  "foriter");
-        DataSourceOptions opts = new DataSourceOptions(optmap);
+        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         DataType schema = reader.readSchema();
@@ -110,7 +112,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", testPath);
         optmap.put("tree",  "Events");
-        DataSourceOptions opts = new DataSourceOptions(optmap);
+        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         List<Partition> partitions = reader.planBatchInputPartitions();
@@ -175,7 +177,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-foriter.root");
         optmap.put("tree",  "foriter");
-        DataSourceOptions opts = new DataSourceOptions(optmap);
+        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         DataType schema = reader.readSchema();
@@ -202,7 +204,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", testPath);
         optmap.put("tree",  "Events");
-        DataSourceOptions opts = new DataSourceOptions(optmap);
+        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         // only get a scalar float_t for now since that's all that works
@@ -234,7 +236,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-small-flat-tree.root");
         optmap.put("tree",  "tree");
-        DataSourceOptions opts = new DataSourceOptions(optmap);
+        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         List<Partition> batch = reader.planBatchInputPartitions();
@@ -246,7 +248,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-small-flat-tree.root");
         optmap.put("tree",  "tree");
-        DataSourceOptions opts = new DataSourceOptions(optmap);
+        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         assertNotNull(reader.planBatchInputPartitions());
@@ -258,7 +260,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("path", "testdata/stdvector.root");
         optmap.put("tree",  "tvec");
         optmap.put("threadCount", "0");
-        DataSourceOptions opts = new DataSourceOptions(optmap);
+        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         List<Partition> partitionPlan = reader.planBatchInputPartitions();
@@ -292,7 +294,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-small-flat-tree.root");
         optmap.put("tree",  "tree");
-        DataSourceOptions opts = new DataSourceOptions(optmap);
+        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         List<Partition> partitions = reader.planBatchInputPartitions();
@@ -332,7 +334,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-small-flat-tree.root");
         optmap.put("tree",  "tree");
-        DataSourceOptions opts = new DataSourceOptions(optmap);
+        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         List<Partition> partitions = reader.planBatchInputPartitions();

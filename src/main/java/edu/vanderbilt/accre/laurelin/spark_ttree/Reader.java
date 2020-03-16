@@ -17,7 +17,6 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
-import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Metadata;
@@ -37,13 +36,16 @@ import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
 
+/**
+ * Backing object for a collection of root files
+ * <p>
+ * Used by Reader_v24 and Table_v30
+ */
 public class Reader {
     static final Logger logger = LogManager.getLogger();
 
     private LinkedList<String> paths;
     private String treeName;
-    private TTree currTree;
-    private TFile currFile;
     private StructType schema;
     private int threadCount;
     private IOProfile profiler;
@@ -51,19 +53,17 @@ public class Reader {
     private SparkContext sparkContext;
     private static ROOTFileCache fileCache = ROOTFileCache.getCache();
 
-    public Reader(DataSourceOptions options, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
+    public Reader(List<String> userPaths, DataSourceOptionsInterface options, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
         logger.trace("construct ttreedatasourcev2reader");
         this.sparkContext = sparkContext;
         try {
             this.paths = new LinkedList<String>();
-            for (String path: options.paths()) {
+            for (String path: userPaths) {
                 this.paths.addAll(IOFactory.expandPathToList(path));
             }
             // FIXME - More than one file, please
-            currFile = TFile.getFromFile(fileCache.getROOTFile(this.paths.get(0)));
-            treeName = options.get("tree").orElse("Events");
-            currTree = new TTree(currFile.getProxy(treeName), currFile);
-            this.schema = readSchemaPriv();
+            treeName = options.getOrDefault("tree", "Events");
+            this.schema = getSchemaFromFiles(userPaths, options);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -84,17 +84,24 @@ public class Reader {
         return schema;
     }
 
-    private StructType readSchemaPriv() {
-        logger.trace("readschemapriv");
-        List<TBranch> branches = currTree.getBranches();
-        List<StructField> fields = readSchemaPart(branches, "");
-        StructField[] fieldArray = new StructField[fields.size()];
-        fieldArray = fields.toArray(fieldArray);
-        StructType schema = new StructType(fieldArray);
-        return schema;
+    public static StructType getSchemaFromFiles(List<String> userPaths, DataSourceOptionsInterface options)  {
+        try {
+            TFile file = TFile.getFromFile(fileCache.getROOTFile(userPaths.get(0)));
+            String name = options.getOrDefault("tree", "Events");
+            TTree tree = new TTree(file.getProxy(name), file);
+            List<TBranch> branches = tree.getBranches();
+            List<StructField> fields = readSchemaPart(branches, "");
+            StructField[] fieldArray = new StructField[fields.size()];
+            fieldArray = fields.toArray(fieldArray);
+            StructType schema = new StructType(fieldArray);
+            return schema;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
-    private List<StructField> readSchemaPart(List<TBranch> branches, String prefix) {
+    private static List<StructField> readSchemaPart(List<TBranch> branches, String prefix) {
         List<StructField> fields = new ArrayList<StructField>();
         for (TBranch branch: branches) {
             // The ROOT-given branch name
@@ -142,7 +149,7 @@ public class Reader {
         return fields;
     }
 
-    private DataType rootToSparkType(SimpleType simpleType) {
+    private static DataType rootToSparkType(SimpleType simpleType) {
         DataType ret = null;
         if (simpleType instanceof SimpleType.ScalarType) {
             if (simpleType == SimpleType.Bool) {

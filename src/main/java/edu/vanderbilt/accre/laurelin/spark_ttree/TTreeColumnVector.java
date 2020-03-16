@@ -144,7 +144,7 @@ public class TTreeColumnVector extends ColumnVector {
     }
 
     @Override
-    protected ColumnVector getChild(int ordinal) {
+    public ColumnVector getChild(int ordinal) {
         // TODO Auto-generated method stub
         return null;
     }

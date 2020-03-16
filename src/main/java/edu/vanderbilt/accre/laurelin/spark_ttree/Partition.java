@@ -13,7 +13,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
 /**
  * Represents a Partition of a TTree.
  *
- * <p> Acts like Spark2.4's InputPartition&lt;ColumnarBatch&rt;
+ * <p> Acts like Spark2.4's InputPartition&lt;ColumnarBatch&gt;
  *
  * <p>This is instantiated on the driver, then serialized and transmitted to
  * the executor

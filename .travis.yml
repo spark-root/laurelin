@@ -4,6 +4,14 @@ env:
     - GPG_EXECUTABLE=gpg
 jdk:
   - openjdk8
+
+jobs:
+  include:
+  - name: "Spark2.4+"
+    env: LAURELIN_SPARK=spark24
+  - mame: "Spark3.0+"
+    env: LAURELIN_SPARK=spark30
+
 install: true
 
 before_script:
@@ -12,7 +20,7 @@ before_script:
   - ./cc-test-reporter before-build
   - ./scripts/get-pristine
 
-script: mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+script: mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -P${LAURELIN_SPARK}
 
 after_script:
   - JACOCO_SOURCE_PATH=src/main/java ./cc-test-reporter format-coverage target/site/jacoco/jacoco.xml --input-type jacoco
@@ -23,7 +31,7 @@ before_install:
   - if [ ! -z "$GPG_OWNERTRUST" ]; then echo $GPG_OWNERTRUST | base64 --decode | $GPG_EXECUTABLE --import-ownertrust; fi
 
 install:
-    mvn --settings .travis.settings.xml install -DskipTests=true -Dgpg.skip -Dmaven.javadoc.skip=true -B -V
+    mvn --settings .travis.settings.xml install -DskipTests=true -Dgpg.skip -Dmaven.javadoc.skip=true -B -V -P${LAURELIN_SPARK}
 
 after_success:
 # Move the code coverage results to codecov
@@ -38,7 +46,7 @@ deploy:
     all_branches: true
     condition: $TRAVIS_BRANCH =~ ^master|branch-0.X$ 
 
-    cache:
+cache:
   directories:
     - testdata/pristine
     - $HOME/.m2
