@@ -2,7 +2,6 @@ package edu.vanderbilt.accre.laurelin;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,28 +40,28 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
      * eagerly garbage collected
      */
     private static LoadingCache<DataSourceReaderKey,
-                                DataSourceReader> dedupDataSource =
-                                    CacheBuilder.newBuilder()
-                                    .softValues()
-                                    .maximumSize(100)
-                                    .build(
-                                       new CacheLoader<DataSourceReaderKey,
-                                                       DataSourceReader>() {
-                                            @Override
-                                            public DataSourceReader load(DataSourceReaderKey key) {
-                                                logger.trace("Construct new reader");
-                                                DataSourceOptions options = new DataSourceOptions(key.options);
-                                                boolean traceIO = key.traceIO;
-                                                SparkContext context = key.context;
-                                                if ((traceIO) && (context != null)) {
-                                                    synchronized (Root.class) {
-                                                        ioAccum = new CollectionAccumulator<Event.Storage>();
-                                                        context.register(ioAccum, "edu.vanderbilt.accre.laurelin.ioprofile");
-                                                    }
-                                                }
-                                                return new Reader(options, context, ioAccum);
-                                            }
-                                            });
+    DataSourceReader> dedupDataSource =
+    CacheBuilder.newBuilder()
+    .softValues()
+    .maximumSize(100)
+    .build(
+            new CacheLoader<DataSourceReaderKey,
+            DataSourceReader>() {
+                @Override
+                public DataSourceReader load(DataSourceReaderKey key) {
+                    logger.trace("Construct new reader");
+                    DataSourceOptions options = new DataSourceOptions(key.options);
+                    boolean traceIO = key.traceIO;
+                    SparkContext context = key.context;
+                    if ((traceIO) && (context != null)) {
+                        synchronized (Root.class) {
+                            ioAccum = new CollectionAccumulator<Event.Storage>();
+                            context.register(ioAccum, "edu.vanderbilt.accre.laurelin.ioprofile");
+                        }
+                    }
+                    return new Reader(options, context, ioAccum);
+                }
+            });
 
     static class DataSourceReaderKey {
         @Override
@@ -107,11 +106,14 @@ public class Root implements DataSourceV2, ReadSupport, DataSourceRegister {
      * @return new reader
      */
     public DataSourceReader createReader(DataSourceOptions options, SparkContext context, boolean traceIO) {
-        try {
-            return dedupDataSource.get(new DataSourceReaderKey(options, context, traceIO));
-        } catch (ExecutionException e) {
-            throw new RuntimeException("Could not load DataSourceReader", e);
+        logger.trace("make new reader");
+        CollectionAccumulator<Event.Storage> ioAccum = null;
+        if ((traceIO) && (context != null)) {
+            ioAccum = new CollectionAccumulator<Event.Storage>();
+            context.register(ioAccum, "edu.vanderbilt.accre.laurelin.ioprofile");
+
         }
+        return new Reader(options, context, ioAccum);
     }
 
     @Override
