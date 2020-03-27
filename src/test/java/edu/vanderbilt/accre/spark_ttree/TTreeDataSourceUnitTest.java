@@ -13,12 +13,16 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.apache.spark.SparkConf;
+import org.apache.spark.serializer.KryoSerializer;
+import org.apache.spark.serializer.SerializerInstance;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.reader.InputPartition;
 import org.apache.spark.sql.sources.v2.reader.InputPartitionReader;
@@ -57,6 +61,7 @@ import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranchInterface;
 import edu.vanderbilt.accre.laurelin.spark_ttree.TTreeColumnVector;
+import scala.reflect.ClassTag;
 
 public class TTreeDataSourceUnitTest {
     /*
@@ -273,6 +278,35 @@ public class TTreeDataSourceUnitTest {
         System.out.println(schema.prettyJson());
 
         InputPartition<ColumnarBatch> partition = partitionPlan.get(0);
+        InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
+        assertTrue(partitionReader.next());
+        ColumnarBatch batch = partitionReader.get();
+        ColumnVector col = batch.column(0);
+        ColumnarArray arr = col.getArray(0);
+        arr.getFloat(0);
+    }
+
+    @Test
+    public void testKryoSerialization() throws IOException {
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", "testdata/stdvector.root");
+        optmap.put("tree",  "tvec");
+        optmap.put("threadCount", "0");
+        DataSourceOptions opts = new DataSourceOptions(optmap);
+        Root source = new Root();
+        Reader reader = (Reader) source.createReader(opts, null, true);
+        List<InputPartition<ColumnarBatch>> partitionPlan = reader.planBatchInputPartitions();
+        assertNotNull(partitionPlan);
+        StructType schema = reader.readSchema();
+        System.out.println(schema.prettyJson());
+
+        InputPartition<ColumnarBatch> partition = partitionPlan.get(0);
+        KryoSerializer serializer = new KryoSerializer(new SparkConf());
+        SerializerInstance serializerInstance = serializer.newInstance();
+        ClassTag<InputPartition> ct = scala.reflect.ClassTag$.MODULE$.apply(this.getClass());
+        ByteBuffer serializedPartition = serializerInstance.serialize(partition, ct);
+        partition = serializerInstance.deserialize(serializedPartition, ct);
+
         InputPartitionReader<ColumnarBatch> partitionReader = partition.createPartitionReader();
         assertTrue(partitionReader.next());
         ColumnarBatch batch = partitionReader.get();
