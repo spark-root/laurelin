@@ -203,12 +203,4 @@ public class IOFactory {
     private static boolean isGlob(String path) {
         return path.matches(".*[{}\\[\\]*?].*");
     }
-
-    public static List<String> expandPathToList(String path) throws IOException {
-        if (Pattern.matches(hadoopPattern,  path)) {
-            return HadoopFile.expandPathToList(path);
-        } else {
-            return NIOFile.expandPathToList(path);
-        }
-    }
 }

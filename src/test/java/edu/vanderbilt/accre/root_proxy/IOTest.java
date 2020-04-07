@@ -168,7 +168,7 @@ public class IOTest {
      */
     @Test
     public void searchDirectory_nio() throws IOException {
-        List<String> files = IOFactory.expandPathToList("testdata/recursive");
+        List<org.apache.hadoop.fs.Path> files = resolveHelper("testdata/recursive");
         assertEquals(3, files.size());
     }
 
@@ -176,7 +176,7 @@ public class IOTest {
     public void searchDirectory_hadoop() throws IOException {
         Path currentRelativePath = Paths.get("");
         String s = currentRelativePath.toAbsolutePath().toString();
-        List<String> files = IOFactory.expandPathToList("file:///" + s + "/" + "testdata/recursive");
+        List<org.apache.hadoop.fs.Path> files = resolveHelper("file:///" + s + "/" + "testdata/recursive");
         assertEquals(3, files.size());
     }
 
