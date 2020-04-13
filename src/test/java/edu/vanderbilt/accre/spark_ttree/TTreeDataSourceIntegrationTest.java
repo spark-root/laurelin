@@ -72,13 +72,15 @@ public class TTreeDataSourceIntegrationTest {
 
     @Test
     public void testTwoFiles() {
+        // If the files are duplicated in the input list, they shouldn't be
+        // after reading
         Dataset<Row> df = spark
                 .read()
                 .format("root")
                 .option("tree",  "Events")
                 .option("threadCount", "0")
                 .load("testdata/all-types.root", "testdata/all-types.root");
-        assertEquals(18, df.count());
+        assertEquals(9, df.count());
     }
 
     @AfterClass

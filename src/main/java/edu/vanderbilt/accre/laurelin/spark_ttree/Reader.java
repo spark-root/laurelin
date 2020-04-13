@@ -3,14 +3,15 @@ package edu.vanderbilt.accre.laurelin.spark_ttree;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
+import org.apache.hadoop.fs.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.spark.SparkContext;
@@ -47,7 +48,7 @@ public class Reader implements DataSourceReader,
         SupportsPushDownRequiredColumns {
     static final Logger logger = LogManager.getLogger();
 
-    private LinkedList<String> paths;
+    private List<String> paths;
     private String treeName;
     private TTree currTree;
     private TFile currFile;
@@ -62,9 +63,10 @@ public class Reader implements DataSourceReader,
         logger.trace("construct ttreedatasourcev2reader");
         this.sparkContext = sparkContext;
         try {
-            this.paths = new LinkedList<String>();
-            for (String path: options.paths()) {
-                this.paths.addAll(IOFactory.expandPathToList(path));
+            List<Path> expanded = IOFactory.resolvePathList(Arrays.asList(options.paths()));
+            this.paths = new ArrayList<String>(expanded.size());
+            for (Path p: expanded) {
+                this.paths.add(p.toString());
             }
             // FIXME - More than one file, please
             currFile = TFile.getFromFile(fileCache.getROOTFile(this.paths.get(0)));
