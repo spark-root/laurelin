@@ -14,7 +14,7 @@
          to change the artifactId just before publishing.
     -->
     <artifactId>laurelin</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.0.3-SNAPSHOT</version>
 
     <name>laurelin</name>
 
@@ -297,13 +297,13 @@
                 <dependency>
                     <groupId>org.apache.spark</groupId>
                     <artifactId>spark-core_2.12</artifactId>
-                    <version>3.0.0-rc1</version>
+                    <version>3.1.0-SNAPSHOT</version>
                     <scope>provided</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.apache.spark</groupId>
                     <artifactId>spark-sql_2.12</artifactId>
-                    <version>3.0.0-rc1</version>
+                    <version>3.1.0-SNAPSHOT</version>
                     <scope>provided</scope>
                 </dependency>
             </dependencies>

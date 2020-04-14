@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.hadoop.fs.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -161,6 +162,10 @@ public class ROOTFileCache {
         }
     }
 
+    public ROOTFile getROOTFile(Path path) throws IOException {
+        return getROOTFile(path.toString());
+    }
+
     /**
      * Gets a ROOTFile pointing to the given URI, ensuring that they're unique
      * within the cache object and with a timeout to prevent immediately
@@ -227,6 +232,8 @@ public class ROOTFileCache {
             lock.unlock();
         }
     }
+
+
 
     private ROOTFile load(String path) throws IOException {
         assert lock.isHeldByCurrentThread() == true;
@@ -361,4 +368,5 @@ public class ROOTFileCache {
             return fiMap.get(path);
         }
     }
+
 }

@@ -5,12 +5,12 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
+import org.apache.hadoop.fs.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.spark.SparkContext;
@@ -44,7 +44,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
 public class Reader {
     static final Logger logger = LogManager.getLogger();
 
-    private LinkedList<String> paths;
+    private List<String> paths;
     private String treeName;
     private StructType schema;
     private int threadCount;
@@ -57,9 +57,10 @@ public class Reader {
         logger.trace("construct ttreedatasourcev2reader");
         this.sparkContext = sparkContext;
         try {
-            this.paths = new LinkedList<String>();
-            for (String path: userPaths) {
-                this.paths.addAll(IOFactory.expandPathToList(path));
+            List<Path> expanded = IOFactory.resolvePathList(options.getPaths());
+            this.paths = new ArrayList<String>(expanded.size());
+            for (Path p: expanded) {
+                this.paths.add(p.toString());
             }
             // FIXME - More than one file, please
             treeName = options.getOrDefault("tree", "Events");

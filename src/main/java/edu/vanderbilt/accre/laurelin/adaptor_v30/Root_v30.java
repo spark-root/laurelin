@@ -34,29 +34,7 @@ public class Root_v30 implements TableProvider, DataSourceRegister {
         return "root";
     }
 
-    private List<String> getPathsPriv(CaseInsensitiveStringMap options) {
-        List<String> ret = new LinkedList<String>();
 
-        if (options.containsKey("paths")) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            String pathsStr = options.getOrDefault("paths", "");
-            String[] parsedPathsList;
-            try {
-                parsedPathsList = objectMapper.readValue(pathsStr, String[].class);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Could not parse paths", e);
-            }
-            for (String p: parsedPathsList) {
-                ret.add(p);
-            }
-        }
-
-        if (options.containsKey("path")) {
-            ret.add(options.get("path"));
-        }
-        Collections.sort(ret);
-        return ret;
-    }
 
     public static class DataSourceOptionsAdaptor_v30 extends CaseInsensitiveStringMap implements DataSourceOptionsInterface {
         public DataSourceOptionsAdaptor_v30(java.util.Map<String, String> originalMap) {
@@ -67,24 +45,52 @@ public class Root_v30 implements TableProvider, DataSourceRegister {
         public String getOrDefault(String key, String defaultValue) {
             return super.getOrDefault(key, defaultValue);
         }
+
+        @Override
+        public List<String> getPaths() {
+            List<String> ret = new LinkedList<String>();
+            if (this.containsKey("paths")) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                String pathsStr = this.getOrDefault("paths", "");
+                String[] parsedPathsList;
+                try {
+                    parsedPathsList = objectMapper.readValue(pathsStr, String[].class);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException("Could not parse paths", e);
+                }
+                for (String p: parsedPathsList) {
+                    ret.add(p);
+                }
+            }
+
+            if (this.containsKey("path")) {
+                ret.add(this.get("path"));
+            }
+            Collections.sort(ret);
+            return ret;
+        }
+    }
+
+    public static DataSourceOptionsInterface wrapOptions(Map<String, String> optmap) {
+        return new DataSourceOptionsAdaptor_v30(optmap);
     }
 
     public Reader createTestReader(DataSourceOptionsAdaptor options, SparkContext context, boolean traceIO) {
-        List<String> paths = getPathsPriv(options);
+        List<String> paths = options.getPaths();
         return new Reader(paths, options, context, null);
     }
 
     @Override
     public StructType inferSchema(CaseInsensitiveStringMap options) {
         DataSourceOptionsAdaptor optionsUpcast = new DataSourceOptionsAdaptor(options);
-        List<String> paths = getPathsPriv(new CaseInsensitiveStringMap(options));
+        List<String> paths = optionsUpcast.getPaths();
         return Reader.getSchemaFromFiles(paths, optionsUpcast);
     }
 
     @Override
     public Table getTable(StructType schema, Transform[] partitioning, Map<String, String> properties) {
         DataSourceOptionsAdaptor optionsUpcast = new DataSourceOptionsAdaptor(properties);
-        List<String> paths = getPathsPriv(new CaseInsensitiveStringMap(properties));
+        List<String> paths = optionsUpcast.getPaths();
         return new Table_v30(optionsUpcast, paths);
     }
 

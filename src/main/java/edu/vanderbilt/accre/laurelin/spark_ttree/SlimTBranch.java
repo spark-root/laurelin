@@ -15,6 +15,11 @@ import java.util.Map.Entry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -23,6 +28,7 @@ import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.ImmutableRangeMap.Builder;
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
 
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
@@ -37,7 +43,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
  * without needing to deserialize the ROOT metadata -- i.e. this contains paths
  * and byte offsets to each basket
  */
-public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectInputValidation {
+public class SlimTBranch implements Serializable, KryoSerializable, SlimTBranchInterface, ObjectInputValidation {
     private static final Logger logger = LogManager.getLogger();
     private static final long serialVersionUID = 1L;
     private String path;
@@ -54,7 +60,7 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectIn
     private int basketStart;
     private int basketEnd;
 
-    private Interner<ImmutableRangeMap<Long, Integer>> rangeMapInterner = Interners.newWeakInterner();
+    private static Interner<ImmutableRangeMap<Long, Integer>> rangeMapInterner = Interners.newWeakInterner();
 
     /**
      * Copy the given slim branch and trim it by removing unneccessary basket
@@ -402,7 +408,8 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectIn
             /*
              * Store the entry range of each basketID
              */
-            ImmutableMap<Range<Long>, Integer> map = in.getRangeToBasketIDMap().asMapOfRanges();
+            ImmutableRangeMap<Long, Integer> idmap = in.getRangeToBasketIDMap();
+            ImmutableMap<Range<Long>, Integer> map = idmap.asMapOfRanges();
             rangeToBasketID = new Range[basketEnd - basketStart];
             for (Entry<Range<Long>, Integer> e: map.entrySet()) {
                 int idx = e.getValue();
@@ -456,4 +463,69 @@ public class SlimTBranch implements Serializable, SlimTBranchInterface, ObjectIn
             throw new InvalidObjectException("Got zero-length baskets");
         }
     }
+
+    /*
+     * Enable kryo serialization for ImmutableRangeMaps, which apparently
+     * doesn't properly serialize with Kryo
+     */
+    private static class ImmutableRangeMapSerializer extends Serializer<ImmutableRangeMap<Long, Integer>> {
+        private static final boolean DOES_NOT_ACCEPT_NULL = true;
+        private static final boolean IMMUTABLE = true;
+
+        public ImmutableRangeMapSerializer() {
+            super(DOES_NOT_ACCEPT_NULL, IMMUTABLE);
+        }
+
+        @Override
+        public void write(Kryo kryo, Output output, ImmutableRangeMap<Long, Integer> object) {
+            kryo.writeObject(output, Maps.newHashMap(object.asMapOfRanges()));
+        }
+
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        @Override
+        public ImmutableRangeMap<Long, Integer> read(Kryo kryo, Input input,
+                Class<ImmutableRangeMap<Long, Integer>> type) {
+            HashMap<Range<Long>, Integer> tmp = new HashMap<Range<Long>, Integer>();
+            Class<? extends HashMap> tmpCls = tmp.getClass();
+            HashMap<Range<Long>, Integer> hashMapOfRanges = kryo.readObject(input, tmpCls);
+            Builder<Long, Integer> builder = new Builder<>();
+            for (Entry<Range<Long>, Integer> entry : hashMapOfRanges.entrySet()) {
+                builder.put(entry.getKey(), entry.getValue());
+            }
+            return builder.build();
+        }
+
+
+    }
+
+    /*
+     * Implements KryoSerializable interface
+     */
+    @Override
+    public void write(Kryo kryo, Output output) {
+        output.writeString(path);
+        output.writeInt(basketEntryOffsetsLength, true);
+        output.writeInt(basketStart, true);
+        output.writeInt(basketEnd, true);
+        kryo.writeObjectOrNull(output, arrayDesc, TBranch.ArrayDescriptor.class);
+        kryo.writeObject(output, baskets);
+        kryo.writeObject(output, rangeToBasketIDMap, new ImmutableRangeMapSerializer());
+    }
+
+    /*
+     * Implements KryoSerializable interface
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public void read(Kryo kryo, Input input) {
+        path = input.readString();
+        basketEntryOffsetsLength = input.readInt(true);
+        basketStart = input.readInt(true);
+        basketEnd = input.readInt(true);
+        arrayDesc = kryo.readObjectOrNull(input, TBranch.ArrayDescriptor.class);
+        baskets = kryo.readObject(input, HashMap.class);
+        rangeToBasketIDMap = kryo.readObject(input, ImmutableRangeMap.class, new ImmutableRangeMapSerializer());
+    }
+
+
 }

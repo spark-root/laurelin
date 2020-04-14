@@ -13,12 +13,17 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
+import org.apache.spark.serializer.KryoSerializer;
+import org.apache.spark.serializer.SerializerInstance;
 import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.BooleanType;
 import org.apache.spark.sql.types.ByteType;
@@ -35,6 +40,7 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarArray;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
+import org.apache.spark.util.CollectionAccumulator;
 import org.junit.Test;
 
 import com.google.common.collect.Range;
@@ -51,7 +57,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
-
+import scala.reflect.ClassTag;
 
 public class TTreeDataSourceUnitTest {
     /*
@@ -96,7 +102,7 @@ public class TTreeDataSourceUnitTest {
         }
 
         // Cap the number of bytes we read to load a file and make partitions
-        assertTrue(15794 >= sumReads);
+        assertTrue(22000 >= sumReads);
         // ... and the number of unique bytes we read to do the same
         assertTrue(5964 >= uniqReads);
     }
@@ -269,6 +275,34 @@ public class TTreeDataSourceUnitTest {
         System.out.println(schema.prettyJson());
 
         Partition partition = partitionPlan.get(0);
+        PartitionReader partitionReader = partition.createPartitionReader();
+        assertTrue(partitionReader.next());
+        ColumnarBatch batch = partitionReader.get();
+        ColumnVector col = batch.column(0);
+        ColumnarArray arr = col.getArray(0);
+        arr.getFloat(0);
+    }
+
+    @Test
+    public void testKryoSerialization() throws IOException {
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", "testdata/stdvector.root");
+        optmap.put("tree",  "tvec");
+        optmap.put("threadCount", "0");
+        DataSourceOptionsInterface opts = Root.wrapOptions(optmap);
+        Reader reader = new Reader(opts.getPaths(), opts, (SparkContext) null, (CollectionAccumulator<Storage>) null);
+        List<Partition> partitionPlan = reader.planBatchInputPartitions();
+        assertNotNull(partitionPlan);
+        StructType schema = reader.readSchema();
+        System.out.println(schema.prettyJson());
+
+        Partition partition = partitionPlan.get(0);
+        KryoSerializer serializer = new KryoSerializer(new SparkConf());
+        SerializerInstance serializerInstance = serializer.newInstance();
+        ClassTag<Partition> ct = scala.reflect.ClassTag$.MODULE$.apply(this.getClass());
+        ByteBuffer serializedPartition = serializerInstance.serialize(partition, ct);
+        partition = serializerInstance.deserialize(serializedPartition, ct);
+
         PartitionReader partitionReader = partition.createPartitionReader();
         assertTrue(partitionReader.next());
         ColumnarBatch batch = partitionReader.get();

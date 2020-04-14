@@ -132,10 +132,19 @@ public class Root_v24 implements DataSourceV2, ReadSupport, DataSourceRegister {
         public String getOrDefault(String key, String defVal) {
             return this.get(key).orElse(defVal);
         }
+
+        @Override
+        public List<String> getPaths() {
+            return Arrays.asList(super.paths());
+        }
+    }
+
+    public static DataSourceOptionsInterface wrapOptions(Map<String, String> optmap) {
+        return new DataSourceOptionsAdaptor_v24(optmap);
     }
 
     public Reader createTestReader(DataSourceOptionsAdaptor_v24 options, SparkContext context, boolean traceIO) {
-        List<String> paths = Arrays.asList(options.paths());
+        List<String> paths = options.getPaths();
         return new Reader(paths, options, context, null);
     }
 }

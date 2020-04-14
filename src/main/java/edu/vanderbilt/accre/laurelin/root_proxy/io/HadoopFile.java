@@ -6,19 +6,13 @@ package edu.vanderbilt.accre.laurelin.root_proxy.io;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.Future;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.RemoteIterator;
 
 public class HadoopFile implements FileInterface {
     FSDataInputStream fd;
@@ -69,27 +63,5 @@ public class HadoopFile implements FileInterface {
     @Override
     public long getLimit() throws IOException {
         return limit;
-    }
-
-    public static List<String> expandPathToList(String path) throws IOException {
-        Configuration conf = new Configuration();
-        URI uri = URI.create(path);
-        FileSystem fileSystem = FileSystem.get(uri, conf);
-	Path tmpPath = new Path(uri);
-        if (!fileSystem.isDirectory(tmpPath)) {
-            ArrayList<String> ret = new ArrayList<String>();
-            ret.add(path);
-            return ret;
-        } else {
-            LinkedList<String> ret = new LinkedList<String>();
-            RemoteIterator<LocatedFileStatus> fileList = fileSystem.listFiles(tmpPath,  true);
-            while (fileList.hasNext()) {
-                LocatedFileStatus file = fileList.next();
-                if (file.isFile() && (file.getPath().getName().endsWith(".root"))) {
-                    ret.add(file.getPath().toString());
-                }
-            }
-            return ret;
-        }
     }
 }
