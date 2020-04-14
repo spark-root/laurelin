@@ -9,8 +9,8 @@ jobs:
   include:
   - name: "Spark2.4+"
     env: LAURELIN_SPARK=spark24
-  - mame: "Spark3.0+"
-    env: LAURELIN_SPARK=spark30
+#  - name: "Spark3.0+"
+#    env: LAURELIN_SPARK=spark30
 
 install: true
 
@@ -31,7 +31,7 @@ before_install:
   - if [ ! -z "$GPG_OWNERTRUST" ]; then echo $GPG_OWNERTRUST | base64 --decode | $GPG_EXECUTABLE --import-ownertrust; fi
 
 install:
-    mvn --settings .travis.settings.xml install -DskipTests=true -Dgpg.skip -Dmaven.javadoc.skip=true -B -V -P${LAURELIN_SPARK}
+    mvn --settings .travis.settings.xml install -DskipTests=true -Dgpg.skip -Dmaven.javadoc.skip=true -B -V # -P${LAURELIN_SPARK}
 
 after_success:
 # Move the code coverage results to codecov
