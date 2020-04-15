@@ -10,6 +10,7 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.apache.spark.util.CollectionAccumulator;
 
+import edu.vanderbilt.accre.laurelin.configuration.LaurelinDSConfig;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.spark_ttree.PartitionReader;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
@@ -18,9 +19,10 @@ class PartitionReader_v24 implements InputPartitionReader<ColumnarBatch> {
     static final Logger logger = LogManager.getLogger();
 
     private PartitionReader partitionReader;
+    LaurelinDSConfig options;
 
-    public PartitionReader_v24(StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount, CollectionAccumulator<Storage> profileData, int pid) {
-        partitionReader = new PartitionReader(schema, entryStart, entryEnd, slimBranches, threadCount, profileData, pid);
+    public PartitionReader_v24(StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, LaurelinDSConfig options, CollectionAccumulator<Storage> profileData, int pid) {
+        partitionReader = new PartitionReader(schema, entryStart, entryEnd, slimBranches, options, profileData, pid);
     }
 
     @Override

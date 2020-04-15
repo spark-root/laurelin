@@ -6,15 +6,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.spark.sql.connector.read.Batch;
 
+import edu.vanderbilt.accre.laurelin.configuration.LaurelinDSConfig;
 import edu.vanderbilt.accre.laurelin.spark_ttree.Partition;
 import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
 
 public class Batch_v30 implements Batch {
     static final Logger logger = LogManager.getLogger();
+    LaurelinDSConfig config;
 
     private Reader reader;
     public Batch_v30(Reader reader) {
         this.reader = reader;
+        config = reader.getConfig();
     }
 
     @Override
@@ -27,7 +30,7 @@ public class Batch_v30 implements Batch {
                                                                             i.entryStart,
                                                                             i.entryEnd,
                                                                             i.slimBranches,
-                                                                            i.threadCount,
+                                                                            config,
                                                                             i.profileData,
                                                                             i.pid);
             ret[idx] = externalPartition;

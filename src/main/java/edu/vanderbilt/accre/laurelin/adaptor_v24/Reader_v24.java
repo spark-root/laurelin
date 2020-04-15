@@ -1,7 +1,6 @@
-package edu.vanderbilt.accre.laurelin.adaptor_v24;
+    package edu.vanderbilt.accre.laurelin.adaptor_v24;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.spark.SparkContext;
@@ -13,7 +12,7 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.apache.spark.util.CollectionAccumulator;
 
-import edu.vanderbilt.accre.laurelin.adaptor_v24.Root_v24.DataSourceOptionsAdaptor_v24;
+import edu.vanderbilt.accre.laurelin.configuration.LaurelinDSConfig;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.spark_ttree.Partition;
 import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
@@ -22,9 +21,11 @@ public class Reader_v24 implements DataSourceReader,
         SupportsScanColumnarBatch,
         SupportsPushDownRequiredColumns {
     private Reader reader;
+    LaurelinDSConfig options;
 
-    public Reader_v24(DataSourceOptionsAdaptor_v24 options, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
-        List<String> paths = Arrays.asList(options.paths());
+    public Reader_v24(LaurelinDSConfig options, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
+        this.options = options;
+        List<String> paths = options.paths();
         reader = new Reader(paths, options, sparkContext, ioAccum);
     }
 
@@ -48,7 +49,7 @@ public class Reader_v24 implements DataSourceReader,
                                                                 i.entryStart,
                                                                 i.entryEnd,
                                                                 i.slimBranches,
-                                                                i.threadCount,
+                                                                options,
                                                                 i.profileData,
                                                                 i.pid);
             ret.add(externalPartition);

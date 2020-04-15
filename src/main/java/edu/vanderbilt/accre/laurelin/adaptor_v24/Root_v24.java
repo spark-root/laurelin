@@ -1,6 +1,5 @@
 package edu.vanderbilt.accre.laurelin.adaptor_v24;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -13,6 +12,7 @@ import org.apache.spark.sql.sources.DataSourceRegister;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.DataSourceV2;
 import org.apache.spark.sql.sources.v2.ReadSupport;
+import org.apache.spark.sql.sources.v2.SessionConfigSupport;
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
 import org.apache.spark.util.CollectionAccumulator;
 
@@ -20,11 +20,11 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
+import edu.vanderbilt.accre.laurelin.configuration.LaurelinDSConfig;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
-import edu.vanderbilt.accre.laurelin.spark_ttree.DataSourceOptionsInterface;
 import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
 
-public class Root_v24 implements DataSourceV2, ReadSupport, DataSourceRegister {
+public class Root_v24 implements DataSourceV2, ReadSupport, DataSourceRegister, SessionConfigSupport {
     static final Logger logger = LogManager.getLogger();
 
     /**
@@ -54,7 +54,6 @@ public class Root_v24 implements DataSourceV2, ReadSupport, DataSourceRegister {
                                             @Override
                                             public DataSourceReader load(DataSourceReaderKey key) {
                                                 logger.trace("Construct new reader");
-                                                DataSourceOptionsAdaptor_v24 options = new DataSourceOptionsAdaptor_v24(key.options);
                                                 boolean traceIO = key.traceIO;
                                                 SparkContext context = key.context;
                                                 if ((traceIO) && (context != null)) {
@@ -63,7 +62,7 @@ public class Root_v24 implements DataSourceV2, ReadSupport, DataSourceRegister {
                                                         context.register(ioAccum, "edu.vanderbilt.accre.laurelin.ioprofile");
                                                     }
                                                 }
-                                                return new Reader_v24(options, context, ioAccum);
+                                                return new Reader_v24(LaurelinDSConfig.wrap(key.options), context, ioAccum);
                                             }
                                             });
 
@@ -118,33 +117,21 @@ public class Root_v24 implements DataSourceV2, ReadSupport, DataSourceRegister {
         }
     }
 
+    // So you can use .format('root')
     @Override
     public String shortName() {
-        return "root_v24";
+        return "root";
     }
 
-    public static class DataSourceOptionsAdaptor_v24 extends DataSourceOptions implements DataSourceOptionsInterface {
-        public DataSourceOptionsAdaptor_v24(java.util.Map<String, String> originalMap) {
-            super(originalMap);
-        }
-
-        @Override
-        public String getOrDefault(String key, String defVal) {
-            return this.get(key).orElse(defVal);
-        }
-
-        @Override
-        public List<String> getPaths() {
-            return Arrays.asList(super.paths());
-        }
-    }
-
-    public static DataSourceOptionsInterface wrapOptions(Map<String, String> optmap) {
-        return new DataSourceOptionsAdaptor_v24(optmap);
-    }
-
-    public Reader createTestReader(DataSourceOptionsAdaptor_v24 options, SparkContext context, boolean traceIO) {
-        List<String> paths = options.getPaths();
+    public Reader createTestReader(LaurelinDSConfig options, SparkContext context, boolean traceIO) {
+        List<String> paths = options.paths();
         return new Reader(paths, options, context, null);
     }
+
+    // So you can use .setConfig('spark.datasource.laurelin.XXX', "foo")
+    @Override
+    public String keyPrefix() {
+        return "laurelin";
+    }
+
 }

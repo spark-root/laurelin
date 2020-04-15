@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.util.CollectionAccumulator;
 
+import edu.vanderbilt.accre.laurelin.configuration.LaurelinDSConfig;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
 
 /**
@@ -26,24 +27,24 @@ public class Partition implements Serializable {
     public long entryStart;
     public long entryEnd;
     public Map<String, SlimTBranch> slimBranches;
-    public int threadCount;
     public CollectionAccumulator<Storage> profileData;
     public int pid;
+    private LaurelinDSConfig options;
 
-    public Partition(StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount, CollectionAccumulator<Storage> profileData, int pid) {
+    public Partition(StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, LaurelinDSConfig options, CollectionAccumulator<Storage> profileData, int pid) {
         logger.trace("dsv2partition new");
         this.schema = schema;
         this.entryStart = entryStart;
         this.entryEnd = entryEnd;
         this.slimBranches = slimBranches;
-        this.threadCount = threadCount;
+        this.options = options;
         this.profileData = profileData;
         this.pid = pid;
     }
 
     public PartitionReader createPartitionReader() {
         logger.trace("input partition reader");
-        return new PartitionReader(schema, entryStart, entryEnd, slimBranches, threadCount, profileData, pid);
+        return new PartitionReader(schema, entryStart, entryEnd, slimBranches, options, profileData, pid);
     }
 
     public void setPid(int pid) {

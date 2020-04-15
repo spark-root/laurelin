@@ -11,6 +11,7 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.apache.spark.util.CollectionAccumulator;
 
+import edu.vanderbilt.accre.laurelin.configuration.LaurelinDSConfig;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.spark_ttree.Partition;
 import edu.vanderbilt.accre.laurelin.spark_ttree.SlimTBranch;
@@ -25,9 +26,11 @@ class Partition_v24 implements InputPartition<ColumnarBatch>, Serializable {
     static final Logger logger = LogManager.getLogger();
     private static final long serialVersionUID = 42L;
     private Partition partition;
+    LaurelinDSConfig options;
 
-    public Partition_v24(StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount, CollectionAccumulator<Storage> profileData, int pid) {
-        partition = new Partition(schema, entryStart, entryEnd, slimBranches, threadCount, profileData, pid);
+    public Partition_v24(StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, LaurelinDSConfig options, CollectionAccumulator<Storage> profileData, int pid) {
+        this.options = options;
+        partition = new Partition(schema, entryStart, entryEnd, slimBranches, options, profileData, pid);
     }
 
     @Override
@@ -37,7 +40,7 @@ class Partition_v24 implements InputPartition<ColumnarBatch>, Serializable {
                                         partition.entryStart,
                                         partition.entryEnd,
                                         partition.slimBranches,
-                                        partition.threadCount,
+                                        options,
                                         partition.profileData,
                                         partition.pid);
     }

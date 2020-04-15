@@ -20,6 +20,7 @@ import org.apache.spark.util.CollectionAccumulator;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import edu.vanderbilt.accre.laurelin.cache.BasketCache;
+import edu.vanderbilt.accre.laurelin.configuration.LaurelinDSConfig;
 import edu.vanderbilt.accre.laurelin.interpretation.AsDtype.Dtype;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile;
@@ -78,7 +79,7 @@ public class PartitionReader {
     private int pid;
     private static ROOTFileCache fileCache = ROOTFileCache.getCache();
 
-    public PartitionReader(StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, int threadCount, CollectionAccumulator<Storage> profileData, int pid) {
+    public PartitionReader(StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, LaurelinDSConfig options, CollectionAccumulator<Storage> profileData, int pid) {
         this.basketCache = BasketCache.getCache();
         this.schema = schema;
         this.entryStart = entryStart;
@@ -96,6 +97,7 @@ public class PartitionReader {
         }
         IOProfile.getInstance(pid, cb);
 
+        int threadCount = options.getInt("threadCount");
         if (threadCount >= 1) {
             executor = staticExecutor;
             executor.setCorePoolSize(threadCount);

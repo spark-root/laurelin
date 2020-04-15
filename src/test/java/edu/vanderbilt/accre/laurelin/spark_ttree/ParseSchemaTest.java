@@ -11,14 +11,14 @@ import org.apache.spark.sql.types.StructType;
 import org.junit.Test;
 
 import edu.vanderbilt.accre.laurelin.Root;
-import edu.vanderbilt.accre.laurelin.Root.DataSourceOptionsAdaptor;
+import edu.vanderbilt.accre.laurelin.configuration.LaurelinDSConfig;
 
 public class ParseSchemaTest {
     @Test
     public void testGetSchemaNano() {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/nano_tree.root");
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         DataType schema = reader.readSchema();
@@ -34,7 +34,7 @@ public class ParseSchemaTest {
         String testPath = getBigTestDataIfExists("testdata/A2C66680-E3AA-E811-A854-1CC1DE192766.root");
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", testPath);
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         DataType schema = reader.readSchema();
@@ -47,7 +47,7 @@ public class ParseSchemaTest {
         String testPath = getBigTestDataIfExists("testdata/nano_19.root");
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", testPath);
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         DataType schema = reader.readSchema();
@@ -60,7 +60,7 @@ public class ParseSchemaTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-foriter.root");
         optmap.put("tree",  "foriter");
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         DataType schema = reader.readSchema();
@@ -74,7 +74,7 @@ public class ParseSchemaTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-small-flat-tree.root");
         optmap.put("tree",  "tree");
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         DataType schema = reader.readSchema();
@@ -88,7 +88,7 @@ public class ParseSchemaTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-nesteddirs.root");
         optmap.put("tree",  "three/tree");
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         DataType schema = reader.readSchema();

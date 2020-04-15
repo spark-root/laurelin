@@ -15,8 +15,7 @@ import org.apache.spark.sql.connector.read.ScanBuilder;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-import edu.vanderbilt.accre.laurelin.Root.DataSourceOptionsAdaptor;
-import edu.vanderbilt.accre.laurelin.adaptor_v30.Root_v30.DataSourceOptionsAdaptor_v30;
+import edu.vanderbilt.accre.laurelin.configuration.LaurelinDSConfig;
 import edu.vanderbilt.accre.laurelin.spark_ttree.Reader;
 import scala.Option;
 
@@ -31,16 +30,16 @@ import scala.Option;
 public class Table_v30 implements Table, SupportsRead {
     static final Logger logger = LogManager.getLogger();
 
-    public Table_v30(DataSourceOptionsAdaptor_v30 options, List<String> paths) {
+    public Table_v30(LaurelinDSConfig options, List<String> paths) {
         Option<SparkSession> session = SparkSession.getActiveSession();
         this.originalOptions = options;
         this.paths = paths;
         // TODO session can be null
-        reader = new Reader(paths, options, session.get().sparkContext(), null);
+        reader = new Reader(paths, options, session.get().sparkContext());
     }
 
     private Reader reader;
-    private CaseInsensitiveStringMap originalOptions;
+    private LaurelinDSConfig originalOptions;
     private List<String> paths;
 
     @Override
@@ -64,8 +63,8 @@ public class Table_v30 implements Table, SupportsRead {
     @Override
     public ScanBuilder newScanBuilder(CaseInsensitiveStringMap options) {
         if (options != null) {
-            DataSourceOptionsAdaptor optionsUpcast = new DataSourceOptionsAdaptor(options);
-            assert optionsUpcast.equals(originalOptions);
+            LaurelinDSConfig optionsUpcast = LaurelinDSConfig.wrap(options.asCaseSensitiveMap());
+            assert optionsUpcast.getMap().equals(originalOptions.getMap());
         }
         return new ScanBuilder_v30(reader);
     }

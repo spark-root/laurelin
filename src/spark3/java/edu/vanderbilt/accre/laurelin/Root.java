@@ -1,7 +1,5 @@
 package edu.vanderbilt.accre.laurelin;
 
-import java.util.Map;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,11 +21,5 @@ public class Root extends Root_v30 {
     @Override
     public String shortName() {
         return "root";
-    }
-
-    public static class DataSourceOptionsAdaptor extends DataSourceOptionsAdaptor_v30 {
-        public DataSourceOptionsAdaptor(Map<String, String> originalMap) {
-            super(originalMap);
-        }
     }
 }

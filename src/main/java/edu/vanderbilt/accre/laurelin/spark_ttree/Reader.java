@@ -25,6 +25,7 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.util.CollectionAccumulator;
 
+import edu.vanderbilt.accre.laurelin.configuration.LaurelinDSConfig;
 import edu.vanderbilt.accre.laurelin.root_proxy.ROOTException.UnsupportedBranchTypeException;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
@@ -36,6 +37,7 @@ import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
 
+
 /**
  * Backing object for a collection of root files
  * <p>
@@ -44,31 +46,35 @@ import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
 public class Reader {
     static final Logger logger = LogManager.getLogger();
 
+    private LaurelinDSConfig options;
     private List<String> paths;
     private String treeName;
     private StructType schema;
-    private int threadCount;
     private IOProfile profiler;
     private static CollectionAccumulator<Storage> profileData;
     private SparkContext sparkContext;
     private static ROOTFileCache fileCache = ROOTFileCache.getCache();
 
-    public Reader(List<String> userPaths, DataSourceOptionsInterface options, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
+    public Reader(List<String> paths, LaurelinDSConfig options, SparkContext sparkContext) {
+        this(paths, options, sparkContext, null);
+    }
+
+    public Reader(List<String> userPaths, LaurelinDSConfig options, SparkContext sparkContext, CollectionAccumulator<Storage> ioAccum) {
         logger.trace("construct ttreedatasourcev2reader");
+        this.options = options;
         this.sparkContext = sparkContext;
         try {
-            List<Path> expanded = IOFactory.resolvePathList(options.getPaths());
+            List<Path> expanded = IOFactory.resolvePathList(options.paths());
             this.paths = new ArrayList<String>(expanded.size());
             for (Path p: expanded) {
                 this.paths.add(p.toString());
             }
             // FIXME - More than one file, please
-            treeName = options.getOrDefault("tree", "Events");
+            treeName = options.getString("tree");
             this.schema = getSchemaFromFiles(userPaths, options);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        threadCount = options.getInt("threadCount", 16);
 
         Function<Event, Integer> cb = null;
         if (ioAccum != null) {
@@ -81,14 +87,18 @@ public class Reader {
         profiler = IOProfile.getInstance(0, cb);
     }
 
+    public LaurelinDSConfig getConfig() {
+        return options;
+    }
+
     public StructType readSchema() {
         return schema;
     }
 
-    public static StructType getSchemaFromFiles(List<String> userPaths, DataSourceOptionsInterface options)  {
+    public static StructType getSchemaFromFiles(List<String> userPaths, LaurelinDSConfig options)  {
         try {
             TFile file = TFile.getFromFile(fileCache.getROOTFile(userPaths.get(0)));
-            String name = options.getOrDefault("tree", "Events");
+            String name = options.getString("tree");
             TTree tree = new TTree(file.getProxy(name), file);
             List<TBranch> branches = tree.getBranches();
             List<StructField> fields = readSchemaPart(branches, "");
@@ -189,11 +199,12 @@ public class Reader {
         String treeName;
         StructType schema;
         int threadCount;
+        LaurelinDSConfig options;
 
-        public PartitionHelper(String treeName, StructType schema, int threadCount) {
+        public PartitionHelper(String treeName, StructType schema, LaurelinDSConfig options) {
             this.treeName = treeName;
             this.schema = schema;
-            this.threadCount = threadCount;
+            this.options = options;
         }
 
         private static void parseStructFields(TTree inputTree, Map<String, SlimTBranch> slimBranches, StructType struct, String namespace) {
@@ -209,7 +220,7 @@ public class Reader {
             }
         }
 
-        public static Iterator<Partition> partitionSingleFileImpl(String path, String treeName, StructType schema, int threadCount) {
+        public static Iterator<Partition> partitionSingleFileImpl(String path, String treeName, StructType schema, LaurelinDSConfig options) {
             List<Partition> ret = new ArrayList<Partition>();
             int pid = 0;
             TTree inputTree;
@@ -234,13 +245,13 @@ public class Reader {
                     for (Entry<String, SlimTBranch> e: slimBranches.entrySet()) {
                         trimmedSlimBranches.put(e.getKey(), e.getValue().copyAndTrim(partitionStart, partitionEnd));
                     }
-                    ret.add(new Partition(schema, partitionStart, partitionEnd, trimmedSlimBranches, threadCount, profileData, pid));
+                    ret.add(new Partition(schema, partitionStart, partitionEnd, trimmedSlimBranches, options, profileData, pid));
                 }
                 if (ret.size() == 0) {
                     // Only one basket?
                     logger.debug("Planned for zero baskets, adding a dummy one");
                     pid += 1;
-                    ret.add(new Partition(schema, 0, inputTree.getEntries(), slimBranches, threadCount, profileData, pid));
+                    ret.add(new Partition(schema, 0, inputTree.getEntries(), slimBranches, options, profileData, pid));
                 }
                 return ret.iterator();
             } catch (Exception e) {
@@ -250,7 +261,7 @@ public class Reader {
         }
 
         FlatMapFunction<String, Partition> getLambda() {
-            return s -> PartitionHelper.partitionSingleFileImpl(s, treeName, schema, threadCount);
+            return s -> PartitionHelper.partitionSingleFileImpl(s, treeName, schema, options);
         }
     }
 
@@ -264,7 +275,7 @@ public class Reader {
         } else {
             JavaSparkContext sc = JavaSparkContext.fromSparkContext(sparkContext);
             JavaRDD<String> rdd_paths = sc.parallelize(paths, paths.size());
-            Reader.PartitionHelper helper = new PartitionHelper(treeName, schema, threadCount);
+            Reader.PartitionHelper helper = new PartitionHelper(treeName, schema, options);
             JavaRDD<Partition> partitions = rdd_paths.flatMap(helper.getLambda());
             ret = partitions.collect();
         }
@@ -277,7 +288,7 @@ public class Reader {
     }
 
     public Iterator<Partition> partitionSingleFile(String path) {
-        return PartitionHelper.partitionSingleFileImpl(path, treeName, schema, threadCount);
+        return PartitionHelper.partitionSingleFileImpl(path, treeName, schema, options);
     }
 
     public void pruneColumns(StructType requiredSchema) {

@@ -20,7 +20,7 @@ public class PartitionReader_v30<T> implements org.apache.spark.sql.connector.re
                                                 partition.entryStart,
                                                 partition.entryEnd,
                                                 partition.slimBranches,
-                                                partition.threadCount,
+                                                partitionWrap.getConfig(),
                                                 partition.profileData,
                                                 partition.pid);
     }

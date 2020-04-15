@@ -48,8 +48,8 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 
 import edu.vanderbilt.accre.laurelin.Root;
-import edu.vanderbilt.accre.laurelin.Root.DataSourceOptionsAdaptor;
 import edu.vanderbilt.accre.laurelin.cache.BasketCache;
+import edu.vanderbilt.accre.laurelin.configuration.LaurelinDSConfig;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
@@ -77,7 +77,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-foriter.root");
         optmap.put("tree",  "foriter");
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
 
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
@@ -118,7 +118,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", testPath);
         optmap.put("tree",  "Events");
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         List<Partition> partitions = reader.planBatchInputPartitions();
@@ -134,10 +134,10 @@ public class TTreeDataSourceUnitTest {
             out.flush();
             yourBytes = bos.toByteArray();
             /*
-             *  This patch produces 348555 bytes serialized, ensure it doesn't
+             *  This patch produces 349972 bytes serialized, ensure it doesn't
              *  grow accidentally
              */
-            assertTrue("Partition size too large", yourBytes.length < 349000);
+            assertTrue("Partition size too large: " + yourBytes.length, yourBytes.length < 351000);
 
             System.out.println("Got length: " + yourBytes.length);
             bis = new ByteArrayInputStream(yourBytes);
@@ -183,7 +183,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-foriter.root");
         optmap.put("tree",  "foriter");
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         DataType schema = reader.readSchema();
@@ -210,7 +210,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", testPath);
         optmap.put("tree",  "Events");
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         // only get a scalar float_t for now since that's all that works
@@ -242,7 +242,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-small-flat-tree.root");
         optmap.put("tree",  "tree");
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         List<Partition> batch = reader.planBatchInputPartitions();
@@ -254,7 +254,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-small-flat-tree.root");
         optmap.put("tree",  "tree");
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         assertNotNull(reader.planBatchInputPartitions());
@@ -266,7 +266,7 @@ public class TTreeDataSourceUnitTest {
         optmap.put("path", "testdata/stdvector.root");
         optmap.put("tree",  "tvec");
         optmap.put("threadCount", "0");
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         List<Partition> partitionPlan = reader.planBatchInputPartitions();
@@ -289,8 +289,8 @@ public class TTreeDataSourceUnitTest {
         optmap.put("path", "testdata/stdvector.root");
         optmap.put("tree",  "tvec");
         optmap.put("threadCount", "0");
-        DataSourceOptionsInterface opts = Root.wrapOptions(optmap);
-        Reader reader = new Reader(opts.getPaths(), opts, (SparkContext) null, (CollectionAccumulator<Storage>) null);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
+        Reader reader = new Reader(opts.paths(), opts, (SparkContext) null, (CollectionAccumulator<Storage>) null);
         List<Partition> partitionPlan = reader.planBatchInputPartitions();
         assertNotNull(partitionPlan);
         StructType schema = reader.readSchema();
@@ -328,7 +328,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-small-flat-tree.root");
         optmap.put("tree",  "tree");
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         List<Partition> partitions = reader.planBatchInputPartitions();
@@ -368,7 +368,7 @@ public class TTreeDataSourceUnitTest {
         Map<String, String> optmap = new HashMap<String, String>();
         optmap.put("path", "testdata/uproot-small-flat-tree.root");
         optmap.put("tree",  "tree");
-        DataSourceOptionsAdaptor opts = new DataSourceOptionsAdaptor(optmap);
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
         Root source = new Root();
         Reader reader = source.createTestReader(opts, null, true);
         List<Partition> partitions = reader.planBatchInputPartitions();
