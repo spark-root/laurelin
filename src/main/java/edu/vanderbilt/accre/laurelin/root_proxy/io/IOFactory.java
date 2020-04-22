@@ -54,6 +54,16 @@ public class IOFactory {
         return ret;
     }
 
+    private static FileSystem getFileSystemFromPath(Path path, Configuration hadoopConf) throws IOException {
+        FileSystem ret;
+        if (Pattern.matches(hadoopPattern, path.toString())) {
+            ret = path.getFileSystem(hadoopConf);
+        } else {
+            ret = org.apache.hadoop.fs.LocalFileSystem.getLocal(hadoopConf);
+        }
+        return ret;
+    }
+
     /**
      * Perform glob-expansion on a list of paths, then recursively expand any
      * directories listed in the list.
@@ -69,12 +79,25 @@ public class IOFactory {
         } catch (IllegalStateException e) {
             hadoopConf = new Configuration();
         }
+        return resolvePathList(paths, hadoopConf);
+    }
 
+    /**
+     * Perform glob-expansion on a list of paths, then recursively expand any
+     * directories listed in the list. This version of resolvePathList is used
+     * in unit tests to inject a custom hadoop config.
+     *
+     * @param paths Paths to be expanded
+     * @param hadoopConf hadoop configuration to use.
+     * @return Fully expanded list of ROOT file paths
+     * @throws IOException If any globs don't resolve or paths don't exist
+     */
+    public static List<Path> resolvePathList(List<String> paths, Configuration hadoopConf) throws IOException {
         List<Path> globResolved = new ArrayList<Path>(paths.size());
         // First perform any globbing
         for (String path: paths) {
             if (isGlob(path)) {
-                globResolved.addAll(resolveGlob(path));
+                globResolved.addAll(resolveGlob(path, hadoopConf));
             } else {
                 globResolved.add(new Path(path));
             }
@@ -112,7 +135,7 @@ public class IOFactory {
             Path parent = path.getParent();
             parentDirectories.put(parent, null);
             childToParentMap.put(path, parent);
-            FileSystem fs = parent.getFileSystem(hadoopConf);
+            FileSystem fs = getFileSystemFromPath(parent, hadoopConf);
             Path qualifiedChild = path.makeQualified(fs.getUri(), fs.getWorkingDirectory());
             qualifiedChildToParentMap.put(qualifiedChild, parent);
         }
@@ -121,7 +144,7 @@ public class IOFactory {
         Map<Path, List<FileStatus>> parentToStatusMap = new HashMap<Path, List<FileStatus>>();
         Map<Path, FileStatus> qualifiedListingToStatusMap = new HashMap<Path, FileStatus>();
         for (Path parent: parentDirectories.keySet()) {
-            FileSystem fs = parent.getFileSystem(hadoopConf);
+            FileSystem fs = getFileSystemFromPath(parent, hadoopConf);
             FileStatus[] listing = fs.listStatus(parent);
             parentToStatusMap.put(parent, Arrays.asList(listing));
             for (FileStatus s: listing) {
@@ -152,7 +175,7 @@ public class IOFactory {
             Path path = status.getPath();
             if (status.isDirectory()) {
                 // We were given a directory, add everything recursively
-                FileSystem fs = status.getPath().getFileSystem(hadoopConf);
+                FileSystem fs = getFileSystemFromPath(status.getPath(), hadoopConf);
                 RemoteIterator<LocatedFileStatus> fileList = fs.listFiles(status.getPath(), true);
                 while (fileList.hasNext()) {
                     LocatedFileStatus file = fileList.next();
@@ -173,19 +196,13 @@ public class IOFactory {
     /**
      * Perform glob expansion on a path
      * @param path Glob to expand
+     * @param hadoopConf configuration to use
      * @return List of paths that match the given glob
      * @throws IOException Nothing matches the given glob
      */
-    private static List<Path> resolveGlob(String path) throws IOException {
-        Configuration hadoopConf;
-        try {
-            hadoopConf = SparkSession.active().sparkContext().hadoopConfiguration();
-        } catch (IllegalStateException e) {
-            hadoopConf = new Configuration();
-        }
-
+    private static List<Path> resolveGlob(String path, Configuration hadoopConf) throws IOException {
         Path hdfsPath = new Path(path);
-        FileSystem fs = hdfsPath.getFileSystem(hadoopConf);
+        FileSystem fs = getFileSystemFromPath(hdfsPath, hadoopConf);
         Path qualified = hdfsPath.makeQualified(fs.getUri(), fs.getWorkingDirectory());
         Seq<Path> globPath = SparkHadoopUtil.get().globPathIfNecessary(fs, qualified);
         if (globPath.isEmpty()) {
