@@ -187,6 +187,18 @@ public class IOTest {
         return ret;
     }
 
+    // Helper to inject a custom hadoop config
+    private List<org.apache.hadoop.fs.Path> resolveHelper(Configuration hadoopConfig, String ...args) throws IOException {
+        List<org.apache.hadoop.fs.Path> ret;
+        if (hadoopConfig != null) {
+            ret = IOFactory.resolvePathList(new ArrayList<String>(Arrays.asList(args)), hadoopConfig);
+        } else {
+            ret = IOFactory.resolvePathList(new ArrayList<String>(Arrays.asList(args)));
+        }
+        Collections.sort(ret);
+        return ret;
+    }
+
     // Just check the suffixes, since different devs will have different working
     // dirs and it's kinda a PITA to jump through the hoops to convert it all
     private void assertPathListsSame(String message, String[] expected, List<org.apache.hadoop.fs.Path> actual) throws IOException {
@@ -243,6 +255,24 @@ public class IOTest {
         assertPathListsSame("recursion_globbed", allGlobFiles, paths);
     }
 
+    @Test
+    public void resolvePathList_recursion_globbed_withschema() throws IOException {
+        Path currentRelativePath = Paths.get("");
+        String cwd = currentRelativePath.toAbsolutePath().toString();
+        List<org.apache.hadoop.fs.Path> paths = resolveHelper("file://" + cwd + "/testdata/globtest/{1,2,3}");
+        assertPathListsSame("recursion_globbed", allGlobFiles, paths);
+    }
+
+    @Test
+    public void resolvePathList_recursion_globbed_override_defaultfs() throws IOException {
+        // make sure that paths w/o schema in the front are resolved by the default
+        // unix filesystem to not break client expectations
+        Configuration hadoopConfig = new Configuration();
+        hadoopConfig.set("fs.defaultFS", "hdfs://INVALID");
+        List<org.apache.hadoop.fs.Path> paths = resolveHelper(hadoopConfig, "testdata/globtest/{1,2,3}");
+        assertPathListsSame("recursion_globbed", allGlobFiles, paths);
+    }
+
     String[] someGlobFiles = new String[] {
             "testdata/globtest/1/2/1_2_1.root",
             "testdata/globtest/1/2/1_2_2.root",
@@ -268,6 +298,16 @@ public class IOTest {
     public void resolvePathList_explicitlist() throws IOException {
         List<org.apache.hadoop.fs.Path> paths = resolveHelper(someGlobFiles);
         assertPathListsSame("explicit_list", someGlobFiles, paths);
+    }
+
+    @Test
+    public void resolvePathList_explicit_one_override_defaultfs() throws IOException {
+        // make sure that paths w/o schema in the front are resolved by the default
+        // unix filesystem to not break client expectations
+        Configuration hadoopConfig = new Configuration();
+        hadoopConfig.set("fs.defaultFS", "hdfs://INVALID");
+        List<org.apache.hadoop.fs.Path> paths = resolveHelper(hadoopConfig, "testdata/globtest/1/2/1_2_1.root");
+        assertPathListsSame("explicit_one", new String[] { "testdata/globtest/1/2/1_2_1.root" }, paths);
     }
 
     @Test
