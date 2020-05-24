@@ -22,7 +22,7 @@ public class ConfigListing implements Serializable {
 
     /**
      * Constructs a new ConfigListing from a list of ConfigOptions
-     * @param opts
+     * @param opts List of config options to wrap in this lissting
      */
     public ConfigListing(ConfigOption[] opts) {
         this.config = opts;
@@ -52,8 +52,8 @@ public class ConfigListing implements Serializable {
 
     /**
      * ConfigOption corresponding to a given key.
-     * @param key
-     * @return
+     * @param key Desired key
+     * @return ConfigOption for key
      */
     public ConfigOption getConfigOption(String key) {
         for (ConfigOption c: config) {

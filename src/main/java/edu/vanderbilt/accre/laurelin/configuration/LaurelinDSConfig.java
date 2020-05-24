@@ -32,7 +32,8 @@ public class LaurelinDSConfig implements Serializable {
 
     /**
      * Wrap the provided string map and return a new LaurenlinDSConfig
-     * @param sparkOpts value to wrap
+     * @param map value to wrap
+     * @return Wrapped veersion of the given map
      */
     public static LaurelinDSConfig wrap(Map<String,String> map) {
         return new LaurelinDSConfig(map, ConfigListing.getDefaultListing());

@@ -188,7 +188,7 @@
                 <version>2.5</version>
                 <configuration>
                     <useReleaseProfile>false</useReleaseProfile>
-                    <releaseProfiles>release</releaseProfiles>
+                    <releaseProfiles>release24</releaseProfiles>
                     <goals>deploy</goals>
                 </configuration>
             </plugin>
