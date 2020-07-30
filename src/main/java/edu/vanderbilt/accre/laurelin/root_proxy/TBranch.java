@@ -10,23 +10,27 @@ import java.util.regex.Pattern;
 
 import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.ImmutableRangeMap.Builder;
+import com.google.common.collect.Range;
 
 import edu.vanderbilt.accre.laurelin.root_proxy.io.Constants;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.Cursor;
 import edu.vanderbilt.accre.laurelin.root_proxy.serialization.Proxy;
 import edu.vanderbilt.accre.laurelin.root_proxy.serialization.ProxyArray;
 
-import com.google.common.collect.Range;
-
 public class TBranch {
     protected Proxy data;
     protected ArrayList<TBranch> branches;
     private ArrayList<TLeaf> leaves;
     private ArrayList<TBasket> lazyBasketStorage;
-    private int fMaxBaskets = 0;
-    private int[] fBasketBytes;
-    private long[] fBasketEntry;
-    private long[] fBasketSeek;
+    private long fEntries;
+    private int fMaxBasketsRaw = 0;
+    private int[] fBasketBytesRaw;
+    private long[] fBasketEntryRaw;
+    private long[] fBasketSeekRaw;
+    private int fMaxBasketsCorrected = 0;
+    private int[] fBasketBytesCorrected;
+    private long[] fBasketEntryCorrected;
+    private long[] fBasketSeekCorrected;
 
     protected boolean isBranch;
     protected TBranch parent;
@@ -113,10 +117,15 @@ public class TBranch {
              *     Long64_t   *fBasketEntry;      ///<[fMaxBaskets] Table of first entry in each basket
              *     Long64_t   *fBasketSeek;       ///<[fMaxBaskets] Addresses of baskets on file
              */
-            fMaxBaskets = (int) data.getScalar("fMaxBaskets").getVal();
-            int[] fBasketBytesTmp = (int[]) data.getScalar("fBasketBytes").getVal();
-            long[] fBasketEntryTmp = (long[]) data.getScalar("fBasketEntry").getVal();
-            long[] fBasketSeekTmp = (long[]) data.getScalar("fBasketSeek").getVal();
+            fEntries = (long) data.getScalar("fEntries").getVal();
+            fMaxBasketsRaw = (int) data.getScalar("fMaxBaskets").getVal();
+            fBasketBytesRaw = (int[]) data.getScalar("fBasketBytes").getVal();
+            fBasketEntryRaw = (long[]) data.getScalar("fBasketEntry").getVal();
+            fBasketSeekRaw = (long[]) data.getScalar("fBasketSeek").getVal();
+            fMaxBasketsCorrected = (int) data.getScalar("fMaxBaskets").getVal();
+//            fBasketBytesCorrected = (int[]) data.getScalar("fBasketBytes").getVal();
+//            fBasketEntryCorrected = (long[]) data.getScalar("fBasketEntry").getVal();
+//            fBasketSeekCorrected = (long[]) data.getScalar("fBasketSeek").getVal();
 
             /*
              *  Root sometimes makes zero-length/empty baskets, so we need to
@@ -124,24 +133,26 @@ public class TBranch {
              *  values are monotonically increasing
              */
             int nonEmptyBaskets = 0;
-            for (int i = 0; i < fMaxBaskets; i += 1) {
-                if (fBasketSeekTmp[i] != 0) {
+            for (int i = 0; i < fMaxBasketsRaw; i += 1) {
+                if (fBasketSeekRaw[i] != 0) {
                     nonEmptyBaskets += 1;
                 }
             }
-            fBasketBytes = new int[nonEmptyBaskets];
-            fBasketEntry = new long[nonEmptyBaskets];
-            fBasketSeek = new long[nonEmptyBaskets];
+            fBasketBytesCorrected = new int[nonEmptyBaskets];
+            fBasketEntryCorrected = new long[nonEmptyBaskets];
+            fBasketSeekCorrected = new long[nonEmptyBaskets];
             int j = 0;
             for (int i = 0; i < nonEmptyBaskets; i += 1) {
-                if (fBasketSeekTmp[i] != 0) {
-                    fBasketBytes[j] = fBasketBytesTmp[i];
-                    fBasketEntry[j] = fBasketEntryTmp[i];
-                    fBasketSeek[j] = fBasketSeekTmp[i];
+                if (fBasketSeekRaw[i] != 0) {
+                    fBasketBytesCorrected[j] = fBasketBytesRaw[i];
+                    fBasketEntryCorrected[j] = fBasketEntryRaw[i];
+                    fBasketSeekCorrected[j] = fBasketSeekRaw[i];
                     j += 1;
                 }
             }
-            fMaxBaskets = nonEmptyBaskets;
+            fMaxBasketsCorrected = nonEmptyBaskets;
+            // Try to recover (in the ROOT sense) files not properly closed
+
         } else {
             isBranch = false;
         }
@@ -210,15 +221,15 @@ public class TBranch {
     private void loadBaskets() {
         lazyBasketStorage = new ArrayList<TBasket>();
         TFile backing = tree.getBackingFile();
-        for (int i = 0; i < fMaxBaskets; i += 1) {
+        for (int i = 0; i < fMaxBasketsCorrected; i += 1) {
             Cursor c;
-            if (fBasketSeek[i] == 0) {
+            if (fBasketSeekCorrected[i] == 0) {
                 // An empty basket?
                 continue;
             }
             try {
-                c = backing.getCursorAt(fBasketSeek[i]);
-                TBasket b = TBasket.getFromFile(c, fBasketBytes[i], fBasketEntry[i], fBasketSeek[i]);
+                c = backing.getCursorAt(fBasketSeekCorrected[i]);
+                TBasket b = TBasket.getFromFile(c, fBasketBytesCorrected[i], fBasketEntryCorrected[i], fBasketSeekCorrected[i]);
                 lazyBasketStorage.add(b);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -410,19 +421,19 @@ public class TBranch {
     }
 
     public long[] getBasketEntryOffsets() {
-        int basketCount = fBasketEntry.length;
+        int basketCount = fBasketEntryCorrected.length;
         // The array processing code wants a final entry to cap the last true
         // basket from above
-        if (fBasketEntry[basketCount - 1] == tree.getEntries()) {
+        if (fBasketEntryCorrected[basketCount - 1] == tree.getEntries()) {
             long []ret = new long[basketCount];
             for (int i = 0; i < basketCount; i += 1) {
-                ret[i] = fBasketEntry[i];
+                ret[i] = fBasketEntryCorrected[i];
             }
             return ret;
         } else {
             long []ret = new long[basketCount + 1];
             for (int i = 0; i < basketCount; i += 1) {
-                ret[i] = fBasketEntry[i];
+                ret[i] = fBasketEntryCorrected[i];
             }
             ret[basketCount] = tree.getEntries();
             return ret;
@@ -430,15 +441,15 @@ public class TBranch {
     }
 
     public int getBasketCount() {
-        return fMaxBaskets;
+        return fMaxBasketsCorrected;
     }
 
     public int[] getBasketBytes() {
-        return fBasketBytes;
+        return fBasketBytesCorrected;
     }
 
     public long[] getBasketSeek() {
-        return fBasketSeek;
+        return fBasketSeekCorrected;
     }
 
     /**
