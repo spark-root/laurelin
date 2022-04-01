@@ -34,6 +34,13 @@ public class TTreeTest {
         return new TTree(currFile.getProxy(testTree), currFile);
     }
 
+    private TTree getBadTestTree() throws IOException {
+        String testPath = "testdata/issue96.root";
+        String testTree = "tpTree/fitter_tree";
+        TFile currFile = TFile.getFromFile(testPath);
+        return new TTree(currFile.getProxy(testTree), currFile);
+    }
+
     @Test
     public void testEntryCount() throws IOException {
         TTree currTree = getTestTree();
@@ -53,9 +60,9 @@ public class TTreeTest {
         List<TBranch> branches = currTree.getBranches();
         assertEquals(19, branches.size());
         for (TBranch branch: branches) {
-            System.out.println(branch.getName() + " - " + branch.getTitle());
+            //System.out.println(branch.getName() + " - " + branch.getTitle());
             for (TLeaf leaf: branch.getLeaves()) {
-                System.out.println("  " + leaf.getName() + " - " + leaf.getTitle());
+                //System.out.println("  " + leaf.getName() + " - " + leaf.getTitle());
             }
         }
         branches = currTree.getBranches("Float64");

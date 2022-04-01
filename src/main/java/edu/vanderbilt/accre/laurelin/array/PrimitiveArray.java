@@ -1,6 +1,5 @@
 package edu.vanderbilt.accre.laurelin.array;
 
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
@@ -13,11 +12,11 @@ import edu.vanderbilt.accre.laurelin.interpretation.AsDtype;
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 
 public abstract class PrimitiveArray extends Array {
-    ByteBuffer buffer;
+    LaurelinBackingArray buffer;
 
     PrimitiveArray(Interpretation interpretation, int length) {
         super(interpretation, length);
-        this.buffer = ByteBuffer.allocate(length * ((interpretation == null) ? 1 : ((AsDtype)interpretation).memory_itemsize() * ((AsDtype)interpretation).multiplicity()));
+        this.buffer = LaurelinBackingArray.allocate(length * ((interpretation == null) ? 1 : ((AsDtype)interpretation).memory_itemsize() * ((AsDtype)interpretation).multiplicity()));
     }
 
     PrimitiveArray(Interpretation interpretation, RawArray rawarray) {
@@ -25,7 +24,7 @@ public abstract class PrimitiveArray extends Array {
         this.buffer = rawarray.raw();
     }
 
-    protected PrimitiveArray(Interpretation interpretation, ByteBuffer buffer) {
+    protected PrimitiveArray(Interpretation interpretation, LaurelinBackingArray buffer) {
         super(interpretation, (buffer.limit() - buffer.position()) / ((interpretation == null) ? 1 : ((AsDtype)interpretation).memory_itemsize() * ((AsDtype)interpretation).multiplicity()));
         this.buffer = buffer;
     }
@@ -49,10 +48,10 @@ public abstract class PrimitiveArray extends Array {
          * This code takes advantage of the fact that tmp and this.buffer share
          * the same backing array after duplicate()
          */
-        ByteBuffer tmp = this.buffer.duplicate();
+        LaurelinBackingArray tmp = this.buffer.duplicate();
         tmp.position(bytestart);
         tmp.limit(bytestop);
-        ByteBuffer srctmp = source.buffer.duplicate();
+        LaurelinBackingArray srctmp = source.buffer.duplicate();
         srctmp.position(0);
         tmp.put(srctmp);
     }
@@ -62,7 +61,7 @@ public abstract class PrimitiveArray extends Array {
         int mult = this.multiplicity();
         int bytestart = start * mult * this.memory_itemsize();
         int bytestop = stop * mult * this.memory_itemsize();
-        ByteBuffer out = this.buffer.duplicate();
+        LaurelinBackingArray out = this.buffer.duplicate();
         out.position(bytestart);
         out.limit(bytestop);
         return this.make(out.slice());
@@ -72,11 +71,11 @@ public abstract class PrimitiveArray extends Array {
         return new RawArray(this.buffer);
     }
 
-    protected ByteBuffer raw() {
+    public LaurelinBackingArray raw() {
         return this.buffer;
     }
 
-    protected abstract Array make(ByteBuffer out);
+    protected abstract Array make(LaurelinBackingArray out);
 
     /////////////////////////////////////////////////////////////////////////// Bool
 
@@ -92,21 +91,21 @@ public abstract class PrimitiveArray extends Array {
             super(interpretation, rawarray);
         }
 
-        protected Bool(Interpretation interpretation, ByteBuffer buffer) {
+        protected Bool(Interpretation interpretation, LaurelinBackingArray buffer) {
             super(interpretation, buffer);
         }
 
         @Override
         public Object toArray(boolean bigEndian) {
             this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
-            ByteBuffer buf = this.buffer.duplicate();
+            LaurelinBackingArray buf = this.buffer.duplicate();
             byte[] out = new byte[buf.limit() - buf.position()];
             buf.get(out);
             return out;
         }
 
         @Override
-        protected Array make(ByteBuffer out) {
+        protected Array make(LaurelinBackingArray out) {
             return new Bool(this.interpretation, out);
         }
 
@@ -121,8 +120,11 @@ public abstract class PrimitiveArray extends Array {
 
         @Override
         public String toString() {
+            Object val = this.toArray();
+
             return Arrays.toString((boolean[])this.toArray());
         }
+
     }
 
     /////////////////////////////////////////////////////////////////////////// Int1
@@ -136,21 +138,21 @@ public abstract class PrimitiveArray extends Array {
             super(interpretation, rawarray);
         }
 
-        protected Int1(Interpretation interpretation, ByteBuffer buffer) {
+        protected Int1(Interpretation interpretation, LaurelinBackingArray buffer) {
             super(interpretation, buffer);
         }
 
         @Override
         public Object toArray(boolean bigEndian) {
             this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
-            ByteBuffer buf = this.buffer.duplicate();
+            LaurelinBackingArray buf = this.buffer.duplicate();
             byte[] out = new byte[buf.limit() - buf.position()];
             buf.get(out);
             return out;
         }
 
         @Override
-        protected Array make(ByteBuffer out) {
+        protected Array make(LaurelinBackingArray out) {
             return new Int1(this.interpretation, out);
         }
 
@@ -180,7 +182,7 @@ public abstract class PrimitiveArray extends Array {
             super(interpretation, rawarray);
         }
 
-        protected Int2(Interpretation interpretation, ByteBuffer buffer) {
+        protected Int2(Interpretation interpretation, LaurelinBackingArray buffer) {
             super(interpretation, buffer);
         }
 
@@ -194,7 +196,7 @@ public abstract class PrimitiveArray extends Array {
         }
 
         @Override
-        protected Array make(ByteBuffer out) {
+        protected Array make(LaurelinBackingArray out) {
             return new Int2(this.interpretation, out);
         }
 
@@ -224,7 +226,7 @@ public abstract class PrimitiveArray extends Array {
             super(interpretation, rawarray);
         }
 
-        protected Int4(Interpretation interpretation, ByteBuffer buffer) {
+        protected Int4(Interpretation interpretation, LaurelinBackingArray buffer) {
             super(interpretation, buffer);
         }
 
@@ -236,13 +238,13 @@ public abstract class PrimitiveArray extends Array {
             super(new AsDtype(AsDtype.Dtype.INT4), rawarray);
         }
 
-        protected Int4(ByteBuffer buffer) {
+        public Int4(LaurelinBackingArray buffer) {
             super(new AsDtype(AsDtype.Dtype.INT4), buffer);
         }
 
         public Int4(int[] data, boolean bigEndian) {
             super(new AsDtype(AsDtype.Dtype.INT4), data.length);
-            this.buffer = ByteBuffer.allocate(data.length * this.memory_itemsize());
+            this.buffer = LaurelinBackingArray.allocate(data.length * this.memory_itemsize());
             this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             this.buffer.asIntBuffer().put(data, 0, data.length);
         }
@@ -257,7 +259,7 @@ public abstract class PrimitiveArray extends Array {
         }
 
         @Override
-        protected Array make(ByteBuffer out) {
+        protected Array make(LaurelinBackingArray out) {
             return new Int4(this.interpretation, out);
         }
 
@@ -276,7 +278,7 @@ public abstract class PrimitiveArray extends Array {
         }
 
         public Int4 add(boolean bigEndian, int value) {
-            ByteBuffer out = ByteBuffer.allocate(length * 4);
+            LaurelinBackingArray out = LaurelinBackingArray.allocate(length * 4);
             out.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             IntBuffer outint = out.asIntBuffer();
@@ -308,7 +310,7 @@ public abstract class PrimitiveArray extends Array {
             super(interpretation, rawarray);
         }
 
-        protected Int8(Interpretation interpretation, ByteBuffer buffer) {
+        protected Int8(Interpretation interpretation, LaurelinBackingArray buffer) {
             super(interpretation, buffer);
         }
 
@@ -322,7 +324,7 @@ public abstract class PrimitiveArray extends Array {
         }
 
         @Override
-        protected Array make(ByteBuffer out) {
+        protected Array make(LaurelinBackingArray out) {
             return new Int8(this.interpretation, out);
         }
 
@@ -352,7 +354,7 @@ public abstract class PrimitiveArray extends Array {
             super(interpretation, rawarray);
         }
 
-        protected Float4(Interpretation interpretation, ByteBuffer buffer) {
+        protected Float4(Interpretation interpretation, LaurelinBackingArray buffer) {
             super(interpretation, buffer);
         }
 
@@ -366,7 +368,7 @@ public abstract class PrimitiveArray extends Array {
         }
 
         @Override
-        protected Array make(ByteBuffer out) {
+        protected Array make(LaurelinBackingArray out) {
             return new Float4(this.interpretation, out);
         }
 
@@ -396,7 +398,7 @@ public abstract class PrimitiveArray extends Array {
             super(interpretation, rawarray);
         }
 
-        protected Float8(Interpretation interpretation, ByteBuffer buffer) {
+        protected Float8(Interpretation interpretation, LaurelinBackingArray buffer) {
             super(interpretation, buffer);
         }
 
@@ -410,7 +412,7 @@ public abstract class PrimitiveArray extends Array {
         }
 
         @Override
-        protected Array make(ByteBuffer out) {
+        protected Array make(LaurelinBackingArray out) {
             return new Float8(this.interpretation, out);
         }
 

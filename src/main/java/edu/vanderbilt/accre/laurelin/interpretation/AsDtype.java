@@ -1,6 +1,5 @@
 package edu.vanderbilt.accre.laurelin.interpretation;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -88,7 +87,11 @@ public class AsDtype implements Interpretation {
 
     @Override
     public int memory_itemsize() {
-        switch (this.dtype) {
+        return memory_itemsize(this.dtype);
+    }
+
+    public static int memory_itemsize(Dtype dtype) {
+        switch (dtype) {
             case BOOL:
                 return 1;
             case INT1:
@@ -232,7 +235,7 @@ public class AsDtype implements Interpretation {
 
     @Override
     public RawArray convertBufferDiskToMemory(RawArray source) {
-        ByteBuffer converted;
+        RawArray converted;
         switch (this.dtype) {
             case UINT1:
                 /*
@@ -246,7 +249,7 @@ public class AsDtype implements Interpretation {
                  *
                  * ByteBuffers are always initialized to zero
                  */
-                converted = ByteBuffer.allocate(source.length() * 2);
+                converted = new RawArray(source.length() * 2);
                 for (int i = 0; i < source.length(); i += 1) {
                     converted.put((i * 2) + 1, source.getByte(i));
                 }
@@ -257,7 +260,7 @@ public class AsDtype implements Interpretation {
                  * src:   11 22 33 44
                  * dest:  00 00 11 22 00 00 33 44
                  */
-                converted = ByteBuffer.allocate(source.length() * 2);
+                converted = new RawArray(source.length() * 2);
                 for (int i = 0; i < source.length(); i += 2) {
                     converted.put((i * 2) + 2, source.getByte(i));
                     converted.put((i * 2) + 3, source.getByte(i + 1));
@@ -269,7 +272,7 @@ public class AsDtype implements Interpretation {
                  * src:   11 22 33 44
                  * dest:  00 00 00 00 11 22 33 44
                  */
-                converted = ByteBuffer.allocate(source.length() * 2);
+                converted = new RawArray(source.length() * 2);
                 for (int i = 0; i < source.length(); i += 4) {
                     converted.put((i * 2) + 4, source.getByte(i));
                     converted.put((i * 2) + 5, source.getByte(i + 1));
@@ -283,7 +286,7 @@ public class AsDtype implements Interpretation {
                  * of 8-byte unsigned integers, so we need to cast it to a
                  * long
                  */
-                converted = ByteBuffer.allocate(source.length());
+                converted = new RawArray(source.length());
                 for (int i = 0; i < source.length(); i += 1) {
                     converted.put(source.getByte(i));
                 }

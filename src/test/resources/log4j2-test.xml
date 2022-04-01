@@ -7,7 +7,14 @@
 		</Console>
 	</Appenders>
 	<Loggers>
-		<Root level="trace" additivity="false">
+		<Logger name="edu.vanderbilt.accre.laurelin.root_proxy.TTree" level="debug" additivity="false">
+			<AppenderRef ref="console" />
+		</Logger>
+		<!--  to add trace level for some lines
+		<Logger name="edu.vanderbilt.accre.laurelin.root_proxy.TBranch" level="debug" additivity="false">
+			<AppenderRef ref="console" />
+		</Logger>  -->
+		<Root level="debug" additivity="false">
 			<AppenderRef ref="console" />
 		</Root>
 	</Loggers>

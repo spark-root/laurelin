@@ -93,7 +93,7 @@ public class ParseSchemaTest {
         Reader reader = source.createTestReader(opts, null, true);
         DataType schema = reader.readSchema();
         StructType schemaCast = (StructType) schema;
-        System.out.println(schema.prettyJson());
+        //System.out.println(schema.prettyJson());
         assertEquals(1, schemaCast.size());
     }
 

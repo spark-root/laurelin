@@ -70,7 +70,7 @@ public class AsJagged implements Interpretation {
             countsbuf.putInt(count);
         }
         countsbuf.position(0);
-        PrimitiveArray.Int4 counts = new PrimitiveArray.Int4(new RawArray(countsbuf));
+        PrimitiveArray.Int4 counts = new PrimitiveArray.Int4(Array.wrap(countsbuf));
 
         Array content;
         // Array content = this.content.fromroot(compact, null, start, stop);

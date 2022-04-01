@@ -10,20 +10,28 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.Future;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.ChecksumFileSystem;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class HadoopFile implements FileInterface {
+    private static final Logger logger = LogManager.getLogger();
     FSDataInputStream fd;
     long limit;
 
     public HadoopFile(String pathStr) throws IOException {
         Configuration conf = new Configuration();
-	URI uri = URI.create(pathStr);
+        URI uri = URI.create(pathStr);
         FileSystem fileSystem = FileSystem.get(uri, conf);
+        if (fileSystem.getClass().isAssignableFrom(ChecksumFileSystem.class)) {
+            ((ChecksumFileSystem)fileSystem).setVerifyChecksum(false);
+        }
         Path path = new Path(uri);
         fd = fileSystem.open(path, 'r');
+        logger.debug("Opening HadoopFile. Path: " + pathStr);
         limit = fileSystem.getFileStatus(path).getLen();
     }
 

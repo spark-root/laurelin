@@ -79,6 +79,10 @@ public class PartitionReader {
     private int pid;
     private static ROOTFileCache fileCache = ROOTFileCache.getCache();
 
+    private ColumnVector[] currVecs;
+
+    private ColumnVector[] tmp2s;
+
     public PartitionReader(StructType schema, long entryStart, long entryEnd, Map<String, SlimTBranch> slimBranches, LaurelinDSConfig options, CollectionAccumulator<Storage> profileData, int pid) {
         this.basketCache = BasketCache.getCache();
         this.schema = schema;
@@ -109,6 +113,14 @@ public class PartitionReader {
 
     public void close() throws IOException {
         logger.trace("close");
+        if (currVecs != null) {
+            for (ColumnVector vec: tmp2s) {
+                vec.close();
+            }
+            for (ColumnVector vec: currVecs) {
+                vec.close();
+            }
+        }
         // This will eventually go away due to GC, should I add
         // explicit closing too?
     }
@@ -129,16 +141,29 @@ public class PartitionReader {
         logger.trace("columnarbatch");
         LinkedList<ColumnVector> vecs = new LinkedList<ColumnVector>();
         vecs = getBatchRecursive(schema.fields());
-        // This is miserable
-        ColumnVector[] tmp = new ColumnVector[vecs.size()];
+        currVecs = new ColumnVector[vecs.size()];
         int idx = 0;
         for (ColumnVector vec: vecs) {
-            tmp[idx] = vec;
+            currVecs[idx] = vec;
+            idx += 1;
+        }
+        for (ColumnVector vec: vecs) {
+            // Finalize the vectors before we pass it to Spark
+            ((TTreeColumnVector) vec).ensureLoaded();
+        }
+        tmp2s = new ColumnVector[vecs.size()];
+        idx = 0;
+        for (ColumnVector vec: currVecs) {
+            tmp2s[idx] = ((TTreeColumnVector) vec).toArrowVector();
             idx += 1;
         }
         // End misery
-        ColumnarBatch ret = new ColumnarBatch(tmp);
+        ColumnarBatch ret = new ColumnarBatch(tmp2s);
         ret.setNumRows((int) (entryEnd - entryStart));
+        for (ColumnVector vec: vecs) {
+            // Finalize the vectors before we pass it to Spark
+            ((TTreeColumnVector) vec).ensureLoaded();
+        }
         return ret;
     }
 

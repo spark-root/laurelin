@@ -31,10 +31,12 @@ import com.google.common.collect.Interners;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Range;
 
+import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
+import edu.vanderbilt.accre.laurelin.root_proxy.TBranch.CompressedBasketInfo;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
 
@@ -42,6 +44,8 @@ import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
  * Contains all the info needed to read a TBranch and its constituent TBaskets
  * without needing to deserialize the ROOT metadata -- i.e. this contains paths
  * and byte offsets to each basket
+ *
+ * ObjectInputValidation
  */
 public class SlimTBranch implements Serializable, KryoSerializable, SlimTBranchInterface, ObjectInputValidation {
     private static final Logger logger = LogManager.getLogger();
@@ -91,11 +95,6 @@ public class SlimTBranch implements Serializable, KryoSerializable, SlimTBranchI
         }
     }
 
-    public SlimTBranch(String path, long []basketEntryOffsets, TBranch.ArrayDescriptor desc) {
-        this(path, basketEntryOffsets, desc, 0);
-        checkInvariants();
-    }
-
     private static Range<Long>[] entryOffsetToRangeArray(long[] basketEntryOffsets) {
         @SuppressWarnings("unchecked")
         Range<Long>[] ret = new Range[basketEntryOffsets.length - 1];
@@ -105,6 +104,13 @@ public class SlimTBranch implements Serializable, KryoSerializable, SlimTBranchI
         }
         return ret;
     }
+
+    public SlimTBranch(String path, long []basketEntryOffsets, TBranch.ArrayDescriptor desc) {
+        this(path, basketEntryOffsets, desc, 0);
+        checkInvariants();
+    }
+
+
 
     private SlimTBranch(String path, long []basketEntryOffsets, TBranch.ArrayDescriptor desc, int basketStart) {
         this(path, entryOffsetToRangeArray(basketEntryOffsets), desc, basketStart);
@@ -117,6 +123,12 @@ public class SlimTBranch implements Serializable, KryoSerializable, SlimTBranchI
     }
 
     public SlimTBranch(String path, Range<Long>[] basketRangeList, TBranch.ArrayDescriptor desc, int basketStart) {
+    	this(path, basketRangeList, desc, 0, null);
+    	checkInvariants();
+    }
+
+    public SlimTBranch(String path, Range<Long>[] basketRangeList, TBranch.ArrayDescriptor desc, int basketStart,
+			CompressedBasketInfo[] compressedBasketInfo) {
         this.path = path;
         this.arrayDesc = desc;
         this.baskets = new HashMap<Integer, SlimTBasket>();
@@ -132,12 +144,13 @@ public class SlimTBranch implements Serializable, KryoSerializable, SlimTBranchI
         checkNotNull(tmp);
         rangeToBasketIDMap = rangeMapInterner.intern(tmp);
         checkInvariants();
-    }
+	}
 
-    public static SlimTBranch getFromTBranch(TBranch fatBranch) {
+	public static SlimTBranch getFromTBranch(TBranch fatBranch) {
         SlimTBranch slimBranch = new SlimTBranch(fatBranch.getTree().getBackingFile().getFileName(), fatBranch.getBasketEntryOffsets(), fatBranch.getArrayDescriptor());
         for (int i = 0; i < fatBranch.getBasketCount(); i += 1) {
-            SlimTBasket slimBasket = SlimTBasket.makeLazyBasket(fatBranch.getBasketSeek()[i]);
+            CompressedBasketInfo compressedBasketInfo = fatBranch.getCompressedBasketInfo()[i];
+            SlimTBasket slimBasket = SlimTBasket.makeLazyBasket(fatBranch.getBasketSeek()[i], compressedBasketInfo);
             slimBranch.addBasket(i, slimBasket);
         }
         return slimBranch;
@@ -187,7 +200,7 @@ public class SlimTBranch implements Serializable, KryoSerializable, SlimTBranchI
         if (ret == null) {
             throw new IndexOutOfBoundsException("Tried to get nonexistent basket: " + basketid);
         }
-        return baskets.get(basketid);
+        return ret;
     }
 
     public int getStoredBasketCount() {
@@ -245,7 +258,11 @@ public class SlimTBranch implements Serializable, KryoSerializable, SlimTBranchI
             try {
                 ROOTFile tmpFile = getBackingFile();
                 basket.initializeMetadata(tmpFile);
-                return new ArrayBuilder.BasketKey(basket.getKeyLen(), basket.getLast(), basket.getObjLen());
+                if (basket.getCompressedBasketInfo() == null) {
+                    return new ArrayBuilder.BasketKey(basket.getKeyLen(), basket.getLast(), basket.getObjLen(), null);
+                } else {
+                    return new ArrayBuilder.BasketKey(basket.getKeyLen(), basket.getLast(), basket.getObjLen(), basket.getCompressedBasketInfo());
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -259,11 +276,16 @@ public class SlimTBranch implements Serializable, KryoSerializable, SlimTBranchI
                 // the offset of each basket is guaranteed to be unique and
                 // stable
                 RawArray data = null;
-                data = basketCache.get(tmpFile, basket.getOffset());
-                if (data == null) {
-                    data = new RawArray(basket.getPayload(tmpFile));
-                    basketCache.put(tmpFile, basket.getOffset(), data);
+                long parentOffset = -1;
+                CompressedBasketInfo compressedInfo = basket.getCompressedBasketInfo();
+                if (compressedInfo != null) {
+                	parentOffset = compressedInfo.getCompressedParentOffset();
                 }
+                //data = basketCache.get(tmpFile, basket.getOffset(), parentOffset);
+                //if (data == null) {
+                    data = new RawArray(Array.wrap(basket.getPayload(tmpFile)));
+                //    basketCache.put(tmpFile, basket.getOffset(), parentOffset, data);
+                //}
                 return data;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -317,6 +339,10 @@ public class SlimTBranch implements Serializable, KryoSerializable, SlimTBranchI
         private Range<Long>[] rangeToBasketID;
         private TBranch.ArrayDescriptor arrayDesc;
         private String path;
+        /**
+         * Additional info for compressed TBranches
+         */
+		private CompressedBasketInfo[] compressedBasketInfo;
 
         public Range<Long>[] getRangeToBasketID() {
             return rangeToBasketID;
@@ -399,11 +425,30 @@ public class SlimTBranch implements Serializable, KryoSerializable, SlimTBranchI
             /*
              * Store the byte offset of each basket
              */
+            int compressedCount = 0;
             basketByteOffsets = new long[in.basketEnd - in.basketStart];
             for (int i = in.basketStart; i < in.basketEnd; i += 1) {
                 int idx = i - basketStart;
-                basketByteOffsets[idx] = in.getBasket(i).getOffset();
+                SlimTBasket basket = in.getBasket(i);
+                basketByteOffsets[idx] = basket.getOffset();
+                CompressedBasketInfo loc = basket.getCompressedBasketInfo();
+                if (loc != null && compressedBasketInfo == null) {
+                	if (compressedBasketInfo == null) {
+                		compressedBasketInfo = new CompressedBasketInfo[in.basketEnd - in.basketStart];
+                	}
+                	compressedBasketInfo[idx] = loc;
+                }
             }
+//            if (compressedCount != 0) {
+//                for (int i = in.basketStart; i < in.basketEnd; i += 1) {
+//                    int idx = i - basketStart;
+//                    SlimTBasket basket = in.getBasket(i);
+//                    basketByteOffsets[idx] = basket.getOffset();
+//                    if (basket.getCompressedBasketInfo() != null) {
+//                    	compressedCount += 1;
+//                    }
+//                }
+//            }
 
             /*
              * Store the entry range of each basketID
@@ -431,11 +476,18 @@ public class SlimTBranch implements Serializable, KryoSerializable, SlimTBranchI
          */
         private Object readResolve() throws ObjectStreamException {
             checkNotNull(rangeToBasketID);
-            SlimTBranch ret = new SlimTBranch(path, rangeToBasketID, arrayDesc, basketStart);
+            SlimTBranch ret = new SlimTBranch(path, rangeToBasketID, arrayDesc, basketStart, compressedBasketInfo);
             int idx = basketStart;
             for (long off: basketByteOffsets) {
                 ret.addBasket(idx, new SlimTBasket(off));
                 idx += 1;
+            }
+            if (compressedBasketInfo != null) {
+            	idx = basketStart;
+            	for (CompressedBasketInfo i: compressedBasketInfo) {
+            		ret.getBasket(idx).setCompressedBasketInfo(i);
+            		idx += 1;
+            	}
             }
             return ret;
         }

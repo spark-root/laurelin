@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import edu.vanderbilt.accre.laurelin.root_proxy.TKey;
 import edu.vanderbilt.accre.laurelin.root_proxy.TList;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.Constants;
@@ -14,6 +17,7 @@ public class Streamer {
     /*
      * Doesn't exist in ROOT, encapsulates Streamer functionality from all the different subclasses
      */
+    private static final Logger logger = LogManager.getLogger();
     ArrayList<Proxy> streamerList;
     HashMap<String, Proxy> streamerMap;
     HashMap<Long, Proxy> classMap;
@@ -109,8 +113,12 @@ public class Streamer {
                 case "TStreamerObjectAny":
                     if (fClassName.equals("TBranch") && ((String) ele.getScalar("fName").getVal()).equals("fBaskets")) {
                         // The baskets inside a TBranch aren't useful
-                        RangeCheck check2 = new RangeCheck(c);
-                        c.setOffset(check2.getStart() + check2.getCount());
+                        logger.trace("found embedded basket at " + c.getOffset());
+                        Proxy embeddedBaskets = deserializeTObjArrayOfBaskets(c);
+                        ret.putProxy("fBaskets", embeddedBaskets);
+//                        RangeCheck check2 = new RangeCheck(c);
+//                        c.setOffset(check2.getStart() + check2.getCount());
+                        logger.trace("      embedded backet ends at " + c.getOffset());
                         continue;
                     }
                     subObj = new Proxy();
@@ -212,6 +220,154 @@ public class Streamer {
 
         check.verify(c);
         ret = arrret;
+        return arrret;
+    }
+
+    /**
+     * Deserializes TObjArray of TBaskets.
+     *
+     * While a TTree is being written, but before it's closed, ROOT
+     * attaches the "in-use" baskets directly to the TBranch in the "fBaskets"
+     * element (known as an "embedded" basket in Uproot parlance). This is
+     * different than the regular method, where the TBranch has an array
+     * of long offsets pointing to the TBaskets that are stored elsewhere in
+     * the file (known as a "loose" basket in Uproot parlance). If the user
+     * who made the TTree didn't properly Close() the file, then the last step
+     * (converting embedded to loose baskets) doesn't happen, and the loose
+     * metadata is incomplete. In these cases, we need to go in and deserialize
+     * the embedded baskets too
+     *
+     * @param c Cursor to the beginning of the TObjArray
+     * @return Proxy of the TObjArray
+     * @throws IOException On error with I/O source
+     */
+    private Proxy deserializeTObjArrayOfBaskets(Cursor c) throws IOException {
+        ProxyArray arrret = new ProxyArray();
+        RangeCheck check = new RangeCheck(c);
+        parseTObject(c, arrret);
+        String fName = c.readTString();
+        arrret.putScalar("fName", fName);
+        int size = c.readInt();
+        int low = c.readInt();
+        //System.out.println("tobjarray " + fName + " size " + size + " low " + low);
+        logger.trace("Got embedded baskets of size " + size);
+        for (int i = 0; i < size; i += 1) {
+            logger.trace("basket pre-start " + c.getOffset());
+            long vers;
+            long start;
+            long tag;
+            long beg = c.getOffset() - c.getOrigin();
+            long bcnt = c.readUInt();
+
+            if (((bcnt & Constants.kByteCountMask) == 0) || (bcnt == Constants.kNewClassTag)) {
+                vers = 0;
+                start = 0;
+                tag = bcnt;
+                bcnt = 0;
+            } else {
+                vers = 1;
+                start = c.getOffset() - c.getOrigin();
+                tag = c.readUInt();
+            }
+            if (tag == 0) {
+                continue;
+            }
+            if (tag == Constants.kNewClassTag ) {
+                String className = c.readCString();
+            }
+            Proxy ele = new Proxy();
+            // i int, I unsigned int
+            // h short, H unsigned short
+            logger.trace("basket start " + c.getOffset());
+            long startOffset = c.getOffset();
+            ele.putScalar("laurelinBasketKeyOffset", startOffset);
+            Cursor parentCursor = c.getParent();
+            Long[] compressedParentDescriptor = null;
+            if (parentCursor != null) {
+                long headerLen = c.getBufferCompressedHeaderLength();
+                long compressedLen = c.getBufferCompressedLen();
+                long uncompressedLen = c.getBufferUncompressedLen();
+                long compressedParentOffset = c.getBufferCompressedOffset();
+                compressedParentDescriptor = new Long[] {headerLen, compressedLen, uncompressedLen, compressedParentOffset};
+            }
+            ele.putScalar("laurelinBasketCompressedInfo", compressedParentDescriptor);
+            if (parentCursor.getParent() != null) {
+                throw new RuntimeException("Unable to handle multiple layers of compression");
+            }
+            logger.trace("tbasketarray prekey " + c.getOffset() + " loc " + (c.getOffset() + c.getBaseWithoutParent()));
+            TKey key = new TKey();
+            key.getFromFile(c);
+            logger.trace("tbasketarray postkey idx " + c.getOffset() + " base " + c.getOrigin());
+            int fKeylen = key.getKeyLen();
+            ele.putScalar("fKeylen", fKeylen);
+            logger.trace("rewound: " + c.getOffset());
+            ele.putScalar("fVersion", c.readUShort());
+            int bufferSize = c.readInt();
+            ele.putScalar("fBufferSize", bufferSize);
+            int fNevBufSize = c.readInt();
+            ele.putScalar("fNevBufSize", fNevBufSize);
+            int fNevBuf = c.readInt();
+            ele.putScalar("fNevBuf", fNevBuf);
+            int fLast = c.readInt();
+            ele.putScalar("fLast", fLast);
+
+            logger.trace("tbasketarray posthead idx " + c.getOffset() + " base " + c.getOrigin());
+            c.skipBytes(1);
+            long basketOffset = c.getOffset();
+            ele.putScalar("laurelinBasketOffset", basketOffset);
+            // nBytes and Objlen isn't set here for some reason in the basket key, so we have
+            // to do some math to manually calculate it
+
+            int objLen = (int) ele.getScalar("fLast").getVal() - key.getKeyLen();
+//                if self._members["fNevBufSize"] > 8:
+//                    raw_byte_offsets = cursor.bytes(
+//                        chunk, 8 + self.num_entries * 4, context
+//                    ).view(_tbasket_offsets_dtype)
+//                    cursor.skip(-4)
+//
+//                    # subtracting fKeylen makes a new buffer and converts to native endian
+//                    self._byte_offsets = raw_byte_offsets[1:] - self._members["fKeylen"]
+//                    # so modifying it in place doesn't have non-local consequences
+//                    self._byte_offsets[-1] = self.border
+//
+//                else:
+//                    self._byte_offsets = None
+//
+//                # second key has no new information
+//                cursor.skip(self._members["fKeylen"])
+//
+//                self._raw_data = None
+//                self._data = cursor.bytes(chunk, self.border, context)
+            logger.trace("basket end " + c.getOffset());
+            logger.trace("border last " + ele.getScalar("fLast").getVal() + " keylen " + key.getKeyLen());
+            c.skipBytes((int) ele.getScalar("fLast").getVal());
+            logger.trace("basket final " + c.getOffset());
+            long finalOffset = c.getOffset();
+            ele.putScalar("laurelinBasketFinal", c.getOffset());
+            logger.trace("basket bytes " + objLen);
+            ele.putScalar("laurelinBasketBytes", objLen);
+            Long[] addlLongInfo = null;
+            Integer[] addlIntInfo = null;
+            if (parentCursor != null) {
+            	addlLongInfo = new Long[] {
+            			startOffset,
+            			basketOffset,
+            			finalOffset
+            	};
+            	addlIntInfo = new Integer[] {
+            			fKeylen,
+            			bufferSize,
+            			fNevBufSize,
+            			fNevBuf,
+            			fLast
+            	};
+            }
+            ele.putScalar("laurelinAdditionalLongInfo", addlLongInfo);
+            ele.putScalar("laurelinAdditionalIntInfo", addlIntInfo);
+            arrret.add(ele);
+        }
+
+        check.verify(c);
         return arrret;
     }
 

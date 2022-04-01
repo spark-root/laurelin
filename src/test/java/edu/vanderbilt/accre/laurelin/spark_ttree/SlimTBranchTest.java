@@ -79,7 +79,7 @@ public class SlimTBranchTest {
          */
         assertTrue("Partition size too large", yourBytes.length < 349000);
 
-        System.out.println("Got length: " + yourBytes.length);
+        //System.out.println("Got length: " + yourBytes.length);
         bis = new ByteArrayInputStream(yourBytes);
         ObjectInput in = new ObjectInputStream(bis);
         return (SlimTBranch) in.readObject();

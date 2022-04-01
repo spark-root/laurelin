@@ -2,6 +2,7 @@ package edu.vanderbilt.accre.laurelin.spark_ttree;
 
 import static edu.vanderbilt.accre.laurelin.Helpers.getBigTestDataIfExists;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -14,12 +15,15 @@ import java.util.Arrays;
 import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.IntegerType;
+import org.apache.spark.sql.vectorized.ArrowColumnVector;
+import org.apache.spark.sql.vectorized.ColumnarArray;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.ImmutableRangeMap.Builder;
 import com.google.common.collect.Range;
 
+import edu.vanderbilt.accre.laurelin.array.Array;
 import edu.vanderbilt.accre.laurelin.array.ArrayBuilder;
 import edu.vanderbilt.accre.laurelin.array.RawArray;
 import edu.vanderbilt.accre.laurelin.cache.BasketCache;
@@ -95,12 +99,12 @@ public class TTreeColumnVectorTest {
             @Override
             public ArrayBuilder.BasketKey basketkey(int basketid) {
                 SlimTBasket basket = branch.getBasket(basketid);
-                return new ArrayBuilder.BasketKey(basket.getKeyLen(), basket.getLast(), basket.getObjLen());
+                return new ArrayBuilder.BasketKey(basket.getKeyLen(), basket.getLast(), basket.getObjLen(), null);
             }
 
             @Override
             public RawArray dataWithoutKey(int basketid) {
-                return new RawArray(payload.get(basketid));
+                return new RawArray(Array.wrap(payload.get(basketid)));
             }
         }
 
@@ -128,6 +132,142 @@ public class TTreeColumnVectorTest {
             }
             return basketBuilder.build();
         }
+    }
+
+    @Test
+    public void shortFlip() {
+        assertEquals("Flip a batch 1", Long.toHexString(TTreeColumnVector.testBatchFlipShortEndianness(0x0011223344556677L)),
+                                       Long.toHexString(0x1100332255447766L));
+        assertEquals("Flip a batch 2", TTreeColumnVector.testBatchFlipShortEndianness(0x0000000044556677L), 0x0000000055447766L);
+        assertEquals("Flip a single 1", TTreeColumnVector.testSingleFlipShortEndianness((short)0x0123), 0x2301);
+    }
+
+    @Test
+    public void intFlip() {
+        assertEquals("Flip a batch 1", TTreeColumnVector.testBatchFlipIntEndianness(0x0011223344556677L), 0x3322110077665544L);
+        assertEquals("Flip a batch 2", TTreeColumnVector.testBatchFlipIntEndianness(0x0000000044556677L), 0x0000000077665544L);
+        assertEquals("Flip a single 1", TTreeColumnVector.testSingleFlipIntEndianness(0x01234567), 0x67452301);
+        assertEquals("Flip a single 2", TTreeColumnVector.testSingleFlipIntEndianness(0x01230000), 0x00002301);
+        assertEquals("Flip a single 3", TTreeColumnVector.testSingleFlipIntEndianness(0x00000001), 0x01000000);
+    }
+
+    @Test
+    public void longFlip() {
+        assertEquals("Flip a batch 1", TTreeColumnVector.testFlipLongEndianness(0x0011223344556677L), 0x7766554433221100L);
+        assertEquals("Flip a batch 2", TTreeColumnVector.testFlipLongEndianness(0x0000000044556677L), 0x7766554400000000L);
+    }
+
+    @Test public void byteVecToBitVec() {
+        // These need to be casted to bytes, because otherwise Java tries to promote them to an int, which
+        // causes the leftmost bit to be interpreted as a sign bit
+        assertEquals("Bitflip 1", TTreeColumnVector.testBatchByteVecToBitVec(0x0100000000000000L), (byte) 0b10000000);
+        assertEquals("Bitflip 2", TTreeColumnVector.testBatchByteVecToBitVec(0x0001000000000000L), (byte) 0b01000000);
+        assertEquals("Bitflip 3", TTreeColumnVector.testBatchByteVecToBitVec(0x0000010000000000L), (byte) 0b00100000);
+        assertEquals("Bitflip 4", TTreeColumnVector.testBatchByteVecToBitVec(0x0000000100000000L), (byte) 0b00010000);
+        assertEquals("Bitflip 5", TTreeColumnVector.testBatchByteVecToBitVec(0x0000000001000000L), (byte) 0b00001000);
+        assertEquals("Bitflip 6", TTreeColumnVector.testBatchByteVecToBitVec(0x0000000000010000L), (byte) 0b00000100);
+        assertEquals("Bitflip 7", TTreeColumnVector.testBatchByteVecToBitVec(0x0000000000000100L), (byte) 0b00000010);
+        assertEquals("Bitflip 8", TTreeColumnVector.testBatchByteVecToBitVec(0x0000000000000001L), (byte) 0b00000001);
+        assertEquals("Bitflip 9", TTreeColumnVector.testBatchByteVecToBitVec(0x0101010101010101L), (byte) 0b11111111);
+        assertEquals("Bitflip 10", TTreeColumnVector.testBatchByteVecToBitVec(0x0000000000000000L), (byte) 0b00000000);
+//        assertEquals("Chunked zeros", TTreeColumnVector.testChunkByteVecToBitVec(0,0,0,0,0,0,0,0), 0L);
+//        assertEquals("Chunked zeros", TTreeColumnVector.testChunkByteVecToBitVec(1L,0,0,0,0,0,0,0), 1L);
+//        assertEquals("Chunked zeros", TTreeColumnVector.testChunkByteVecToBitVec(0L,0,0,0,0,0,0,1L), 0L);
+//        assertEquals("Chunked flip",
+//                TTreeColumnVector.testChunkByteVecToBitVec(
+//                0x0100000000000000L,
+//                0x0001000000000000L,
+//                0x0000010000000000L,
+//                0x0000000100000000L,
+//                0x0000000001000000L,
+//                0x0000000000010000L,
+//                0x0000000000000100L,
+//                0x0000000000000001L), 0L);
+    }
+
+    // Raw boolean test data
+    byte[] booleanPayload = new byte[] {
+            0, 0, 1, 1, 0, 0, 0, 1, // byte 0 - 49 - 0x31
+            0, 1, 1, 0, 0, 0, 1, 1, // byte 1 - 99 - 0x63
+            0, 0, 0, 1, 1, 1, 0, 0, // byte 2
+            0, 0, 0, 1, 1, 1, 0, 1, // byte 3
+            0, 0, 0, 1, 0, 1, 1, 1, // byte 4
+            1, 1, 0, 0, 0, 1, 1, 0, // byte 5
+            0, 1, 1, 1, 1, 0, 0, 1, // byte 6
+            0, 0, 1, 1, 1, 1, 1, 0, // byte 7
+            1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1,
+            0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1,
+            1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1,
+            0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1,
+            1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1,
+            0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1,
+            0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+            1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0,
+            0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1,
+            0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0,
+            0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0,
+            1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0,
+            1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0,
+            0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1,
+            1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1,
+            0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1,
+            1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0,
+            0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0,
+            1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0,
+            0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1,
+            1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0,
+            1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0,
+            1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0,
+            0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1,
+            1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0,
+            0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0,
+            1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0 };
+/*
+ * true i 0 in false out false
+true i 1 in false out false
+true i 2 in true out true
+true i 3 in true out true
+true i 4 in false out false
+true i 5 in false out false
+true i 6 in false out false
+true i 7 in true out true
+true i 8 in false out false
+true i 9 in true out true
+true i 10 in true out true
+true i 11 in false out false
+true i 12 in false out false
+true i 13 in false out false
+true i 14 in true out true
+false i 15 in true out false
+ */
+    @Test
+    public void arrowBitVec() {
+       // {{ int entrystart = 0; int entrystop = 64;
+        for (int entrystart = 0; entrystart <= 1028; entrystart += 65) {
+            for (int entrystop = entrystart + 9; entrystop <= Math.min(1028, entrystart + (64 + 16 + 7)); entrystop += 1) {
+                //System.out.println("Reading from " + entrystart + " to " + entrystop);
+                TTreeColumnVector tmp = getDummyScalarBooleanVec(entrystart,entrystop);
+                ArrowColumnVector result = tmp.toArrowVector();
+                for (int i = 0; i < entrystop - entrystart; i += 1) {
+                    //System.out.println("Begin start/stop/i " + entrystart + "/" + entrystop + "/" + i);
+                    boolean event = result.getBoolean(i);
+                    boolean truth = booleanPayload[i + entrystart] == 1;
+                    String vals = "no match start/stop/i " + entrystart + "/" + entrystop + "/" + i + " truth: " + truth + " event: " + event;
+                    //System.out.println(String.format("%s i %s in %s out %s", truth == event, i + entrystart, truth, event));
+                    assertEquals(vals, truth, event);
+                }
+                result.close();
+                tmp.close();
+            }
+        }
+    }
+
+    private TTreeColumnVector getDummyScalarBooleanVec(long entryStart, long entryStop) {
+        // Just a mess of 1029 booleans.
+        byte [][]payload = {booleanPayload};
+        SlimTBranchInterface branch = new SlimTBranchStub(payload, null, null, new long[] {0, 1029}, null, 0);
+        return new TTreeColumnVector(DataTypes.BooleanType, SimpleType.Bool, Dtype.BOOL, basketCache, entryStart, entryStop, branch, null);
     }
 
     private TTreeColumnVector getDummyScalarVec() {
@@ -178,12 +318,47 @@ public class TTreeColumnVectorTest {
     }
 
     @Test
-    public void getJaggedArrayVec() {
+    public void getJaggedArrowArrayVec() {
         // Exhaustively test the entry start/stop
-        for (int entrystart = 2; entrystart <= 27; entrystart += 1) {
-            for (int entrystop = 10; entrystop <= 27; entrystop += 1) {
+        for (int entrystart = 0; entrystart <= 27; entrystart += 1) {
+            for (int entrystop = entrystart + 1; entrystop <= 27; entrystop += 1) {
                 //System.out.println("Reading from " + entrystart + " to " + entrystop);
                 for (int i = 0; i < entrystop - entrystart; i += 1) {
+                    //System.out.println("Begin start/stop/i " + entrystart + "/" + entrystop + "/" + i);
+                    TTreeColumnVector tmp = getDummyJaggedArrayVec(entrystart,entrystop);
+                    ArrowColumnVector result = tmp.toArrowVector();
+                    Object[] event = result.getArray(i).array();
+                    Integer[] truth = getDummyJaggedArrayTruth(i + entrystart);
+                    String vals = "no match start/stop/i/len " + entrystart + "/" + entrystop + "/" + i + "/" + truth.length + " truth: " + Arrays.toString(truth) + " event: " + Arrays.toString(event);
+                    assertArrayEquals(vals, truth, event);
+                    result.close();
+                    tmp.close();
+                }
+            }
+        }
+    }
+    @Test
+    public void convertToArrowVector() {
+        TTreeColumnVector tmp = getDummyJaggedArrayVec(10,21);
+        ArrowColumnVector arrow = tmp.toArrowVector();
+        System.out.println(Arrays.toString(arrow.getArray(0).array()));
+        ColumnarArray myArray = arrow.getArray(0);
+        System.out.println(myArray);
+        System.out.println(myArray.array());
+        System.out.println(Arrays.toString(arrow.getArray(1).array()));
+        System.out.println(Arrays.toString(arrow.getArray(2).array()));
+        arrow.close();
+        tmp.close();
+    }
+
+    @Test
+    public void getJaggedArrayVec() {
+        // Exhaustively test the entry start/stop
+        for (int entrystart = 0; entrystart <= 27; entrystart += 1) {
+            for (int entrystop = entrystart + 1; entrystop <= 27; entrystop += 1) {
+                //System.out.println("Reading from " + entrystart + " to " + entrystop);
+                for (int i = 0; i < entrystop - entrystart; i += 1) {
+
                     TTreeColumnVector result = getDummyJaggedArrayVec(entrystart,entrystop);
                     Object[] event = result.getArray(i).array();
                     Integer[] truth = getDummyJaggedArrayTruth(i + entrystart);

@@ -1,7 +1,5 @@
 package edu.vanderbilt.accre.laurelin.array;
 
-import java.nio.ByteBuffer;
-
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 
 public class JaggedArray extends Array {
@@ -24,8 +22,14 @@ public class JaggedArray extends Array {
         return this.content;
     }
 
+    public PrimitiveArray.Int4 offsets() {
+        if (this.offsets == null) {
+            allocateOffsets();
+        }
+        return offsets;
+    }
     private void allocateOffsets() {
-        ByteBuffer offsetsbuf = ByteBuffer.allocate((this.counts.length() + 1) * 4);
+        LaurelinBackingArray offsetsbuf = LaurelinBackingArray.allocate((this.counts.length() + 1) * 4);
         int last = 0;
         int startpos = this.counts.get(0);
         offsetsbuf.putInt(last);

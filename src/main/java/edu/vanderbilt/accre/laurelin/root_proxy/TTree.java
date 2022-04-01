@@ -1,6 +1,7 @@
 package edu.vanderbilt.accre.laurelin.root_proxy;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,6 +36,12 @@ public class TTree {
         leaves = new ArrayList<TLeaf>();
         ProxyArray fBranches = (ProxyArray) data.getProxy("fBranches");
         for (Proxy val: fBranches) {
+            //
+            // FIXME DROP
+            //
+//            if (!"eta".equals(val.getScalar("fName").getVal())) {
+//                continue;
+//            }
             // Drop branches with neither subbranches nor leaves
             TBranch branch = new TBranch(val, this, null);
             if (branch.getBranches().size() != 0 || branch.getLeaves().size() != 0) {
@@ -65,6 +72,7 @@ public class TTree {
             ArrayList<TBranch> branchList = getNestedBranches();
             for (TBranch branch: branchList) {
                 String branchName = branch.getFullName();
+                logger.trace("Getting branch name " + branchName);
                 for (int i = 0; i < names.length; i += 1) {
                     String name = names[i];
                     if (branchName.equals(name)) {
@@ -82,6 +90,22 @@ public class TTree {
             }
             return ret;
         }
+    }
+
+    public TBranch getBranch(String name) {
+        TBranch ret = null;
+        List<TBranch> tmp = getNestedBranches();
+        for (TBranch b: getNestedBranches()) {
+            // System.out.println(b.getName());
+            if (b.getName().equals(name)) {
+                if (ret == null) {
+                    ret = b;
+                } else {
+                    throw new RuntimeException("Duplicate branch found: " + name);
+                }
+            }
+        }
+        return ret;
     }
 
     private ArrayList<TBranch> getNestedBranches() {

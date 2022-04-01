@@ -16,6 +16,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
 
 import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
+import edu.vanderbilt.accre.laurelin.root_proxy.TBranch.CompressedBasketInfo;
 
 public class ArrayBuilder {
     private static final Logger logger = LogManager.getLogger();
@@ -28,11 +29,13 @@ public class ArrayBuilder {
         int fKeylen;
         int fLast;
         int fObjlen;
+        CompressedBasketInfo compresedInfo;
 
-        public BasketKey(int fKeylen, int fLast, int fObjlen) {
+        public BasketKey(int fKeylen, int fLast, int fObjlen, CompressedBasketInfo compressedInfo) {
             this.fKeylen = fKeylen;
             this.fLast = fLast;
             this.fObjlen = fObjlen;
+            this.compresedInfo = compressedInfo;
         }
     }
 
@@ -77,7 +80,13 @@ public class ArrayBuilder {
         int entryStop = Math.toIntExact(entryRange.upperEndpoint());
         int entries = entryStop - entryStart;
         BasketKey basketKey = basketCallback.basketkey(basketId);;
-        int bytes = basketKey.fLast - basketKey.fKeylen;
+        int bytes;
+        if (basketKey.fLast != 0) {
+            bytes = basketKey.fLast - basketKey.fKeylen;
+        } else {
+            bytes = basketKey.compresedInfo.getBasketLen();
+            //assert 1 == 0;
+        }
         int items = interpretation.numitems(bytes, entries);
 
         RawArray basketdata = basketCallback.dataWithoutKey(basketId);
@@ -85,22 +94,31 @@ public class ArrayBuilder {
 
 
         int border = basketKey.fLast - basketKey.fKeylen;
-        if (basketKey.fObjlen == border) {
-            basketdata = interpretation.convertBufferDiskToMemory(basketdata);
-            source = interpretation.fromroot(basketdata, null, 0, entryStop - entryStart);
-        } else {
-            RawArray content = basketdata.slice(0, border);
-            RawArray offsets = basketdata.slice(border + 4, basketKey.fObjlen);
-            PrimitiveArray.Int4 testcontent = new PrimitiveArray.Int4(content);
-            PrimitiveArray.Int4 testoffsets = new PrimitiveArray.Int4(offsets);
-            PrimitiveArray.Int4 byteoffsets = new PrimitiveArray.Int4(offsets).add(true, -basketKey.fKeylen);
-            byteoffsets.put(byteoffsets.length() - 1, border);
-            content = interpretation.subarray().convertBufferDiskToMemory(content);
-            byteoffsets = interpretation.subarray().convertOffsetDiskToMemory(byteoffsets);
-            int start = (0);
-            int stop = (entryStop - entryStart);
-            source = interpretation.fromroot(content, byteoffsets, start, stop);
-        }
+        // num_entries = "fNevBuf"
+
+//        if (basketKey.compresedInfo != null) {
+//            // embedded basket
+//            basketdata = interpretation.convertBufferDiskToMemory(basketdata);
+//            source = interpretation.fromroot(basketdata, null, 0, entryStop - entryStart);
+//            throw new RuntimeException("Fails");
+//        } else {
+            if (basketKey.fObjlen == border) {
+                basketdata = interpretation.convertBufferDiskToMemory(basketdata);
+                source = interpretation.fromroot(basketdata, null, 0, entryStop - entryStart);
+            } else {
+                RawArray content = basketdata.slice(0, border);
+                RawArray offsets = basketdata.slice(border + 4, basketKey.fObjlen);
+                PrimitiveArray.Int4 testcontent = new PrimitiveArray.Int4(content);
+                PrimitiveArray.Int4 testoffsets = new PrimitiveArray.Int4(offsets);
+                PrimitiveArray.Int4 byteoffsets = new PrimitiveArray.Int4(offsets).add(true, -basketKey.fKeylen);
+                byteoffsets.put(byteoffsets.length() - 1, border);
+                content = interpretation.subarray().convertBufferDiskToMemory(content);
+                byteoffsets = interpretation.subarray().convertOffsetDiskToMemory(byteoffsets);
+                int start = (0);
+                int stop = (entryStop - entryStart);
+                source = interpretation.fromroot(content, byteoffsets, start, stop);
+            }
+//        }
 
         interpretation.fill(source,
                 output,
@@ -146,7 +164,14 @@ public class ArrayBuilder {
             Range<Long> entryRange = entry.getKey();
             Integer basketId = entry.getValue();
             BasketKey key = getbasket.basketkey(basketId);
-            int bytes = key.fLast - key.fKeylen;
+            // FIXME need a better test passed through
+            int bytes;
+            if (key.fLast != 0) {
+                bytes = key.fLast - key.fKeylen;
+            } else {
+                bytes = key.compresedInfo.getBasketLen();
+                //assert 1 == 0;
+            }
 
             // whole basket
             long entries_whole = basketEntryOffsets[basketId + 1] - basketEntryOffsets[basketId];
@@ -165,8 +190,13 @@ public class ArrayBuilder {
             Range<Long> entryRange = entry.getKey();
             Integer basketId = entry.getValue();
             BasketKey key = getbasket.basketkey(basketId);
-            int bytes = key.fLast - key.fKeylen;
-
+            int bytes;
+            if (key.fLast != 0) {
+                bytes = key.fLast - key.fKeylen;
+            } else {
+                bytes = key.compresedInfo.getBasketLen();
+                //assert 1 == 0;
+            }
 
             // whole basket
             long entries_whole = basketEntryOffsets[basketId + 1] - basketEntryOffsets[basketId];
@@ -205,4 +235,6 @@ public class ArrayBuilder {
         Array x = output_whole.clip(global_offset_whole + rowId, global_offset_whole + rowId + count);
         return x;
     }
+
+
 }

@@ -20,7 +20,7 @@ public class ArrayBuilderTest {
         ArrayBuilder.GetBasket getbasket = new ArrayBuilder.GetBasket() {
                 @Override
                 public ArrayBuilder.BasketKey basketkey(int basketid) {
-                    return new ArrayBuilder.BasketKey(0, 4 * 5, 4 * 5);
+                    return new ArrayBuilder.BasketKey(0, 4 * 5, 4 * 5, null);
                 }
 
                 @Override

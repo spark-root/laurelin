@@ -1,19 +1,18 @@
 package edu.vanderbilt.accre.laurelin.array;
 
-import java.nio.ByteBuffer;
 
 public class RawArray extends PrimitiveArray {
-    RawArray(int length) {
+    public RawArray(int length) {
         super(null, length);
-        this.buffer = ByteBuffer.allocate(length);
+        this.buffer = LaurelinBackingArray.allocate(length);
     }
 
-    RawArray(RawArray rawarray) {
+    public RawArray(RawArray rawarray) {
         super(null, rawarray.length());
         this.buffer = rawarray.raw();
     }
 
-    public RawArray(ByteBuffer buffer) {
+    public RawArray(LaurelinBackingArray buffer) {
         super(null, buffer.limit());
         this.buffer = buffer;
     }
@@ -24,7 +23,7 @@ public class RawArray extends PrimitiveArray {
     }
 
     public RawArray slice(int start, int stop) {
-        ByteBuffer tmp = buffer.duplicate();
+        LaurelinBackingArray tmp = buffer.duplicate();
         tmp.position(start);
         tmp.limit(stop);
         return new RawArray(tmp.slice());
@@ -32,7 +31,7 @@ public class RawArray extends PrimitiveArray {
 
     @Override
     public Array clip(int start, int stop) {
-        ByteBuffer out = this.buffer.duplicate();
+        LaurelinBackingArray out = this.buffer.duplicate();
         out.position(start);
         out.limit(stop);
         return this.make(out);
@@ -40,12 +39,12 @@ public class RawArray extends PrimitiveArray {
 
     public RawArray compact(PrimitiveArray.Int4 byteoffsets, int skipbytes, int local_entrystart, int local_entrystop) {
         if (skipbytes == 0) {
-            ByteBuffer out = this.buffer.duplicate();
+            LaurelinBackingArray out = this.buffer.duplicate();
             out.position(byteoffsets.get(local_entrystart));
             out.limit(byteoffsets.get(local_entrystop));
             return new RawArray(out);
         } else {
-            ByteBuffer out = ByteBuffer.allocate(byteoffsets.get(local_entrystop) - byteoffsets.get(local_entrystart) - skipbytes * (local_entrystop - local_entrystart));
+            LaurelinBackingArray out = LaurelinBackingArray.allocate(byteoffsets.get(local_entrystop) - byteoffsets.get(local_entrystart) - skipbytes * (local_entrystop - local_entrystart));
             this.buffer.position(0);
             for (int i = local_entrystart;  i < local_entrystop;  i++) {
                 int start = byteoffsets.get(i) + skipbytes;
@@ -69,7 +68,7 @@ public class RawArray extends PrimitiveArray {
     }
 
     @Override
-    protected Array make(ByteBuffer out) {
+    protected Array make(LaurelinBackingArray out) {
         return new RawArray(out);
     }
 
@@ -92,5 +91,13 @@ public class RawArray extends PrimitiveArray {
 
     public long getLong(int i) {
         return this.buffer.getLong(i);
+    }
+
+    public void put(int i, byte byte1) {
+        this.buffer.put(i, byte1);
+    }
+
+    public void put(byte byte1) {
+        this.buffer.put(byte1);
     }
 }

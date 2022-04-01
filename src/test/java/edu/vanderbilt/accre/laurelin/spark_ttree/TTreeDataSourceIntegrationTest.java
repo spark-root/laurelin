@@ -16,11 +16,12 @@ public class TTreeDataSourceIntegrationTest {
     public static void beforeClass() {
         System.setProperty("hadoop.home.dir", "/");
         spark = SparkSession.builder()
-                .master("local[*]")
+                .master("local[1]")
+                .config("spark.sql.codegen.wholeStage", "false")
                 .appName("test").getOrCreate();
     }
 
-    @Test
+    //@Test
     public void testLoadDataFrame() {
         Dataset<Row> df = spark
                 .read()
@@ -33,6 +34,19 @@ public class TTreeDataSourceIntegrationTest {
     }
 
     @Test
+    public void testLoadDataFrame2() {
+        Dataset<Row> df = spark
+                .read()
+                .format("edu.vanderbilt.accre.laurelin.Root")
+                .option("tree",  "Events")
+                .option("threadCount", "0")
+                .load("testdata/pristine/2018nanoaod1june2019.root");
+        df.printSchema();
+        df.show();
+        df.count();
+    }
+
+   // @Test
     public void testLoadNestedDataFrame() {
         Dataset<Row> df = spark
                 .read()
@@ -45,7 +59,20 @@ public class TTreeDataSourceIntegrationTest {
         df.select("SliceI8", "SliceI16", "SliceI32", "SliceI64").show();
     }
 
-    @Test
+   // @Test
+    public void testLoadDataFrame_pr96() {
+        Dataset<Row> df = spark
+                .read()
+                .format("edu.vanderbilt.accre.laurelin.Root")
+                .option("tree",  "tpTree/fitter_tree")
+                .option("threadCount", 0)
+                .load("testdata/issue96.root");
+        df = df.select("eta");
+        df.printSchema();
+        df.show();
+    }
+
+    //@Test
     public void testShortName() {
         Dataset<Row> df = spark
                 .read()
@@ -57,7 +84,7 @@ public class TTreeDataSourceIntegrationTest {
         df.select("ScalarI8").show();
     }
 
-    @Test
+    //@Test
     public void testVectorLoad() {
         // try to load an std::vector
         Dataset<Row> df = spark
@@ -70,7 +97,7 @@ public class TTreeDataSourceIntegrationTest {
         df.show(false);
     }
 
-    @Test
+    //@Test
     public void testTwoFiles() {
         // If the files are duplicated in the input list, they shouldn't be
         // after reading
@@ -80,7 +107,11 @@ public class TTreeDataSourceIntegrationTest {
                 .option("tree",  "Events")
                 .option("threadCount", "0")
                 .load("testdata/all-types.root", "testdata/all-types.root");
-        assertEquals(9, df.count());
+        df.printSchema();
+        //df.select("ArrayUI1").show();
+        //assertEquals(9, df.count());
+        df.select("ScalarUI1").show();
+
     }
 
     @AfterClass

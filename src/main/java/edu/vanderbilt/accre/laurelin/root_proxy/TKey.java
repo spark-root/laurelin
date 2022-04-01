@@ -23,6 +23,7 @@ public class TKey {
     }
 
     public Cursor getFromFile(Cursor buffer) throws IOException {
+        long tmpoff = buffer.getOffset() + buffer.getBase();
         Nbytes = buffer.readInt();
         version = buffer.readShort();
         ObjLen = buffer.readInt();

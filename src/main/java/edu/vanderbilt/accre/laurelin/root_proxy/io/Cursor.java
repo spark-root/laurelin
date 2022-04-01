@@ -104,6 +104,10 @@ public class Cursor {
         }
     }
 
+    public long getBaseWithoutParent() {
+        return base;
+    }
+
     public long getLimit() throws IOException {
         return buf.getLimit();
     }
@@ -403,6 +407,47 @@ public class Cursor {
         // Skip the null byte
         off += ret.length() + 1;
         return ret;
+    }
+
+    /*
+     * Offset to the beginning of this compressed buffer
+     *
+     * @returns Offset of first byte of this compressed span
+     */
+    public long getBufferCompressedOffset() {
+        // TODO Auto-generated method stub
+        return ((PossiblyCompressedBuf) buf).getBufferCompressedOffset();
+    }
+
+    /*
+     * Returns the length of the compressed buffer before decompression
+     *
+     * @returns compressed buffer length
+     */
+    public long getBufferCompressedLen() {
+        // TODO Auto-generated method stub
+        return ((PossiblyCompressedBuf) buf).getBufferCompressedLen();
+    }
+
+    /*
+     * Returns the length of the compressed buffer after decompression
+     *
+     * @returns decompressed buffer size
+     */
+    public long getBufferUncompressedLen() {
+        // TODO Auto-generated method stub
+        return ((PossiblyCompressedBuf) buf).getBufferUncompressedLen();
+    }
+
+    /*
+     * Returns the "base" of the compressed buffer, which is the offset
+     * of the first byte past the compression headers (e.g. zlib or similar)
+     *
+     * @returns Offset of first payload byte past compression headers
+     */
+    public long getBufferCompressedHeaderLength() {
+        // TODO Auto-generated method stub
+        return ((PossiblyCompressedBuf) buf).getBufferCompressedHeaderLength();
     }
 
 }

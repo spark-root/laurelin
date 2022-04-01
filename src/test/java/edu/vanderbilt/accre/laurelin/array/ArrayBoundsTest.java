@@ -5,8 +5,6 @@ import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Test;
@@ -33,12 +31,12 @@ public class ArrayBoundsTest {
                 int keylen = 0;
                 int last = (int) (2 * (basketEntryOffsets[basketid + 1] - basketEntryOffsets[basketid]));
                 int objlen = last;
-                return new ArrayBuilder.BasketKey(keylen, last, objlen);
+                return new ArrayBuilder.BasketKey(keylen, last, objlen, null);
             }
 
             @Override
             public RawArray dataWithoutKey(int basketid) {
-                return new RawArray(ByteBuffer.allocate((int) (2 * (basketEntryOffsets[basketid + 1] - basketEntryOffsets[basketid]))));
+                return new RawArray((int) (2 * (basketEntryOffsets[basketid + 1] - basketEntryOffsets[basketid])));
             }
         }
 
@@ -68,8 +66,8 @@ public class ArrayBoundsTest {
         Interpretation interp = new AsJagged(new AsDtype(type));
         ArrayBuilder builder = new ArrayBuilder(getbasket, interp, basketEntryOffsets, null, 0, 50069);
         JaggedArray testarray = (JaggedArray)builder.getArray(0, 10);
-        System.out.println(Arrays.toString((int[])(testarray.counts().toArray(true))));
-        System.out.println(Arrays.toString((float[])(testarray.content().toArray(true))));
+        //System.out.println(Arrays.toString((int[])(testarray.counts().toArray(true))));
+        //System.out.println(Arrays.toString((float[])(testarray.content().toArray(true))));
     }
 
     @Test

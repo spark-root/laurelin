@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import edu.vanderbilt.accre.laurelin.root_proxy.TBranch.CompressedBasketInfo;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.Cursor;
 
 public class TBasket {
@@ -24,29 +25,50 @@ public class TBasket {
     private long fBasketSeek;
     private Cursor startCursor;
     private Cursor payload;
+    private boolean embedded;
 
-    public TBasket(Cursor cursor, int fBasketBytes, long fBasketEntry, long fBasketSeek) throws IOException {
-        this.fBasketBytes = fBasketBytes;
-        this.fBasketEntry = fBasketEntry;
-        this.fBasketSeek = fBasketSeek;
-        startCursor = cursor.duplicate();
-        key = new TKey();
-        Cursor c = key.getFromFile(cursor);
-        vers = c.readShort();
-        fBufferSize = c.readInt();
-        fNevBufSize = c.readInt();
-        fNevBuf = c.readInt();
-        fLast = c.readInt();
-        fHeaderOnly = c.readChar();
+    private CompressedBasketInfo loc;
+
+    public static TBasket getLooseFromFile(Cursor cursor, int fBasketBytes, long fBasketEntry, long fBasketSeek) throws IOException {
+        TBasket ret = new TBasket();
+        ret.fBasketBytes = fBasketBytes;
+        ret.fBasketEntry = fBasketEntry;
+        ret.fBasketSeek = fBasketSeek;
+        ret.startCursor = cursor.duplicate();
+        ret.key = new TKey();
+        Cursor c = ret.key.getFromFile(cursor);
+        ret.vers = c.readShort();
+        ret.fBufferSize = c.readInt();
+        ret.fNevBufSize = c.readInt();
+        ret.fNevBuf = c.readInt();
+        ret.fLast = c.readInt();
+        ret.fHeaderOnly = c.readChar();
+        ret.embedded = false;
+        return ret;
     }
 
-    public static TBasket getFromFile(Cursor cursor, int fBasketBytes, long fBasketEntry, long fBasketSeek) throws IOException {
-        TBasket ret = new TBasket(cursor, fBasketBytes, fBasketEntry, fBasketSeek);
+    public static TBasket getEmbeddedFromFile(Cursor cursor, CompressedBasketInfo loc, int fBasketBytes, long fBasketEntry, long fBasketSeek) throws IOException {
+        TBasket ret = new TBasket();
+        ret.fBasketBytes = fBasketBytes;
+        ret.fBasketEntry = fBasketEntry;
+        ret.fBasketSeek = fBasketSeek;
+        ret.startCursor = cursor.duplicate();
+        ret.key = new TKey();
+        Cursor c = ret.key.getFromFile(cursor);
+        ret.vers = c.readShort();
+        ret.fBufferSize = c.readInt();
+        ret.fNevBufSize = c.readInt();
+        ret.fNevBuf = c.readInt();
+        ret.fLast = c.readInt();
+        ret.fHeaderOnly = c.readChar();
+        ret.loc = loc;
+        ret.embedded = true;
         return ret;
     }
 
     private void initializePayload() {
         // FIXME mutex this eventually
+    	https://github.com/scikit-hep/uproot3/blob/54f5151fb7c686c3a161fbe44b9f299e482f346b/uproot3/tree.py#L1763-L1769
         this.payload = startCursor.getPossiblyCompressedSubcursor(key.KeyLen,
                 key.Nbytes - key.KeyLen,
                 key.ObjLen,
@@ -100,4 +122,8 @@ public class TBasket {
     public long getBasketEntry() {
         return fBasketEntry;
     }
+
+	public long getBasketSeek() {
+		return fBasketSeek;
+	}
 }

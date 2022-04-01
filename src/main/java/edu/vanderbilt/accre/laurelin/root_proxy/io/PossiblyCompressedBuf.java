@@ -61,4 +61,41 @@ public class PossiblyCompressedBuf implements BackingBuf {
         return new PossiblyCompressedBuf(parent.duplicate(), base, compressedLen, uncompressedLen, decompressed);
     }
 
+    /*
+     * Offset to the beginning of this compressed buffer
+     *
+     * @returns Offset of first byte of this compressed span
+     */
+    public long getBufferCompressedOffset() {
+        return parent.getBase();
+    }
+
+    /*
+     * Returns the length of the compressed buffer before decompression
+     *
+     * @returns compressed buffer length
+     */
+    public long getBufferCompressedLen() {
+        return compressedLen;
+    }
+
+    /*
+     * Returns the length of the compressed buffer after decompression
+     *
+     * @returns decompressed buffer size
+     */
+    public long getBufferUncompressedLen() {
+        return uncompressedLen;
+    }
+
+    /*
+     * Returns the "base" of the compressed buffer, which is the offset
+     * of the first byte past the compression headers (e.g. zlib or similar)
+     *
+     * @returns Offset of first payload byte past compression headers
+     */
+    public long getBufferCompressedHeaderLength() {
+        return base;
+    }
+
 }

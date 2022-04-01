@@ -156,16 +156,19 @@ public class ROOTFile implements AutoCloseable {
 
     /* Hide constructor */
     private ROOTFile(String path) {
+        logger.debug("Instantiating ROOTFile for " + path);
         profile = IOProfile.getInstance().beginProfile(path);
         this.path = path;
     }
 
     public static ROOTFile getInputFile(String path) throws IOException {
+        logger.debug("Calling getInputFile(1) for " + path);
         FileInterface fh = IOFactory.openForRead(path);
         return ROOTFile.getInputFile(path, fh);
     }
 
     public static ROOTFile getInputFile(String path, FileInterface fh) throws IOException {
+        logger.debug("Calling getInputFile(1) for " + path);
         ROOTFile rf = new ROOTFile(path);
         rf.fh = fh;
         return rf;

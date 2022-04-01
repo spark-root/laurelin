@@ -23,4 +23,12 @@ public class ProxyArray extends Proxy implements Iterable<Proxy>  {
         return val.iterator();
     }
 
+    public int size() {
+        return val.size();
+    }
+
+    public Proxy at(int idx) {
+        return val.get(idx);
+    }
+
 }

@@ -9,8 +9,8 @@ import org.junit.Test;
 
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
-import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.FileProfiler;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
+import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.FileProfiler;
 
 public class TestIOProfile {
 

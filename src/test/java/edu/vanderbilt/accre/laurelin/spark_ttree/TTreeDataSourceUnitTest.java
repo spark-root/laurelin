@@ -14,12 +14,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.serializer.KryoSerializer;
@@ -37,6 +40,7 @@ import org.apache.spark.sql.types.MetadataBuilder;
 import org.apache.spark.sql.types.ShortType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.vectorized.ArrowColumnVector;
 import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarArray;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
@@ -52,14 +56,18 @@ import edu.vanderbilt.accre.laurelin.cache.BasketCache;
 import edu.vanderbilt.accre.laurelin.configuration.LaurelinDSConfig;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
+import edu.vanderbilt.accre.laurelin.root_proxy.TBranch.CompressedBasketInfo;
 import edu.vanderbilt.accre.laurelin.root_proxy.TFile;
 import edu.vanderbilt.accre.laurelin.root_proxy.TTree;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.IOProfile.Event.Storage;
+import edu.vanderbilt.accre.laurelin.root_proxy.serialization.Proxy;
 import scala.reflect.ClassTag;
 
 public class TTreeDataSourceUnitTest {
+    private static final Logger logger = LogManager.getLogger();
+
     /*
      * @lgray reported that too much data was being deserialised when TTrees
      * were loaded and partitions made. Make sure that the bytes read don't
@@ -137,14 +145,14 @@ public class TTreeDataSourceUnitTest {
              *  This patch produces 349972 bytes serialized, ensure it doesn't
              *  grow accidentally
              */
-            assertTrue("Partition size too large: " + yourBytes.length, yourBytes.length < 351000);
+            assertTrue("Partition size too large: " + yourBytes.length, yourBytes.length < 352000);
 
-            System.out.println("Got length: " + yourBytes.length);
+            //System.out.println("Got length: " + yourBytes.length);
             bis = new ByteArrayInputStream(yourBytes);
             ObjectInput in = new ObjectInputStream(bis);
             @SuppressWarnings("unchecked")
             Partition partitionBack = (Partition) in.readObject();
-            System.out.println("got partition" + partitionBack);
+            //System.out.println("got partition" + partitionBack);
 
         } catch (ClassNotFoundException e) {
 
@@ -201,6 +209,40 @@ public class TTreeDataSourceUnitTest {
             ColumnarBatch batch = partitionReader.get();
             assertFalse(partitionReader.next());
             assertEquals(expectedCounts[i], batch.numRows());
+        }
+    }
+
+    @Test
+    public void testLoadingCorruptRoot() throws IOException {
+        Map<String, String> optmap = new HashMap<String, String>();
+        optmap.put("path", "testdata/issue96.root");
+        optmap.put("tree",  "tpTree/fitter_tree");
+        optmap.put("threadCount", "0");
+        LaurelinDSConfig opts = LaurelinDSConfig.wrap(optmap);
+        Root source = new Root();
+        Reader reader = source.createTestReader(opts, null, true);
+        // only get a scalar float_t for now since that's all that works
+        MetadataBuilder metadata = new MetadataBuilder();
+        metadata.putString("rootType", "float");
+        StructType prune = new StructType()
+                            .add(new StructField("eta", DataTypes.FloatType, false, metadata.build()));
+        reader.pruneColumns(prune);
+        List<Partition> partitions = reader.planBatchInputPartitions();
+        assertNotNull(partitions);
+        assertEquals(1, partitions.size());
+        Partition partition;
+        long []expectedCounts = {132056};
+        for (int i = 0; i < 1; i += 1) {
+            //System.out.println("Now reading partition " + i);
+            partition = partitions.get(i);
+            PartitionReader partitionReader = partition.createPartitionReader();
+            assertTrue(partitionReader.next());
+            ColumnarBatch batch = partitionReader.get();
+            ColumnVector x = batch.column(0);
+            x.getFloat(batch.numRows() - 1);
+            assertFalse(partitionReader.next());
+            assertEquals(expectedCounts[i], batch.numRows());
+
         }
     }
 
@@ -272,7 +314,7 @@ public class TTreeDataSourceUnitTest {
         List<Partition> partitionPlan = reader.planBatchInputPartitions();
         assertNotNull(partitionPlan);
         StructType schema = reader.readSchema();
-        System.out.println(schema.prettyJson());
+        //System.out.println(schema.prettyJson());
 
         Partition partition = partitionPlan.get(0);
         PartitionReader partitionReader = partition.createPartitionReader();
@@ -294,7 +336,7 @@ public class TTreeDataSourceUnitTest {
         List<Partition> partitionPlan = reader.planBatchInputPartitions();
         assertNotNull(partitionPlan);
         StructType schema = reader.readSchema();
-        System.out.println(schema.prettyJson());
+        //System.out.println(schema.prettyJson());
 
         Partition partition = partitionPlan.get(0);
         KryoSerializer serializer = new KryoSerializer(new SparkConf());
@@ -667,7 +709,8 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("uchar")), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
+        TTreeColumnVector tmp = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("uchar")), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
+        ArrowColumnVector result = tmp.toArrowVector();
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 0);
         ColumnarArray event1 = result.getArray(1);
@@ -695,6 +738,208 @@ public class TTreeDataSourceUnitTest {
         assertEquals(event8.numElements(), 2);
         assertEquals(event8.getShort(0), 253);
         assertEquals(event8.getShort(1), 253);
+        result.close();
+        tmp.close();
+    }
+
+    @Test
+    public void testTmp() {
+//        [TRACE] 18:40:54.973 e.v.a.l.r.TBranch - 9 entries
+//        [TRACE] 18:40:54.973 e.v.a.l.r.TBranch - 10 maxbaskets
+//        [TRACE] 18:40:54.974 e.v.a.l.r.TBranch - [96, 0, 0, 0, 0, 0, 0, 0, 0, 0] basketbytes
+//        [TRACE] 18:40:54.974 e.v.a.l.r.TBranch - [0, 9, 0, 0, 0, 0, 0, 0, 0, 0] basketentry
+//        [TRACE] 18:40:54.974 e.v.a.l.r.TBranch - [1558, 0, 0, 0, 0, 0, 0, 0, 0, 0] basketseek
+//        [TRACE] 18:40:54.974 e.v.a.l.r.TBranch - 1 writebasket
+        long fEntries = 9;
+        int fMaxBaskets = 10;
+        int[] fBasketBytesTmp = {96, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        long[] fBasketEntryTmp = {0, 9, 0, 0, 0, 0, 0, 0, 0, 0};
+        long[] fBasketSeekTmp = {1558, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        Proxy[] fBaskets = {};
+        int fWriteBasket = 1;
+        TBranch.CompressedBasketInfo[] ret = basketDemo(fEntries, fMaxBaskets, fBasketBytesTmp, fBasketEntryTmp, fBasketSeekTmp, fBaskets, fWriteBasket);
+        assertEquals(2, ret.length);
+        logger.trace(ret[0]);
+    }
+
+    public static class BranchBasketsLocator {
+        private int nEntries = 0;
+        private int size = 0;
+        private boolean[] isLoose;
+        /**
+         * Number of bytes in this basket
+         */
+        private int[] bytes;
+        /**
+         * Number of entries in this basket
+         */
+        private long[] entries;
+        /**
+         * Seek position of this basket in the file
+         */
+        private long[] seek;
+        /**
+         * Length of the header at the beginning of a compressed range
+         */
+        private int[] headerLen;
+        /**
+         * Length of the compressed range
+         */
+        private int[] compressedLen;
+        /**
+         * Length of the compressed range after decompression
+         */
+        private int[] uncompressedLen;
+        /**
+         * Offset to the first byte of this compressed range
+         */
+        private long[] compressedParentOffset;
+
+        private void resize(int size) {
+            this.size = size;
+            isLoose = Arrays.copyOf(isLoose, size);
+            bytes = Arrays.copyOf(bytes, size);
+            entries = Arrays.copyOf(entries, size);
+            seek = Arrays.copyOf(seek, size);
+            headerLen = Arrays.copyOf(headerLen, size);
+            compressedLen =  Arrays.copyOf(compressedLen, size);
+            uncompressedLen = Arrays.copyOf(uncompressedLen, size);
+            compressedParentOffset = Arrays.copyOf(compressedParentOffset, size);
+        }
+
+        public BranchBasketsLocator(int size) {
+            this.size = size;
+            isLoose = new boolean[size];
+            bytes = new int[size];
+            entries = new long[size];
+            seek = new long[size];
+            headerLen = new int[size];
+            compressedLen = new int[size];
+            uncompressedLen = new int[size];
+            compressedParentOffset = new long[size];
+        }
+    }
+
+//    public static TBranch.CompressedBasketInfo[] basketDemo2(long fEntries, int fMaxBaskets, int[] fBasketBytesTmp,
+//            long[] fBasketEntryTmp, long[] fBasketSeekTmp, Proxy[] fBaskets,
+//            int fWriteBasket) {
+//        /*
+//         *  Root sometimes makes zero-length/empty baskets, so we need to
+//         *  trim them to preserve the invariant in ArrayBuilder that the
+//         *  values are monotonically increasing
+//         */
+//        int nonEmptyBaskets = 0;
+//
+//        for (int i = 0; i < fMaxBaskets; i += 1) {
+//            if (fBasketSeekTmp[i] != 0) {
+//                nonEmptyBaskets += 1;
+//            }
+//        }
+//        fBasketBytes = new int[nonEmptyBaskets];
+//        fBasketEntry = new long[nonEmptyBaskets];
+//        fBasketSeek = new long[nonEmptyBaskets];
+//        TBranch.CompressedBasketInfo[] compressedBasketInfo = new CompressedBasketInfo[nonEmptyBaskets];
+//
+//        int j = 0;
+//        for (int i = 0; i < nonEmptyBaskets; i += 1) {
+//            if (fBasketSeekTmp[i] != 0) {
+//                fBasketBytes[j] = fBasketBytesTmp[i];
+//                fBasketEntry[j] = fBasketEntryTmp[i];
+//                fBasketSeek[j] = fBasketSeekTmp[i];
+//                j += 1;
+//            }
+//        }
+//        fMaxBaskets = nonEmptyBaskets;
+//    }
+
+    public static TBranch.CompressedBasketInfo[] basketDemo(long fEntries, int fMaxBaskets, int[] fBasketBytesTmp,
+                                                            long[] fBasketEntryTmp, long[] fBasketSeekTmp, Proxy[] fBaskets,
+                                                            int fWriteBasket) {
+        long lastEntry = 0;
+        // Count the valid loose baskets
+        int looseBaskets = 0;
+        for (int i = 0; i < fMaxBaskets; i += 1) {
+            if (((fBasketSeekTmp[i] != 0) && (i != fWriteBasket))) {
+                // this is a basket worth deserializing
+                looseBaskets += 1;
+                lastEntry = fBasketEntryTmp[i];
+            } else {
+                lastEntry = fBasketEntryTmp[i];
+            }
+        }
+
+        int embeddedBaskets = 0;
+        if (fEntries == fBasketEntryTmp[looseBaskets]) {
+            /*
+             *  All the baskets in the "regular" location add up to the
+             *  number of entries the TBranch purports to have, so we know
+             *  there are no "embedded" baskets to search for
+             */
+        } else if ((fBaskets != null) && (fBaskets.length > 0)) {
+            embeddedBaskets = fBaskets.length;
+        }
+
+
+        int correctedBasketCount = looseBaskets + embeddedBaskets + 1;
+        int[] fBasketBytes = new int[correctedBasketCount];
+        long[] fBasketEntry = new long[correctedBasketCount];
+        long[] fBasketSeek = new long[correctedBasketCount];
+        TBranch.CompressedBasketInfo[] compressedBasketInfo = new CompressedBasketInfo[correctedBasketCount];
+        int j = 0;
+        // Loose baskets are the easy case, the TBranch gives these vals
+        for (int i = 0; i < looseBaskets; i += 1) {
+            fBasketBytes[j] = fBasketBytesTmp[i];
+            fBasketEntry[j] = fBasketEntryTmp[i];
+            fBasketSeek[j] = fBasketSeekTmp[i];
+            // Loose basekets aren't stored within another compressed range
+            compressedBasketInfo[j] = null;
+            logger.trace("Add entry loose " + j + " entry " + fBasketEntry[j]);
+            j += 1;
+        }
+
+        if (embeddedBaskets > 0) {
+            logger.trace(" - Embedded showing up");
+            /*
+             * In the case of embedded baskets, push forward lastEvent by
+             * the number of events in the final loose basket
+             */
+        }
+
+        /*
+         * For embedded baskets, we need to (annoyingly) do some math to
+         * calculate the fBasketEntry. Reminder: lastEntry is one past
+         * the final valid entry in the loose baskets, so when we add the
+         * number of entries in the embedded basket, the new lastEntry is
+         * also one past the last entry in the embedded basket.
+         */
+        for (int i = 0; i < embeddedBaskets; i += 1) {
+            Proxy basket = fBaskets[i];
+            fBasketBytes[j] = (int) basket.getScalar("fNbytes").getVal();
+            // We track where the TKey is read in our custom streamer override
+            fBasketSeek[j] = (long) basket.getScalar("laurelinBasketOffset").getVal();
+            Long[] tmpInfo = (Long []) basket.getScalar("laurelinBasketCompressedInfo").getVal();
+            compressedBasketInfo[j] = null; //new CompressedBasketInfo(tmpInfo[0].intValue(), tmpInfo[1].intValue(), tmpInfo[2].intValue(), tmpInfo[3], 30);
+            long entryFromBasket = (int) basket.getScalar("fNevBuf").getVal();
+            logger.trace(" - Embedded has " + entryFromBasket + " events");
+            /*
+             * first set the current basket beginning, then push lastEntry
+             * forward past the end of this basket
+             */
+            fBasketEntry[j] = lastEntry;
+            lastEntry += entryFromBasket;
+            logger.trace("Add entry embed " + j + " entry " + lastEntry);
+            j += 1;
+        }
+
+        fMaxBaskets = j;
+        /*
+         * Finally we add back in the fake basket who is one past the last
+         * valid basket.
+         */
+        fBasketEntry[j] = lastEntry;
+        compressedBasketInfo[j] = null;
+        //TBranch.CompressedBasketInfo[] ret = { new TBranch.CompressedBasketInfo(1,2,3,4) };
+        return compressedBasketInfo;
     }
 
     @Test
