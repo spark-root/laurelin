@@ -23,7 +23,6 @@ jobs:
           server-password: MAVEN_PASSWORD
           gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
-          cache: 'maven'
 
       - name: Set projects Maven version to GitHub Action GUI set version
         run: mvn versions:set "-DnewVersion=${{ github.event.inputs.releaseversion }}"
