@@ -23,10 +23,13 @@ jobs:
           server-password: MAVEN_PASSWORD
           gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
-
+      
+      - name: get settings
+        run: cat $HOME/.m2/settings.xml
+        
       - name: Set projects Maven version to GitHub Action GUI set version
         run: mvn versions:set "-DnewVersion=${{ github.event.inputs.releaseversion }}"
-
+  
       - name: Publish package
         run: mvn -B --batch-mode clean deploy -P spark30,release30,ossrh -DskipTests=true
         env:
