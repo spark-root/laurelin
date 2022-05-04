@@ -251,6 +251,9 @@
     </distributionManagement>
     <profiles>
         <profile>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <id>spark30</id>
             <build>
                 <plugins>
@@ -303,7 +306,7 @@
         <profile>
             <id>spark24</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+                <activeByDefault>false</activeByDefault>
             </activation>
             <build>
                 <plugins>
