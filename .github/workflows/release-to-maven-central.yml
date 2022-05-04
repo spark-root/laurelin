@@ -1,4 +1,5 @@
-name: release-to-maven-central
+name: 
+  release-to-maven-central
 on:
   workflow_dispatch:
     inputs:
@@ -33,13 +34,13 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.OSS_SONATYPE_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
-      - name: Generate changelog
-    	  id: changelog
-    	  uses: metcalfc/changelog-generator@v0.4.4
-    	  with:
+      - name: Generate Changelog
+        id: changelog
+        uses: metcalfc/changelog-generator@v0.4.4
+        with:
           myToken: ${{ secrets.GITHUB_TOKEN }}
 
-	  - name: Create GitHub Release
+      - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -48,12 +49,12 @@ jobs:
           tag_name: ${{ github.event.inputs.releaseversion }}
           release_name: ${{ github.event.inputs.releaseversion }}
           body: |
-			Use this version in your Spark application by adding `.config("spark.jars.packages", "edu.vanderbilt.accre:laurelin:1.1.2-SNAPSHOT")` your Spark configuration.
+            Use this version in your Spark application by adding `.config("spark.jars.packages", "edu.vanderbilt.accre:laurelin:1.1.2-SNAPSHOT")` your Spark configuration.
 
-			Alternately, the libraries can be used directly in other JVM applications with dependencies listed at https://search.maven.org/artifact/edu.vanderbilt.accre/laurelin/${{ github.event.inputs.releaseversion }}/jar
+            Alternately, the libraries can be used directly in other JVM applications with dependencies listed at https://search.maven.org/artifact/edu.vanderbilt.accre/laurelin/${{ github.event.inputs.releaseversion }}/jar
 
-          ### Commits this release
-          ${{ steps.changelog.outputs.changelog }}
+            ### Commits this release
+            ${{ steps.changelog.outputs.changelog }}
 
 
           draft: false
