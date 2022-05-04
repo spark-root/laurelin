@@ -279,13 +279,18 @@ public abstract class PrimitiveArray extends Array {
 
         public Int4 add(boolean bigEndian, int value) {
             LaurelinBackingArray out = LaurelinBackingArray.allocate(length * 4);
+            //System.out.println(this.buffer.asIntBuffer().array());
             out.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             this.buffer.order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
             IntBuffer outint = out.asIntBuffer();
             IntBuffer thisint = this.buffer.asIntBuffer();
+            int[] tmpout = new int[length];
+            int[] tmpin = new int[length];
+            thisint.get(tmpin);
             for (int i = 0;  i < this.length;  i++) {
-                outint.put(i, thisint.get(i) + value);
+                tmpout[i] = tmpin[i]+ value;
             }
+            outint.put(tmpout);
             return new Int4(out);
         }
 

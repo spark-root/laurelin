@@ -313,6 +313,12 @@
                     <version>3.2.1</version>
                     <scope>provided</scope>
                 </dependency>
+                <dependency>
+                    <groupId>org.apache.spark</groupId>
+                    <artifactId>spark-unsafe_2.12</artifactId>
+                    <version>3.2.1</version>
+                    <scope>provided</scope>
+                </dependency>
             </dependencies>
         </profile>
         <profile>

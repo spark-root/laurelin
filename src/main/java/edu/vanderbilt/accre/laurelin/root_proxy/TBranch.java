@@ -14,6 +14,8 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.ImmutableRangeMap;
 import com.google.common.collect.ImmutableRangeMap.Builder;
+import com.google.common.collect.Interner;
+import com.google.common.collect.Interners;
 import com.google.common.collect.Range;
 
 import edu.vanderbilt.accre.laurelin.root_proxy.io.Constants;
@@ -159,13 +161,7 @@ public class TBranch {
         int nevBufSize;
         int nevBuf;
         int last;
-        /**
-         * @param headerLen
-         * @param compressedLen
-         * @param uncompressedLen
-         * @param compressedParentOffset
-         * @param i
-         */
+
         public CompressedBasketInfo(int headerLen, int compressedLen, int uncompressedLen,
                 long compressedParentOffset, int basketLen, long startOffset, long basketOffset, long finalOffset,
                 int keyLen, int bufferSize, int nevBufSize, int nevBuf, int last) {
@@ -358,8 +354,10 @@ public class TBranch {
 
     protected void extractBranchInfo(long fEntries, String fName, int[] fBasketBytesTmp, long[] fBasketEntryTmp,
             long[] fBasketSeekTmp, EmbeddedBasketsInfo fBaskets, int fWriteBasket, int fMaxBasketsTmp) {
-        for (int i = 0; i < fBasketEntryTmp.length; i += 1) {
-            logger.trace(String.format("%04d %10d %10d %10d", i, fBasketBytesTmp[i], fBasketEntryTmp[i], fBasketSeekTmp[i]));
+        if (logger.isTraceEnabled()) {
+            for (int i = 0; i < fBasketEntryTmp.length; i += 1) {
+                logger.trace(String.format("%04d %10d %10d %10d", i, fBasketBytesTmp[i], fBasketEntryTmp[i], fBasketSeekTmp[i]));
+            }
         }
 
         /*
@@ -528,10 +526,12 @@ public class TBranch {
          */
         fBasketEntry[j] = lastEntry;
         compressedBasketInfo[j] = null;
-        logger.trace("     bytes      entry      seek       compressionInfo complete");
-        for (int i = 0; i < correctedBasketCount; i += 1) {
+        if (logger.isTraceEnabled()) {
+            logger.trace("     bytes      entry      seek       compressionInfo complete");
+            for (int i = 0; i < correctedBasketCount; i += 1) {
 
-            logger.trace(String.format("%04d %10d %10d %10d %s", i, fBasketBytes[i], fBasketEntry[i], fBasketSeek[i], compressedBasketInfo[i]));
+                logger.trace(String.format("%04d %10d %10d %10d %s", i, fBasketBytes[i], fBasketEntry[i], fBasketSeek[i], compressedBasketInfo[i]));
+            }
         }
         logger.trace("Closing branch " + fName + " fEntries: " + fEntries + " maxBaskets " + fMaxBaskets);
     }
@@ -840,6 +840,10 @@ public class TBranch {
     public long[] getBasketSeek() {
         return fBasketSeek;
     }
+
+
+
+    private static Interner<ImmutableRangeMap<Long, Integer>> rangeMapInterner = Interners.newWeakInterner();
 
     /**
      * Converts a root-style basketEntryOffset into a RangeMap which maps
