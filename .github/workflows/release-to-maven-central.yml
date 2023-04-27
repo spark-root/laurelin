@@ -49,7 +49,7 @@ jobs:
           tag_name: ${{ github.event.inputs.releaseversion }}
           release_name: ${{ github.event.inputs.releaseversion }}
           body: |
-            Use this version in your Spark application by adding `.config("spark.jars.packages", "edu.vanderbilt.accre:laurelin:1.1.2-SNAPSHOT")` your Spark configuration.
+            Use this version in your Spark application by adding `.config("spark.jars.packages", "edu.vanderbilt.accre:laurelin:${{ github.event.inputs.releaseversion }}")` your Spark configuration.
 
             Alternately, the libraries can be used directly in other JVM applications with dependencies listed at https://search.maven.org/artifact/edu.vanderbilt.accre/laurelin/${{ github.event.inputs.releaseversion }}/jar
 

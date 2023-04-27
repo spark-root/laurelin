@@ -41,7 +41,11 @@ import edu.vanderbilt.accre.laurelin.interpretation.Interpretation;
 import edu.vanderbilt.accre.laurelin.root_proxy.SimpleType;
 import edu.vanderbilt.accre.laurelin.root_proxy.TBranch;
 import edu.vanderbilt.accre.laurelin.root_proxy.io.ROOTFileCache;
+
+
+
 public class TTreeColumnVector extends ColumnVector {
+    static final boolean ARROW_ENABLED = false;
     private static final org.apache.logging.log4j.Logger logger = LogManager.getLogger();
     private long [] basketEntryOffsets;
     private ArrayBuilder.GetBasket getbasket;
@@ -57,7 +61,38 @@ public class TTreeColumnVector extends ColumnVector {
     private BufferAllocator allocator;
     static int totvec = 0;
     int vecid;
-    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, BasketCache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor, ROOTFileCache fileCache) {
+
+    public static ColumnVector makeColumnVector(DataType type, SimpleType rootType, Dtype dtype, BasketCache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor, ROOTFileCache fileCache) {
+        if (ARROW_ENABLED) {
+            TTreeColumnVector ret = new TTreeColumnVector(type, rootType, dtype, basketCache, entrystart, entrystop, slimBranch, executor, fileCache);
+            return ret.toArrowVector();
+        } else {
+            return new TTreeColumnVector(type, rootType, dtype, basketCache, entrystart, entrystop, slimBranch, executor, fileCache);
+        }
+    }
+
+    public static ColumnVector makeColumnVector(DataType type, SimpleType rootType, Dtype dtype, BasketCache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor) {
+        if (ARROW_ENABLED) {
+            TTreeColumnVector ret = new TTreeColumnVector(type, rootType, dtype, basketCache, entrystart, entrystop, slimBranch, executor, null);
+            return ret.toArrowVector();
+        } else {
+            return new TTreeColumnVector(type, rootType, dtype, basketCache, entrystart, entrystop, slimBranch, executor, null);
+        }
+    }
+
+    public static ColumnVector makeImmediateColumnVector(DataType type, SimpleType rootType, Dtype dtype, BasketCache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor) {
+        ColumnVector ret = TTreeColumnVector.makeColumnVector(type, rootType, dtype, basketCache, entrystart, entrystop, slimBranch, executor, null);
+        if (ret.getClass() == TTreeColumnVector.class) {
+            ((TTreeColumnVector) ret).ensureLoaded();
+        }
+        return ret;
+    }
+
+    public static TTreeColumnVector makeTTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, BasketCache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor) {
+            return new TTreeColumnVector(type, rootType, dtype, basketCache, entrystart, entrystop, slimBranch, executor, null);
+    }
+
+    private TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, BasketCache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor, ROOTFileCache fileCache) {
         super(type);
         vecid = totvec;
         totvec += 1;
@@ -161,11 +196,12 @@ public class TTreeColumnVector extends ColumnVector {
     private void swapShortEndianness(ArrowBuf in, long index, int count) {
         long length = count * INT_SIZE;
         long curAddress = in.memoryAddress() + index;
+        /*
         // copy word at a time
         while (length - 128 >= LONG_SIZE) {
             for (int x = 0; x < 16; x++) {
                 long t = MemoryUtil.UNSAFE.getLong(curAddress);
-                long v = batchFlipIntEndianness(t);
+                long v = batchFlipShortEndianness(t);
                 MemoryUtil.UNSAFE.putLong(curAddress, v);
                 length -= LONG_SIZE;
                 curAddress += LONG_SIZE;
@@ -173,18 +209,19 @@ public class TTreeColumnVector extends ColumnVector {
         }
         while (length >= LONG_SIZE) {
             long t = MemoryUtil.UNSAFE.getLong(curAddress);
-            long v = batchFlipIntEndianness(t);
+            long v = batchFlipShortEndianness(t);
             MemoryUtil.UNSAFE.putLong(curAddress, v);
             length -= LONG_SIZE;
             curAddress += LONG_SIZE;
         }
+        */
         // copy last byte
         while (length > 0) {
-            int t = MemoryUtil.UNSAFE.getInt(curAddress);
-            int v = singleFlipIntEndianness(t);
-            MemoryUtil.UNSAFE.putInt(curAddress, v);
-            length -= INT_SIZE;
-            curAddress += INT_SIZE;
+            short t = MemoryUtil.UNSAFE.getShort(curAddress);
+            short v = singleFlipShortEndianness(t);
+            MemoryUtil.UNSAFE.putShort(curAddress, v);
+            length -= SHORT_SIZE;
+            curAddress += SHORT_SIZE;
         }
     }
 
@@ -194,7 +231,7 @@ public class TTreeColumnVector extends ColumnVector {
         long length = count * INT_SIZE;
         long curAddress = in.memoryAddress() + index;
         // copy word at a time
-        while (length - 128 >= LONG_SIZE) {
+        /*while (length - 128 >= LONG_SIZE) {
             for (int x = 0; x < 16; x++) {
                 long t = MemoryUtil.UNSAFE.getLong(curAddress);
                 long v = batchFlipIntEndianness(t);
@@ -209,7 +246,7 @@ public class TTreeColumnVector extends ColumnVector {
             MemoryUtil.UNSAFE.putLong(curAddress, v);
             length -= LONG_SIZE;
             curAddress += LONG_SIZE;
-        }
+        }*/
         // copy last byte
         while (length > 0) {
             int t = MemoryUtil.UNSAFE.getInt(curAddress);
@@ -222,13 +259,13 @@ public class TTreeColumnVector extends ColumnVector {
 
     @SuppressWarnings("restriction")
     private void swapLongEndianness(ArrowBuf in, long index, int count) {
-        long length = count * INT_SIZE;
+        long length = count * LONG_SIZE;
         long curAddress = in.memoryAddress() + index;
         // copy word at a time
-        while (length - 128 >= LONG_SIZE) {
+       /* while (length - 128 >= LONG_SIZE) {
             for (int x = 0; x < 16; x++) {
                 long t = MemoryUtil.UNSAFE.getLong(curAddress);
-                long v = batchFlipIntEndianness(t);
+                long v = batchFlipLongEndianness(t);
                 MemoryUtil.UNSAFE.putLong(curAddress, v);
                 length -= LONG_SIZE;
                 curAddress += LONG_SIZE;
@@ -240,14 +277,15 @@ public class TTreeColumnVector extends ColumnVector {
             MemoryUtil.UNSAFE.putLong(curAddress, v);
             length -= LONG_SIZE;
             curAddress += LONG_SIZE;
-        }
+        }*/
         // copy last byte
         while (length > 0) {
-            int t = MemoryUtil.UNSAFE.getInt(curAddress);
-            int v = singleFlipIntEndianness(t);
-            MemoryUtil.UNSAFE.putInt(curAddress, v);
-            length -= INT_SIZE;
-            curAddress += INT_SIZE;
+            long t = MemoryUtil.UNSAFE.getLong(curAddress);
+            long v = flipLongEndianness(t);
+            //System.out.println("Flipping " + t + " to " + v);
+            MemoryUtil.UNSAFE.putLong(curAddress, v);
+            length -= LONG_SIZE;
+            curAddress += LONG_SIZE;
         }
     }
 
@@ -310,13 +348,16 @@ public class TTreeColumnVector extends ColumnVector {
         int countBufferSize = (entryStop - entryStart + 1) * INT_SIZE;
 
         ArrowBuf countsBuf = allocator.buffer(countBufferSize);
-        String buf = "count[";
+//        String buf = "count[";
         for (int x = 0; x < (entryStop - entryStart + 1); x++) {
-            countsBuf.writeInt(x * desc.getFixedLength());
-            buf += "" + x * desc.getFixedLength() + ",";
+            countsBuf.setInt(x * INT_SIZE, x * desc.getFixedLength());
+//            buf += "" + x * desc.getFixedLength() + ",";
         }
-        buf += "]";
-        System.out.println(buf);
+//        buf += "]\ncount2[";
+//        for (int x = 0; x < (entryStop - entryStart + 1); x++) {
+//            buf += "" + countsBuf.getInt(x * INT_SIZE) + ",";
+//        }
+//        System.out.println(buf);
 
         ArrowBuf contentBuf = convertLaurelinBufToArrowBuf(contentTemp);
 
@@ -331,13 +372,17 @@ public class TTreeColumnVector extends ColumnVector {
         ArrowFieldNode outerNode = new ArrowFieldNode(outerLen, 0);
         ArrowFieldNode innerNode = new ArrowFieldNode(innerLen, 0);
 
-
         ListVector arrowVec = ListVector.empty("testcol", allocator);
         arrowVec.loadFieldBuffers(outerNode, Arrays.asList(null, countsBuf));
 
         AddOrGetResult<ValueVector> children = arrowVec.addOrGetVector(innerField);
 
         FieldVector innerVec = (FieldVector) children.getVector();
+//        buf = "arrow_vals[";
+//        for (int x = 0; x < contentTemp.numitems(); x++) {
+//            buf += "" + contentBuf.getLong(x * LONG_SIZE) + ",";
+//        }
+//        System.out.println(buf);
         innerVec.loadFieldBuffers(innerNode, Arrays.asList(null, contentBuf));
 
         countsBuf.getReferenceManager().release();
@@ -351,13 +396,18 @@ public class TTreeColumnVector extends ColumnVector {
         int topCounter = countsTmp.get(0);
         PrimitiveArray contentTmp = (PrimitiveArray) backing.content();
         int itemSize = new AsDtype(dtype).memory_itemsize();
-
         ArrowBuf countsBuf = allocator.buffer(countsTmp.length() * INT_SIZE);
 
         ArrowBuf contentBuf = convertLaurelinBufToArrowBuf(contentTmp);
 
         countsBuf.setBytes(0, ((NIOBuf) countsTmp.raw()).toByteBuffer());
         swapIntEndianness(countsBuf, 0, countsTmp.length());
+
+        String buf = "count[";
+        for (int x = 0; x < (entryStop - entryStart + 1); x++) {
+            buf += "" + countsBuf.getInt(x * INT_SIZE) + ",";
+        }
+        // System.out.println(buf);
 
         ArrowType outerType = new ArrowType.List();
         ArrowType innerType = dtypeToArrow();
@@ -367,7 +417,6 @@ public class TTreeColumnVector extends ColumnVector {
 
         ArrowFieldNode outerNode = new ArrowFieldNode(entryStop - entryStart, 0);
         ArrowFieldNode innerNode = new ArrowFieldNode(contentTmp.length(), 0);
-
 
         ListVector arrowVec = ListVector.empty("testcol", allocator);
         arrowVec.loadFieldBuffers(outerNode, Arrays.asList(null, countsBuf));
@@ -383,6 +432,7 @@ public class TTreeColumnVector extends ColumnVector {
     }
 
     ArrowType dtypeToArrow() {
+        logger.debug("dtype is " + dtype.name() + " memsize is " + AsDtype.memory_itemsize(dtype));
         if (dtype.name().equals("BOOL")) {
             return new ArrowType.Bool();
         } else if (dtype.name().equals("INT1")) {
@@ -491,7 +541,7 @@ public class TTreeColumnVector extends ColumnVector {
         int bytepos = content.raw().position();
         int pos = bytepos;
         // Number of bytes remaining
-        long length = (content.length() - pos);
+        long length = (content.numitems() - pos);
         long curAddress = out.memoryAddress();
 
 //        // copy word at a time
@@ -573,7 +623,7 @@ public class TTreeColumnVector extends ColumnVector {
     private ArrowBuf convertLaurelinBufToArrowBuf(PrimitiveArray content) {
         if (dtype.name().equals("BOOL")) {
             //While ROOT encodes booleans as 1 byte, Arrow puts them into bitvectors
-            ArrowBuf contentBuf = allocator.buffer(content.length() / 8 + 1);
+            ArrowBuf contentBuf = allocator.buffer(content.numitems() / 8 + 1);
             byteVectorToBitVector(content, contentBuf);
             return contentBuf;
         } else {
@@ -582,18 +632,25 @@ public class TTreeColumnVector extends ColumnVector {
             ArrowBuf contentBuf = allocator.buffer(contentBufSize);
 
             contentBuf.setBytes(0, ((NIOBuf) content.raw()).toByteBuffer());
-            if (dtype.name().equals("INT2")) {
-                swapShortEndianness(contentBuf, 0, content.length());
+            // System.out.println("Buf type is " + dtype.name());
+            if (dtype.name().equals("INT2") || dtype.name().equals("UINT1")) {
+                swapShortEndianness(contentBuf, 0, content.numitems());
+                //  || dtype.name().equals("FLOAT4")
             } else if (dtype.name().equals("UINT2") || dtype.name().equals("INT4")) {
-                swapIntEndianness(contentBuf, 0, content.length());
-            } else if (dtype.name().equals("UINT4") || dtype.name().equals("INT8") || dtype.name().equals("UINT8")) {
-                swapLongEndianness(contentBuf, 0, content.length());
+                swapIntEndianness(contentBuf, 0, content.numitems());
+            } else if (dtype.name().equals("FLOAT4")) {
+                //System.out.println("flipping float of " + contentBuf);
+                //System.out.println(contentBuf.getFloat(0));
+                swapIntEndianness(contentBuf, 0, content.numitems());
+                //System.out.println(contentBuf.getFloat(0));
+            } else if (dtype.name().equals("UINT4") || dtype.name().equals("INT8") || dtype.name().equals("UINT8") || dtype.name().equals("FLOAT8")) {
+                swapLongEndianness(contentBuf, 0, content.numitems());
             }
             return contentBuf;
         }
     }
 
-    public TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, BasketCache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor) {
+    private TTreeColumnVector(DataType type, SimpleType rootType, Dtype dtype, BasketCache basketCache, long entrystart, long entrystop, SlimTBranchInterface slimBranch, ThreadPoolExecutor executor) {
         this(type, rootType, dtype, basketCache, entrystart, entrystop, slimBranch, executor, (ROOTFileCache) null);
     }
 
@@ -734,7 +791,11 @@ public class TTreeColumnVector extends ColumnVector {
         return (double[])(builder.getArray(rowId, count).toArray());
     }
 
-    public void ensureLoaded() {
-        backing = builder.getArray(0, entryStop - entryStart);
+    public synchronized void ensureLoaded() {
+        if (backing == null) {
+            backing = builder.getArray(0, entryStop - entryStart);
+        }
     }
+
+
 }

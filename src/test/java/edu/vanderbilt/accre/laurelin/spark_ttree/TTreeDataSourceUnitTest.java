@@ -429,8 +429,13 @@ public class TTreeDataSourceUnitTest {
         assertEquals(100, batch.numRows());
 
         ColumnVector float32col = batch.column((int)schema.getFieldIndex("ArrayFloat32").get());
-
+        System.out.println("Filed index is + " + schema.getFieldIndex("ArrayFloat32") + "\n");
         assertFloatArrayEquals(new float[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}, float32col.getArray(0).toFloatArray());
+        System.out.printf("Float of 10.0   0x%08X\n", Float.floatToRawIntBits(10.0f));
+        ColumnarArray testval = float32col.getArray(10);
+        System.out.println(testval);
+        System.out.printf("Float of Zeroth 0x%08X\n", Float.floatToRawIntBits(float32col.getArray(10).toFloatArray()[0]));
+        System.out.printf("Float of First  0x%08X\n", Float.floatToRawIntBits(float32col.getArray(10).toFloatArray()[1]));
         assertFloatArrayEquals(new float[] { 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f, 10.0f}, float32col.getArray(10).toFloatArray());
         assertFloatArrayEquals(new float[] { 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f, 31.0f}, float32col.getArray(31).toFloatArray());
     }
@@ -443,7 +448,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new BooleanType(), SimpleType.fromString("bool"), SimpleType.dtypeFromString("bool"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new BooleanType(), SimpleType.fromString("bool"), SimpleType.dtypeFromString("bool"), cache, 0, 9, slim, null);
         assertEquals(result.getBoolean(0), false);
         assertEquals(result.getBoolean(1), true);
         assertEquals(result.getBoolean(2), false);
@@ -463,7 +468,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new BooleanType(), false), new SimpleType.ArrayType(SimpleType.fromString("bool")), SimpleType.dtypeFromString("bool"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new BooleanType(), false), new SimpleType.ArrayType(SimpleType.fromString("bool")), SimpleType.dtypeFromString("bool"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 3);
         assertEquals(event0.getBoolean(0), false);
@@ -519,7 +524,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ByteType(), SimpleType.fromString("char"), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ByteType(), SimpleType.fromString("char"), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
         assertEquals(result.getByte(0), 0);
         assertEquals(result.getByte(1), 1);
         assertEquals(result.getByte(2), 2);
@@ -539,7 +544,8 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ShortType(), SimpleType.fromString("uchar"), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ShortType(), SimpleType.fromString("uchar"), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
+
         assertEquals(result.getShort(0), 0);
         assertEquals(result.getShort(1), 1);
         assertEquals(result.getShort(2), 2);
@@ -559,7 +565,8 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ByteType(), false), new SimpleType.ArrayType(SimpleType.fromString("char")), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new ByteType(), false), new SimpleType.ArrayType(SimpleType.fromString("char")), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
+
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 3);
         assertEquals(event0.getByte(0), 0);
@@ -615,7 +622,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("uchar")), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("uchar")), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 3);
         assertEquals(event0.getShort(0), 0);
@@ -671,7 +678,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ByteType(), false), new SimpleType.ArrayType(SimpleType.fromString("char")), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new ByteType(), false), new SimpleType.ArrayType(SimpleType.fromString("char")), SimpleType.dtypeFromString("char"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 0);
         ColumnarArray event1 = result.getArray(1);
@@ -709,7 +716,10 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector tmp = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("uchar")), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
+        TTreeColumnVector tmp = TTreeColumnVector.makeTTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("uchar")), SimpleType.dtypeFromString("uchar"), cache, 0, 9, slim, null);
+        ColumnarArray fakeThing = tmp.getArray(2);
+        logger.debug("a " + fakeThing.getShort(0) + " " + fakeThing.getShort(1));
+        // TO ARROW VECTOR IS THE FUCKUP
         ArrowColumnVector result = tmp.toArrowVector();
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 0);
@@ -717,6 +727,9 @@ public class TTreeDataSourceUnitTest {
         assertEquals(event1.numElements(), 1);
         assertEquals(event1.getShort(0), 1);
         ColumnarArray event2 = result.getArray(2);
+        logger.debug("b " + event2.getShort(1));
+        logger.debug("c " + event2.getShort(0) + " " + event2.getShort(1));
+        logger.debug("d " + event2.getShort(0) + " " + event2.getShort(1));
         assertEquals(event2.numElements(), 2);
         assertEquals(event2.getShort(0), 2);
         assertEquals(event2.getShort(1), 2);
@@ -950,7 +963,8 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ShortType(), SimpleType.fromString("short"), SimpleType.dtypeFromString("short"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ShortType(), SimpleType.fromString("short"), SimpleType.dtypeFromString("short"), cache, 0, 9, slim, null);
+
         assertEquals(result.getShort(0), 0);
         assertEquals(result.getShort(1), 1);
         assertEquals(result.getShort(2), 2);
@@ -970,7 +984,8 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new IntegerType(), SimpleType.fromString("ushort"), SimpleType.dtypeFromString("ushort"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new IntegerType(), SimpleType.fromString("ushort"), SimpleType.dtypeFromString("ushort"), cache, 0, 9, slim, null);
+
         assertEquals(result.getInt(0), 0);
         assertEquals(result.getInt(1), 1);
         assertEquals(result.getInt(2), 2);
@@ -990,7 +1005,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("short")), SimpleType.dtypeFromString("short"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("short")), SimpleType.dtypeFromString("short"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 3);
         assertEquals(event0.getShort(0), 0);
@@ -1046,7 +1061,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("ushort")), SimpleType.dtypeFromString("ushort"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("ushort")), SimpleType.dtypeFromString("ushort"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 3);
         assertEquals(event0.getInt(0), 0);
@@ -1102,7 +1117,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("short")), SimpleType.dtypeFromString("short"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new ShortType(), false), new SimpleType.ArrayType(SimpleType.fromString("short")), SimpleType.dtypeFromString("short"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 0);
         ColumnarArray event1 = result.getArray(1);
@@ -1140,7 +1155,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("ushort")), SimpleType.dtypeFromString("ushort"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("ushort")), SimpleType.dtypeFromString("ushort"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 0);
         ColumnarArray event1 = result.getArray(1);
@@ -1178,7 +1193,8 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new IntegerType(), SimpleType.fromString("int"), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new IntegerType(), SimpleType.fromString("int"), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
+
         assertEquals(result.getInt(0), 0);
         assertEquals(result.getInt(1), 1);
         assertEquals(result.getInt(2), 2);
@@ -1198,7 +1214,8 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new LongType(), SimpleType.fromString("uint"), SimpleType.dtypeFromString("uint"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new LongType(), SimpleType.fromString("uint"), SimpleType.dtypeFromString("uint"), cache, 0, 9, slim, null);
+
         assertEquals(result.getLong(0), 0);
         assertEquals(result.getLong(1), 1);
         assertEquals(result.getLong(2), 2);
@@ -1218,7 +1235,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("int")), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("int")), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 3);
         assertEquals(event0.getInt(0), 0);
@@ -1274,7 +1291,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("uint")), SimpleType.dtypeFromString("uint"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("uint")), SimpleType.dtypeFromString("uint"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 3);
         assertEquals(event0.getLong(0), 0);
@@ -1330,7 +1347,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("int")), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new IntegerType(), false), new SimpleType.ArrayType(SimpleType.fromString("int")), SimpleType.dtypeFromString("int"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 0);
         ColumnarArray event1 = result.getArray(1);
@@ -1368,7 +1385,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("uint")), SimpleType.dtypeFromString("uint"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("uint")), SimpleType.dtypeFromString("uint"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 0);
         ColumnarArray event1 = result.getArray(1);
@@ -1406,7 +1423,8 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new LongType(), SimpleType.fromString("long"), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new LongType(), SimpleType.fromString("long"), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
+
         assertEquals(result.getLong(0), 0);
         assertEquals(result.getLong(1), 1);
         assertEquals(result.getLong(2), 2);
@@ -1426,7 +1444,8 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new DoubleType(), SimpleType.fromString("ulong"), SimpleType.dtypeFromString("ulong"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new DoubleType(), SimpleType.fromString("ulong"), SimpleType.dtypeFromString("ulong"), cache, 0, 9, slim, null);
+
         assertEquals(result.getLong(0), 0, 0.1);
         assertEquals(result.getLong(1), 1, 0.1);
         assertEquals(result.getLong(2), 2, 0.1);
@@ -1450,7 +1469,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 3);
         assertEquals(event0.getLong(0), 0);
@@ -1506,7 +1525,8 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("ulong")), SimpleType.dtypeFromString("ulong"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("ulong")), SimpleType.dtypeFromString("ulong"), cache, 0, 9, slim, null);
+        //result = ((TTreeColumnVector) result).toArrowVector();
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 3);
         assertEquals(event0.getLong(0), 0, 0.1);
@@ -1562,7 +1582,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 0);
         ColumnarArray event1 = result.getArray(1);
@@ -1600,7 +1620,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("ulong")), SimpleType.dtypeFromString("ulong"), cache, 0, 9, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("ulong")), SimpleType.dtypeFromString("ulong"), cache, 0, 9, slim, null);
         ColumnarArray event0 = result.getArray(0);
         assertEquals(event0.numElements(), 0);
         ColumnarArray event1 = result.getArray(1);
@@ -1639,7 +1659,8 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new FloatType(), SimpleType.fromString("float"), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new FloatType(), SimpleType.fromString("float"), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
+
         for (int i = 0;  i < 100;  i++) {
             assertEquals(result.getFloat(i), i, 0.0001);
         }
@@ -1654,7 +1675,8 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new FloatType(), false), new SimpleType.ArrayType(SimpleType.fromString("float")), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new FloatType(), false), new SimpleType.ArrayType(SimpleType.fromString("float")), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
+        //result = ((TTreeColumnVector) result).toArrowVector();
         for (int i = 0;  i < 100;  i++) {
             ColumnarArray event = result.getArray(i);
             assertEquals(event.numElements(), 10);
@@ -1673,7 +1695,8 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new FloatType(), false), new SimpleType.ArrayType(SimpleType.fromString("float")), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new FloatType(), false), new SimpleType.ArrayType(SimpleType.fromString("float")), SimpleType.dtypeFromString("float"), cache, 0, 100, slim, null);
+        //result = ((TTreeColumnVector) result).toArrowVector();
         for (int i = 0;  i < 100;  i++) {
             ColumnarArray event = result.getArray(i);
             assertEquals(event.numElements(), i % 10);
@@ -1691,7 +1714,8 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new DoubleType(), SimpleType.fromString("double"), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new DoubleType(), SimpleType.fromString("double"), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
+
         for (int i = 0;  i < 100;  i++) {
             assertEquals(result.getDouble(i), i, 0.0001);
         }
@@ -1706,7 +1730,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("double")), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("double")), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
         for (int i = 0;  i < 100;  i++) {
             ColumnarArray event = result.getArray(i);
             assertEquals(event.numElements(), 10);
@@ -1725,7 +1749,7 @@ public class TTreeDataSourceUnitTest {
         BasketCache cache = BasketCache.getCache();
         SlimTBranchInterface slim = SlimTBranch.getFromTBranch(branch);
 
-        TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("double")), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
+        ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new DoubleType(), false), new SimpleType.ArrayType(SimpleType.fromString("double")), SimpleType.dtypeFromString("double"), cache, 0, 100, slim, null);
         for (int i = 0;  i < 100;  i++) {
             ColumnarArray event = result.getArray(i);
             assertEquals(event.numElements(), i % 10);
@@ -1762,7 +1786,7 @@ public class TTreeDataSourceUnitTest {
 
         for (int start = 0; start < 10; start += 1) {
             for (int end = start + 1; end <= 10; end += 1) {
-                TTreeColumnVector result = new TTreeColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, start, end, slim, null);
+                ColumnVector result = TTreeColumnVector.makeImmediateColumnVector(new ArrayType(new LongType(), false), new SimpleType.ArrayType(SimpleType.fromString("long")), SimpleType.dtypeFromString("long"), cache, start, end, slim, null);
                 for (int i = start; i < end; i += 1) {
                     ColumnarArray event = result.getArray(i - start);
                     assertEquals(i + 1, event.numElements());

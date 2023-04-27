@@ -144,26 +144,25 @@ public class PartitionReader {
         currVecs = new ColumnVector[vecs.size()];
         int idx = 0;
         for (ColumnVector vec: vecs) {
+            // Finalize the vectors before we pass it to Spark
+            if (vec.getClass() == TTreeColumnVector.class) {
+                ((TTreeColumnVector) vec).ensureLoaded();
+            }
             currVecs[idx] = vec;
             idx += 1;
         }
-        for (ColumnVector vec: vecs) {
-            // Finalize the vectors before we pass it to Spark
-            ((TTreeColumnVector) vec).ensureLoaded();
-        }
+
         tmp2s = new ColumnVector[vecs.size()];
         idx = 0;
         for (ColumnVector vec: currVecs) {
-            tmp2s[idx] = ((TTreeColumnVector) vec).toArrowVector();
+            //System.out.println("index is " + idx);
+            tmp2s[idx] = vec;
             idx += 1;
         }
         // End misery
         ColumnarBatch ret = new ColumnarBatch(tmp2s);
         ret.setNumRows((int) (entryEnd - entryStart));
-        for (ColumnVector vec: vecs) {
-            // Finalize the vectors before we pass it to Spark
-            ((TTreeColumnVector) vec).ensureLoaded();
-        }
+
         return ret;
     }
 
@@ -180,7 +179,7 @@ public class PartitionReader {
             rootType = SimpleType.fromString(field.metadata().getString("rootType"));
 
             Dtype dtype = SimpleType.dtypeFromString(field.metadata().getString("rootType"));
-            vecs.add(new TTreeColumnVector(field.dataType(), rootType, dtype, basketCache, entryStart, entryEnd, slimBranch, executor, fileCache));
+            vecs.add(TTreeColumnVector.makeColumnVector(field.dataType(), rootType, dtype, basketCache, entryStart, entryEnd, slimBranch, executor, fileCache));
         }
         return vecs;
     }

@@ -21,6 +21,14 @@ public class Streamer {
     ArrayList<Proxy> streamerList;
     HashMap<String, Proxy> streamerMap;
     HashMap<Long, Proxy> classMap;
+    TList listInfo;
+    public HashMap<String, Proxy> getStreamerMap() {
+        return streamerMap;
+    }
+
+    public HashMap<Long, Proxy> getClassMap() {
+        return classMap;
+    }
 
     public void getFromCursor(Cursor c, long off) throws IOException {
         /*
@@ -32,7 +40,7 @@ public class Streamer {
          *
          */
         streamerList = new ArrayList<Proxy>();
-        TList listInfo = new TList();
+        listInfo = new TList();
         RangeCheck check = new RangeCheck(c);
         listInfo.readFromCursor(c.getSubcursor(off));
 

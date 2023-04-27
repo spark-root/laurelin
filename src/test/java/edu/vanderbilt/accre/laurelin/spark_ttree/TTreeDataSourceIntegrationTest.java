@@ -21,7 +21,7 @@ public class TTreeDataSourceIntegrationTest {
                 .appName("test").getOrCreate();
     }
 
-    //@Test
+    @Test
     public void testLoadDataFrame() {
         Dataset<Row> df = spark
                 .read()
@@ -29,12 +29,14 @@ public class TTreeDataSourceIntegrationTest {
                 .option("tree",  "tree")
                 .load("testdata/uproot-small-flat-tree.root");
         df = df.select("Float32", "ArrayFloat32", "SliceFloat32");
+        df.printSchema();
         df.show();
         assertEquals(100, df.count());
     }
 
-    @Test
+    /* @Test */
     public void testLoadDataFrame2() {
+        System.out.println("start");
         Dataset<Row> df = spark
                 .read()
                 .format("edu.vanderbilt.accre.laurelin.Root")

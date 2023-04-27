@@ -172,6 +172,10 @@ public class TFile implements AutoCloseable {
         return fileName;
     }
 
+    public Streamer getStreamerInfo() {
+        return streamerInfo;
+    }
+
     @Override
     public void close() throws Exception {
         fh.close();

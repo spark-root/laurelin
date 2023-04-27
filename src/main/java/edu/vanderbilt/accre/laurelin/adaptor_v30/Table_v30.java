@@ -9,9 +9,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.catalog.SupportsRead;
+import org.apache.spark.sql.connector.catalog.SupportsWrite;
 import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCapability;
 import org.apache.spark.sql.connector.read.ScanBuilder;
+import org.apache.spark.sql.connector.write.LogicalWriteInfo;
+import org.apache.spark.sql.connector.write.WriteBuilder;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
@@ -27,7 +30,7 @@ import scala.Option;
  * on the same dataframe will use the same Table object and just produce new
  * scan builders.
  */
-public class Table_v30 implements Table, SupportsRead {
+public class Table_v30 implements Table, SupportsRead, SupportsWrite {
     static final Logger logger = LogManager.getLogger();
 
     public Table_v30(LaurelinDSConfig options, List<String> paths) {
@@ -67,5 +70,11 @@ public class Table_v30 implements Table, SupportsRead {
             assert optionsUpcast.getMap().equals(originalOptions.getMap());
         }
         return new ScanBuilder_v30(reader);
+    }
+
+    @Override
+    public WriteBuilder newWriteBuilder(LogicalWriteInfo info) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }
