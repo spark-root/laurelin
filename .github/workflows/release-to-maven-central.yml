@@ -34,7 +34,7 @@ jobs:
           myToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish package
-        run: mvn -B --batch-mode clean deploy -P spark30,release30,ossrh -DskipTests=true
+        run: mvn -B --batch-mode clean deploy -P spark30,release30 -DskipTests=true
         env:
           MAVEN_USERNAME: ${{ secrets.OSS_SONATYPE_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSS_SONATYPE_PASSWORD }}
